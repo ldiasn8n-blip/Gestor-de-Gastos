@@ -197,6 +197,10 @@
   }
   .photo-btn:active{ transform:scale(0.97); }
   .photo-preview-slot{display:flex;align-items:center;gap:8px;}
+  .ocr-status{ font-size:11.5px;color:var(--ink-soft);margin-top:6px;min-height:14px;line-height:1.4; }
+  .ocr-status.ocr-loading{ color:var(--ink-soft); }
+  .ocr-status.ocr-ok{ color:var(--positive); }
+  .ocr-status.ocr-fail{ color:var(--alert); }
   .photo-preview{
     width:42px;height:42px;border-radius:6px;object-fit:cover;border:1px solid var(--line);
   }
@@ -611,6 +615,14 @@
 <div id="reset-modal" class="hidden">
   <div id="reset-panel"></div>
 </div>
+
+<!--
+  Tesseract.js faz a leitura automática (OCR) das notas fiscais direto no
+  navegador da pessoa, sem precisar de servidor nem de chave de API.
+  Se o CDN não carregar por algum motivo, o app detecta isso e cai de volta
+  pro preenchimento manual — a leitura automática nunca trava o resto do site.
+-->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.0.4/tesseract.min.js"></script>
 
 <script>
 (function(){
@@ -1187,6 +1199,7 @@
           + '<label class="photo-btn">📷 Foto ou galeria<input type="file" accept="image/*" class="photo-input" style="display:none;"></label>'
           + '<span class="photo-preview-slot">' + renderPhotoSlotHTML(editingExpense) + '</span>'
         + '</div>'
+        + '<div class="ocr-status"></div>'
       + '</div>'
       + '<button type="submit" class="submit-btn" style="background:'+member.color+';">' + (editingExpense ? 'Salvar alterações' : 'Adicionar gasto') + '</button>'
       + (editingExpense ? '<button type="button" class="cancel-edit-btn" data-action="cancel-edit">Cancelar edição</button>' : '')
@@ -1225,6 +1238,7 @@
           + '<label class="photo-btn">📷 Foto ou galeria<input type="file" accept="image/*" class="photo-input" style="display:none;"></label>'
           + '<span class="photo-preview-slot">' + renderPhotoSlotHTML(editingExpense) + '</span>'
         + '</div>'
+        + '<div class="ocr-status"></div>'
       + '</div>'
       + '<button type="submit" class="submit-btn" style="background:'+member.color+';">' + (editingExpense ? 'Salvar alterações' : 'Adicionar gasto') + '</button>'
       + (editingExpense ? '<button type="button" class="cancel-edit-btn" data-action="cancel-edit">Cancelar edição</button>' : '')
@@ -1825,6 +1839,143 @@
     slot.innerHTML = renderPhotoSlotHTML(editingExpense);
   }
 
+  /* ---------- Leitura automática da nota (OCR) ---------- */
+
+  function parseBRLNumber(str){
+    if (!str) return null;
+    var cleaned = String(str).replace(/\./g, '').replace(',', '.');
+    var n = parseFloat(cleaned);
+    return isNaN(n) ? null : n;
+  }
+
+  function parseReceiptText(text){
+    var moneyToken = '\\d{1,3}(?:\\.\\d{3})*,\\d{2}';
+    var moneyRe = new RegExp(moneyToken, 'g');
+    var lines = text.split(/\r?\n/).map(function(l){ return l.replace(/\s+/g, ' ').trim(); }).filter(function(l){ return l.length > 0; });
+
+    var result = { date: null, total: null, storeName: null, items: [] };
+
+    var dateRe = /(\d{2})[\/.](\d{2})[\/.](\d{4})/;
+    for (var i = 0; i < lines.length; i++){
+      var dm = lines[i].match(dateRe);
+      if (dm){
+        var dd = dm[1], mm = dm[2], yyyy = dm[3];
+        var dt = new Date(Number(yyyy), Number(mm) - 1, Number(dd));
+        if (!isNaN(dt.getTime()) && Number(yyyy) > 2000 && Number(yyyy) < 2100){
+          result.date = yyyy + '-' + mm + '-' + dd;
+          break;
+        }
+      }
+    }
+
+    for (var j = 0; j < Math.min(lines.length, 6); j++){
+      var l = lines[j];
+      if (/[A-Za-zÀ-ÿ]{3,}/.test(l) && !/CNPJ|CUPOM|NOTA FISCAL|ENDERE|CONSUMIDOR/i.test(l)){
+        var clean = l.replace(/[^A-Za-zÀ-ÿ0-9 .,-]/g, '').trim();
+        if (clean.length >= 3){ result.storeName = clean; break; }
+      }
+    }
+
+    var totalKeywords = /VALOR\s*A\s*PAGAR|\bTOTAL\s*R?\$?/i;
+    for (var k = lines.length - 1; k >= 0; k--){
+      var lk = lines[k];
+      if (totalKeywords.test(lk) && !/SUBTOTAL|DESCONTO/i.test(lk)){
+        var moneysT = lk.match(moneyRe);
+        if (moneysT && moneysT.length){
+          var val = parseBRLNumber(moneysT[moneysT.length - 1]);
+          if (val != null && val > 0){ result.total = val; break; }
+        }
+      }
+    }
+
+    var skipRe = /TOTAL|SUBTOTAL|DESCONTO|TROCO|DINHEIRO|CART[ÃA]O|CNPJ|CPF|CUPOM|NOTA FISCAL|VALOR PAGO|FORMA DE PAGAMENTO|TRIBUTOS|OBSERVA|ENDERE|CONSUMIDOR/i;
+    var qtyRe = /(\d+(?:[.,]\d+)?)\s*(UN|KG|UND|PC|CX|LT|G)\s*X\s*(\d{1,3}(?:\.\d{3})*,\d{2})/i;
+    lines.forEach(function(line){
+      if (skipRe.test(line)) return;
+      var moneys = line.match(moneyRe);
+      if (!moneys || !moneys.length) return;
+      var qm = line.match(qtyRe);
+      var desc = line, quantity = 1, unitValue = null, subtotal = null;
+      if (qm){
+        quantity = parseBRLNumber(qm[1]) || parseFloat(String(qm[1]).replace(',', '.')) || 1;
+        unitValue = parseBRLNumber(qm[3]);
+        desc = line.slice(0, qm.index).trim();
+        subtotal = parseBRLNumber(moneys[moneys.length - 1]);
+        if (subtotal == null && unitValue != null) subtotal = quantity * unitValue;
+      } else {
+        subtotal = parseBRLNumber(moneys[moneys.length - 1]);
+        unitValue = subtotal;
+        desc = line.replace(moneyRe, '').trim();
+      }
+      desc = desc.replace(/^\d+\s+/, '').replace(/\s{2,}/g, ' ').trim();
+      if (!desc || desc.length < 2 || subtotal == null || subtotal <= 0) return;
+      if (unitValue == null) unitValue = subtotal / (quantity || 1);
+      result.items.push({ description: desc, quantity: quantity, unitValue: unitValue });
+    });
+
+    return result;
+  }
+
+  function setOcrStatus(formEl, text, kind){
+    var el = formEl && formEl.querySelector('.ocr-status');
+    if (!el) return;
+    el.textContent = text || '';
+    el.className = 'ocr-status' + (kind ? (' ocr-' + kind) : '');
+  }
+
+  function applyOcrResult(formEl, parsed){
+    var filled = false;
+
+    var descInput = formEl.querySelector('.description-input');
+    if (descInput && !descInput.value.trim() && parsed.storeName){
+      descInput.value = parsed.storeName;
+      filled = true;
+    }
+
+    var dateInput = formEl.querySelector('.date-input');
+    if (dateInput && parsed.date && dateInput.value === todayISO()){
+      dateInput.value = parsed.date;
+      filled = true;
+    }
+
+    var itemsList = formEl.querySelector('.items-list');
+    if (itemsList && parsed.items.length && itemsList.querySelectorAll('.item-row').length === 0){
+      itemsList.innerHTML = parsed.items.map(itemRowHTML).join('');
+      recalcItemsTotal(formEl);
+      filled = true;
+    } else {
+      var valueInput = formEl.querySelector('.value-input');
+      if (valueInput && !valueInput.readOnly && (!valueInput.value || parseFloat(valueInput.value) === 0) && parsed.total != null){
+        valueInput.value = parsed.total.toFixed(2);
+        filled = true;
+      }
+    }
+
+    setOcrStatus(formEl, filled
+      ? '✅ Nota lida automaticamente — confira os valores antes de salvar.'
+      : '⚠️ Não consegui identificar os dados da nota — preencha manualmente.', filled ? 'ok' : 'fail');
+  }
+
+  async function runReceiptOCR(imageSource, formEl){
+    if (!formEl || !formEl.isConnected) return;
+    if (typeof Tesseract === 'undefined'){
+      console.warn('Tesseract.js indisponível — leitura automática desativada.');
+      setOcrStatus(formEl, '⚠️ Leitura automática indisponível agora — preencha manualmente.', 'fail');
+      return;
+    }
+    setOcrStatus(formEl, '🔎 Lendo a nota automaticamente...', 'loading');
+    try {
+      var out = await Tesseract.recognize(imageSource, 'por');
+      if (!formEl.isConnected) return;
+      var text = (out && out.data && out.data.text) ? out.data.text : '';
+      var parsed = parseReceiptText(text);
+      applyOcrResult(formEl, parsed);
+    } catch(e){
+      console.error('OCR falhou', e);
+      if (formEl.isConnected) setOcrStatus(formEl, '⚠️ Não consegui ler a nota automaticamente — preencha manualmente.', 'fail');
+    }
+  }
+
   async function handlePhotoChange(input){
     var file = input.files[0];
     if (!file) return;
@@ -1834,6 +1985,7 @@
       state.pendingPhoto = {thumb:results[0], full:results[1]};
       state.removeExistingPhoto = false;
       refreshPhotoSlot(formEl);
+      runReceiptOCR(results[1], formEl);
     } catch(e){
       alert('Não foi possível processar a imagem. Tente outra foto.');
     }
