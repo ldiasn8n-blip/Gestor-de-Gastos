@@ -416,15 +416,21 @@
   .item-field{ display:flex;flex-direction:column;gap:3px;min-width:0; }
   .item-field-label{ font-size:10px;font-weight:600;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.03em; }
   .item-field-desc{ flex:1 1 100%; }
-  .item-field-qty{ flex:0 0 68px; }
-  .item-field-value{ flex:1 1 120px; }
+  .item-field-pos{ flex:0 0 46px; }
+  .item-field-units{ flex:0 0 58px; }
+  .item-field-weight{ flex:0 0 72px; }
+  .item-field-value{ flex:1 1 100px; }
   .item-row .item-desc-input,
-  .item-row .item-qty-input,
-  .item-row .item-unit-input{
+  .item-row .item-pos-input,
+  .item-row .item-units-input,
+  .item-row .item-weight-input,
+  .item-row .item-value-input{
     padding:8px 9px;border:1px solid var(--line);border-radius:7px;font-size:14px;background:var(--input-bg);color:var(--ink);font-family:inherit;width:100%;box-sizing:border-box;
   }
-  .item-row .item-qty-input{ text-align:center; }
-  .item-row .item-unit-input{ text-align:right; }
+  .item-row .item-pos-input{ text-align:center;color:var(--ink-soft); }
+  .item-row .item-units-input{ text-align:center; }
+  .item-row .item-weight-input{ text-align:center; }
+  .item-row .item-value-input{ text-align:right; }
   .item-row .item-remove-btn{
     flex:0 0 auto;border:none;background:none;color:var(--alert);font-size:16px;cursor:pointer;padding:6px 6px 9px;font-family:inherit;
   }
@@ -1200,12 +1206,24 @@
     expenses.forEach(function(e){
       if (Array.isArray(e.items) && e.items.length){
         e.items.forEach(function(it){
-          var qty = Number(it.quantity) || 1;
-          var uv = Number(it.unitValue) || 0;
-          items.push({description:it.description, quantity:qty, unitValue:uv, subtotal:qty*uv, date:e.date, monthKey:monthKeyFromDate(e.date), expenseId:e.id});
+          var isNewSchema = it.value !== undefined;
+          var subtotal, qty, weight;
+          if (isNewSchema){
+            subtotal = Number(it.value) || 0;
+            qty = (it.units != null && it.units !== '') ? Number(it.units) : null;
+            weight = (it.weight != null && it.weight !== '') ? Number(it.weight) : null;
+          } else {
+            // Itens salvos antes desta atualização (schema antigo: quantity/unitValue).
+            qty = Number(it.quantity) || 1;
+            var uv = Number(it.unitValue) || 0;
+            subtotal = qty * uv;
+            weight = null;
+          }
+          var displayQty = (qty != null) ? qty : (weight != null ? weight : 1);
+          items.push({description:it.description, quantity:displayQty, weight:weight, unitValue: displayQty ? subtotal/displayQty : subtotal, subtotal:subtotal, date:e.date, monthKey:monthKeyFromDate(e.date), expenseId:e.id});
         });
       } else {
-        items.push({description:e.description, quantity:1, unitValue:e.value, subtotal:e.value, date:e.date, monthKey:monthKeyFromDate(e.date), expenseId:e.id});
+        items.push({description:e.description, quantity:1, weight:null, unitValue:e.value, subtotal:e.value, date:e.date, monthKey:monthKeyFromDate(e.date), expenseId:e.id});
       }
     });
     return items;
@@ -1323,12 +1341,18 @@
   // 3) valor. Cada campo tem um rótulo permanente (não só placeholder) pra
   // ficar sempre claro qual número é qual, mesmo depois de preenchido pelo OCR.
   function itemRowHTML(item){
-    item = item || {description:'', quantity:1, unitValue:''};
+    item = item || {};
+    var posVal = (item.position !== undefined && item.position !== null && item.position !== '') ? item.position : '';
+    var unitsVal = (item.units !== undefined && item.units !== null && item.units !== '') ? item.units : '';
+    var weightVal = (item.weight !== undefined && item.weight !== null && item.weight !== '') ? item.weight : '';
+    var valueVal = (item.value !== undefined && item.value !== null && item.value !== '') ? item.value : '';
     return ''
       + '<div class="item-row">'
-      + '<div class="item-field item-field-desc"><span class="item-field-label">1. Produto</span><input type="text" class="item-desc-input" placeholder="Ex: Arroz 5kg" value="'+escapeHTML(item.description||'')+'"></div>'
-      + '<div class="item-field item-field-qty"><span class="item-field-label">2. Qtd</span><input type="number" inputmode="decimal" class="item-qty-input" min="0.001" step="0.001" placeholder="1" value="'+(item.quantity||1)+'"></div>'
-      + '<div class="item-field item-field-value"><span class="item-field-label">3. Valor (R$)</span><input type="number" inputmode="decimal" class="item-unit-input" min="0" step="0.01" placeholder="0,00" value="'+(item.unitValue!==''&&item.unitValue!=null?item.unitValue:'')+'"></div>'
+      + '<div class="item-field item-field-desc"><span class="item-field-label">Produto</span><input type="text" class="item-desc-input" placeholder="Ex: Arroz 5kg" value="'+escapeHTML(item.description||'')+'"></div>'
+      + '<div class="item-field item-field-pos"><span class="item-field-label">Nº</span><input type="number" inputmode="numeric" class="item-pos-input" min="1" step="1" placeholder="—" value="'+posVal+'"></div>'
+      + '<div class="item-field item-field-units"><span class="item-field-label">Unid.</span><input type="number" inputmode="decimal" class="item-units-input" min="0" step="1" placeholder="—" value="'+unitsVal+'"></div>'
+      + '<div class="item-field item-field-weight"><span class="item-field-label">Peso (kg)</span><input type="number" inputmode="decimal" class="item-weight-input" min="0" step="0.001" placeholder="—" value="'+weightVal+'"></div>'
+      + '<div class="item-field item-field-value"><span class="item-field-label">Valor (R$)</span><input type="number" inputmode="decimal" class="item-value-input" min="0" step="0.01" placeholder="0,00" value="'+valueVal+'"></div>'
       + '<button type="button" class="item-remove-btn" data-action="remove-item">✕</button>'
       + '</div>';
   }
@@ -1351,9 +1375,8 @@
     }
     var total = 0;
     rows.forEach(function(row){
-      var qty = parseFloat(row.querySelector('.item-qty-input').value) || 0;
-      var uv = parseFloat(row.querySelector('.item-unit-input').value) || 0;
-      total += qty*uv;
+      var val = parseFloat(row.querySelector('.item-value-input').value) || 0;
+      total += val;
     });
     if (valueInput){
       valueInput.value = total.toFixed(2);
@@ -1405,7 +1428,7 @@
       + '<div class="items-hint" style="margin:-4px 0 12px;">Se essa conta parcelada entrar aqui, o acerto da casa vai contar só as parcelas já pagas — as próximas aparecem na aba Meses.</div>'
       + '<div class="field items-section">'
         + '<div class="items-section-head"><label>🧾 Itens da compra (opcional)</label></div>'
-        + '<div class="items-hint">Tirou foto da nota fiscal? Registre aqui os produtos, quantidade e valor de cada item para poder consultar tudo depois pelo Resumo.</div>'
+        + '<div class="items-hint">Tirou foto da nota fiscal? Cada item vira uma linha com Nº (posição na nota), Produto, Unidade, Peso (só se vendido por peso) e Valor — confira os campos preenchidos automaticamente antes de salvar.</div>'
         + '<div class="items-list">' + existingItems.map(itemRowHTML).join('') + '</div>'
         + itemsTotalRowHTML()
         + '<button type="button" class="secondary-btn add-item-btn" data-action="add-item">+ Adicionar item</button>'
@@ -1858,9 +1881,11 @@
       draft.items = [];
       itemRows.forEach(function(row){
         draft.items.push({
+          position: row.querySelector('.item-pos-input').value,
           description: row.querySelector('.item-desc-input').value,
-          quantity: row.querySelector('.item-qty-input').value,
-          unitValue: row.querySelector('.item-unit-input').value
+          units: row.querySelector('.item-units-input').value,
+          weight: row.querySelector('.item-weight-input').value,
+          value: row.querySelector('.item-value-input').value
         });
       });
     }
@@ -1953,7 +1978,8 @@
       var metaBits = [];
       if (!grouped) metaBits.push(formatDateBR(it.date));
       if (grouped && it.purchases > 1) metaBits.push(it.purchases + ' compras · última em ' + formatDateBR(it.date));
-      if (it.quantity !== 1) metaBits.push(formatQty(it.quantity) + (grouped ? ' un. no total' : 'x ' + formatBRL(it.unitValue)));
+      if (!grouped && it.weight) metaBits.push(formatQty(it.weight) + ' kg');
+      else if (it.quantity !== 1) metaBits.push(formatQty(it.quantity) + (grouped ? ' un. no total' : 'x ' + formatBRL(it.unitValue)));
       return '<div class="item-view-row">'
         + '<div class="item-view-main"><div class="item-view-desc">'+escapeHTML(it.description)+'</div><div class="item-view-meta">'+metaBits.join(' · ')+'</div></div>'
         + '<div class="item-view-value">'+formatBRL(it.subtotal)+'</div>'
@@ -2058,9 +2084,17 @@
       var items = [];
       itemRows.forEach(function(row){
         var idesc = row.querySelector('.item-desc-input').value.trim();
-        var iqty = parseFloat(row.querySelector('.item-qty-input').value) || 0;
-        var iuv = parseFloat(row.querySelector('.item-unit-input').value) || 0;
-        if (idesc && iqty > 0) items.push({description:idesc, quantity:iqty, unitValue:iuv});
+        var ivalue = parseFloat(row.querySelector('.item-value-input').value) || 0;
+        var ipos = parseInt(row.querySelector('.item-pos-input').value, 10);
+        var iunits = parseFloat(row.querySelector('.item-units-input').value);
+        var iweight = parseFloat(row.querySelector('.item-weight-input').value);
+        if (idesc && ivalue > 0) items.push({
+          position: isNaN(ipos) ? null : ipos,
+          description: idesc,
+          units: isNaN(iunits) ? null : iunits,
+          weight: isNaN(iweight) ? null : iweight,
+          value: ivalue
+        });
       });
       extra.items = items.length ? items : null;
 
@@ -2204,6 +2238,11 @@
     // quantidade cai pra 1 por padrão e some — ex: uma compra de "2 UN" pode
     // acabar registrada como se fosse 1 unidade, o que muda o valor unitário.
     var qtyOnlyRe = /(\d+(?:[.,]\d+)?)\s*(UN|KG|UND|PC|CX|LT|G)\b/i;
+    // Nº sequencial do item impresso no começo da linha, seguido do código de
+    // barras/interno (ex: "01 07891097010781 ..." -> posição 1). Usamos isso
+    // como âncora pra saber onde um item novo começa e não deixar a descrição
+    // de um item "vazar" pro item seguinte quando o OCR pula uma linha.
+    var posRe = /^(\d{1,3})\s+\d{6,}/;
 
     // Tira código de barras/código interno do produto (sequências longas de dígitos)
     // e o número sequencial do item no início da linha (ex: "01 7891...  ARROZ 5KG" -> "ARROZ 5KG").
@@ -2216,29 +2255,49 @@
       return s;
     }
 
-    // Muitos cupons imprimem a descrição numa linha e a quantidade/valor na linha
-    // seguinte. Por isso percorremos as linhas guardando a última linha "de texto"
-    // (sem valor em R$) como candidata a descrição, e só fechamos um item quando
-    // encontramos uma linha com valor — usando o texto da própria linha se ela já
-    // tiver uma descrição decente, ou a linha de texto pendente caso contrário.
+    // Lê o par quantidade+unidade de uma linha (seja do padrão "2 UN X 5,00"
+    // ou do fallback "2 UN" sozinho) e devolve como unidade (contagem, ex.:
+    // "2 UN") ou peso em kg (ex.: "0,970 KG" -> 0.97), nunca os dois.
+    function readUnitsOrWeight(match){
+      if (!match) return {units:null, weight:null};
+      var qty = parseBRLNumber(match[1]);
+      if (qty == null) qty = parseFloat(String(match[1]).replace(',', '.'));
+      if (qty == null || isNaN(qty)) return {units:null, weight:null};
+      var label = String(match[2] || '').toUpperCase();
+      if (label === 'KG') return {units:null, weight:qty};
+      if (label === 'G') return {units:null, weight:qty / 1000};
+      return {units:qty, weight:null};
+    }
+
+    // Muitos cupons imprimem a descrição (com Nº + código de barras) numa linha
+    // e a quantidade/valor na linha seguinte. Por isso percorremos as linhas
+    // guardando a última linha "de texto" (sem valor em R$) como candidata a
+    // descrição — e o Nº do item, se identificado — e só fechamos um item
+    // quando encontramos uma linha com valor.
     var pendingDesc = '';
+    var pendingPos = null;
+    var autoPos = 0;
     lines.forEach(function(line){
       if (skipRe.test(line)) return;
+
+      var posMatch = line.match(posRe);
+      if (posMatch) pendingPos = parseInt(posMatch[1], 10);
+
       var moneys = line.match(moneyRe);
       if (!moneys || !moneys.length){
         var candidate = cleanDescLine(line);
         if (candidate) pendingDesc = candidate;
         return;
       }
+
       var qm = line.match(qtyRe);
-      var quantity = 1, unitValue = null, subtotal = null, desc;
+      var units = null, weight = null, desc;
+      var value = parseBRLNumber(moneys[moneys.length - 1]);
       if (qm){
         // Padrão de quantidade reconhecido com confiança (ex: "1 UN X 12,59") —
         // o texto antes dele nessa mesma linha é uma descrição confiável.
-        quantity = parseBRLNumber(qm[1]) || parseFloat(String(qm[1]).replace(',', '.')) || 1;
-        unitValue = parseBRLNumber(qm[3]);
-        subtotal = parseBRLNumber(moneys[moneys.length - 1]);
-        if (subtotal == null && unitValue != null) subtotal = quantity * unitValue;
+        var ru = readUnitsOrWeight(qm);
+        units = ru.units; weight = ru.weight;
         var cleanedInline = cleanDescLine(line.slice(0, qm.index));
         desc = (cleanedInline && cleanedInline.length >= 3) ? cleanedInline : pendingDesc;
       } else {
@@ -2246,22 +2305,29 @@
         // (comum quando o OCR embaralha "1 UN X" em algo como "TUNX") — não dá
         // pra confiar no texto que sobra dela, então priorizamos a descrição
         // pendente da linha anterior; só usamos o texto desta linha em último caso.
-        subtotal = parseBRLNumber(moneys[moneys.length - 1]);
         var qOnly = line.match(qtyOnlyRe);
         if (qOnly){
-          var qCandidate = parseBRLNumber(qOnly[1]);
-          if (qCandidate == null) qCandidate = parseFloat(String(qOnly[1]).replace(',', '.'));
+          var ru2 = readUnitsOrWeight(qOnly);
           // Só confia nesse número como quantidade se fizer sentido pra uma
           // compra normal (evita pegar código de barras ou peso mal lido).
-          if (qCandidate && qCandidate > 0 && qCandidate < 1000) quantity = qCandidate;
+          if ((ru2.units != null && ru2.units > 0 && ru2.units < 1000) || (ru2.weight != null && ru2.weight > 0 && ru2.weight < 1000)){
+            units = ru2.units; weight = ru2.weight;
+          }
         }
-        unitValue = quantity > 0 ? subtotal / quantity : subtotal;
         desc = pendingDesc || cleanDescLine(line.replace(moneyRe, '').replace(qtyOnlyRe, ' '));
       }
+      var itemPos = pendingPos;
       pendingDesc = '';
-      if (!desc || desc.length < 2 || subtotal == null || subtotal <= 0) return;
-      if (unitValue == null) unitValue = subtotal / (quantity || 1);
-      result.items.push({ description: desc, quantity: quantity, unitValue: unitValue });
+      pendingPos = null;
+      if (!desc || desc.length < 2 || value == null || value <= 0) return;
+      autoPos += 1;
+      result.items.push({
+        position: (itemPos != null) ? itemPos : autoPos,
+        description: desc,
+        units: units,
+        weight: weight,
+        value: value
+      });
     });
 
     return result;
