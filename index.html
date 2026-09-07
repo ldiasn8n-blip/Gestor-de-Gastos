@@ -403,23 +403,34 @@
   .items-hint{ font-size:11.5px;color:var(--ink-soft);margin:2px 0 8px;line-height:1.4; }
   .items-list{ margin-bottom:8px; }
   .item-row{
-    display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;
+    display:flex;flex-wrap:wrap;gap:6px 8px;align-items:flex-end;
     padding:8px;margin-bottom:6px;background:var(--paper);border-radius:8px;
   }
-  .item-row .item-desc-input{ flex:1 1 100%;min-width:0; }
-  .item-row .item-qty-input{ flex:0 0 64px; }
-  .item-row .item-unit-input{ flex:1 1 120px; }
+  .item-field{ display:flex;flex-direction:column;gap:3px;min-width:0; }
+  .item-field-label{ font-size:10px;font-weight:600;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.03em; }
+  .item-field-desc{ flex:1 1 100%; }
+  .item-field-qty{ flex:0 0 68px; }
+  .item-field-value{ flex:1 1 120px; }
   .item-row .item-desc-input,
   .item-row .item-qty-input,
   .item-row .item-unit-input{
-    padding:8px 9px;border:1px solid var(--line);border-radius:7px;font-size:14px;background:#fff;color:var(--ink);font-family:inherit;
+    padding:8px 9px;border:1px solid var(--line);border-radius:7px;font-size:14px;background:#fff;color:var(--ink);font-family:inherit;width:100%;box-sizing:border-box;
   }
   .item-row .item-qty-input{ text-align:center; }
   .item-row .item-unit-input{ text-align:right; }
   .item-row .item-remove-btn{
-    flex:0 0 auto;border:none;background:none;color:var(--alert);font-size:16px;cursor:pointer;padding:6px;font-family:inherit;
+    flex:0 0 auto;border:none;background:none;color:var(--alert);font-size:16px;cursor:pointer;padding:6px 6px 9px;font-family:inherit;
   }
   .add-item-btn{ width:100%; }
+  .items-total-row{
+    display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;
+    padding:9px 10px;margin:2px 0 8px;background:var(--paper);border-radius:8px;font-size:13px;color:var(--ink-soft);
+  }
+  .items-total-row.hidden{ display:none; }
+  .items-total-row .items-total-main{ font-weight:700;color:var(--ink); }
+  .items-total-row .items-total-ref{ font-size:12px; }
+  .items-total-row.totals-mismatch .items-total-ref{ color:var(--alert);font-weight:600; }
+  .items-total-row.totals-match .items-total-ref{ color:var(--positive);font-weight:600; }
   .value-input.computed-value{ background:var(--paper);color:var(--ink-soft); }
 
   /* Category → items modal */
@@ -881,7 +892,10 @@
       reader.onload = function(e){
         var img = new Image();
         img.onload = function(){
-          var maxWidth = 1800;
+          // Resolução maior ajuda MUITO em cupons de impressora matricial (os
+          // "pontinhos" do texto ficam pequenos e a leitura precisa de mais
+          // pixels pra reconhecer cada caractere).
+          var maxWidth = 2200;
           var w = img.width, h = img.height;
           if (w > maxWidth){ h = Math.round(h * (maxWidth / w)); w = maxWidth; }
           var canvas = document.createElement('canvas');
@@ -891,21 +905,32 @@
           try {
             var imgData = ctx.getImageData(0, 0, w, h);
             var d = imgData.data;
-            var min = 255, max = 0, i;
+            var hist = new Array(256).fill(0);
+            var i, g;
             for (i = 0; i < d.length; i += 4){
-              var g = 0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2];
+              g = (0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2]) | 0;
               d[i] = d[i+1] = d[i+2] = g;
-              if (g < min) min = g;
-              if (g > max) max = g;
+              hist[g]++;
             }
-            var range = Math.max(1, max - min);
+            // Alonga o contraste usando percentis (2%–98%) em vez do mínimo/máximo
+            // cru — assim um brilho de reflexo ou uma sombra no canto da foto não
+            // estraga o realce da folha inteira, como aconteceria com min/max puro.
+            var totalPx = w * h;
+            var lowCut = totalPx * 0.02, highCut = totalPx * 0.02;
+            var acc = 0, lo = 0, hi = 255;
+            for (i = 0; i < 256; i++){ acc += hist[i]; if (acc >= lowCut){ lo = i; break; } }
+            acc = 0;
+            for (i = 255; i >= 0; i--){ acc += hist[i]; if (acc >= highCut){ hi = i; break; } }
+            if (hi <= lo){ lo = 0; hi = 255; }
+            var range = hi - lo;
             for (i = 0; i < d.length; i += 4){
-              var v = (d[i] - min) * (255 / range);
+              var v = (d[i] - lo) * (255 / range);
+              if (v < 0) v = 0; else if (v > 255) v = 255;
               d[i] = d[i+1] = d[i+2] = v;
             }
             ctx.putImageData(imgData, 0, 0);
           } catch(err){ /* segue sem o realce se o navegador não permitir */ }
-          resolve(canvas.toDataURL('image/jpeg', 0.9));
+          resolve(canvas.toDataURL('image/jpeg', 0.92));
         };
         img.onerror = function(){ reject(new Error('Erro ao carregar imagem')); };
         img.src = e.target.result;
@@ -1176,24 +1201,34 @@
     return renderCasalFormHTML(memberId, editingExpense);
   }
 
+  // Ordem fixa dos campos de cada item: 1) nome do produto, 2) quantidade,
+  // 3) valor. Cada campo tem um rótulo permanente (não só placeholder) pra
+  // ficar sempre claro qual número é qual, mesmo depois de preenchido pelo OCR.
   function itemRowHTML(item){
     item = item || {description:'', quantity:1, unitValue:''};
     return ''
       + '<div class="item-row">'
-      + '<input type="text" class="item-desc-input" placeholder="Produto (ex: Arroz 5kg)" value="'+escapeHTML(item.description||'')+'">'
-      + '<input type="number" inputmode="decimal" class="item-qty-input" min="0.001" step="0.001" placeholder="Qtd" value="'+(item.quantity||1)+'">'
-      + '<input type="number" inputmode="decimal" class="item-unit-input" min="0" step="0.01" placeholder="Valor unit. (R$)" value="'+(item.unitValue!==''&&item.unitValue!=null?item.unitValue:'')+'">'
+      + '<div class="item-field item-field-desc"><span class="item-field-label">1. Produto</span><input type="text" class="item-desc-input" placeholder="Ex: Arroz 5kg" value="'+escapeHTML(item.description||'')+'"></div>'
+      + '<div class="item-field item-field-qty"><span class="item-field-label">2. Qtd</span><input type="number" inputmode="decimal" class="item-qty-input" min="0.001" step="0.001" placeholder="1" value="'+(item.quantity||1)+'"></div>'
+      + '<div class="item-field item-field-value"><span class="item-field-label">3. Valor (R$)</span><input type="number" inputmode="decimal" class="item-unit-input" min="0" step="0.01" placeholder="0,00" value="'+(item.unitValue!==''&&item.unitValue!=null?item.unitValue:'')+'"></div>'
       + '<button type="button" class="item-remove-btn" data-action="remove-item">✕</button>'
       + '</div>';
+  }
+
+  function itemsTotalRowHTML(){
+    return '<div class="items-total-row hidden"><span>🧮 Total dos itens: <span class="items-total-main">R$ 0,00</span></span><span class="items-total-ref"></span></div>';
   }
 
   function recalcItemsTotal(form){
     var rows = form.querySelectorAll('.item-row');
     var valueInput = form.querySelector('.value-input');
-    if (!valueInput) return;
+    var totalRow = form.querySelector('.items-total-row');
     if (rows.length === 0){
-      valueInput.readOnly = false;
-      valueInput.classList.remove('computed-value');
+      if (valueInput){
+        valueInput.readOnly = false;
+        valueInput.classList.remove('computed-value');
+      }
+      if (totalRow) totalRow.classList.add('hidden');
       return;
     }
     var total = 0;
@@ -1202,9 +1237,29 @@
       var uv = parseFloat(row.querySelector('.item-unit-input').value) || 0;
       total += qty*uv;
     });
-    valueInput.value = total.toFixed(2);
-    valueInput.readOnly = true;
-    valueInput.classList.add('computed-value');
+    if (valueInput){
+      valueInput.value = total.toFixed(2);
+      valueInput.readOnly = true;
+      valueInput.classList.add('computed-value');
+    }
+    if (totalRow){
+      totalRow.classList.remove('hidden');
+      var mainEl = totalRow.querySelector('.items-total-main');
+      if (mainEl) mainEl.textContent = formatBRL(total);
+      var refEl = totalRow.querySelector('.items-total-ref');
+      var itemsList = form.querySelector('.items-list');
+      var ocrTotal = itemsList ? parseFloat(itemsList.dataset.ocrTotal || '') : NaN;
+      totalRow.classList.remove('totals-match', 'totals-mismatch');
+      if (refEl){
+        if (!isNaN(ocrTotal)){
+          var matches = Math.abs(ocrTotal - total) < 0.02;
+          refEl.textContent = (matches ? '✅ confere com o total da nota (' : '⚠️ total da nota lido: ') + formatBRL(ocrTotal) + (matches ? ')' : ' — confira os itens');
+          totalRow.classList.add(matches ? 'totals-match' : 'totals-mismatch');
+        } else {
+          refEl.textContent = 'Confira com o total impresso na nota.';
+        }
+      }
+    }
   }
 
   function renderCasalFormHTML(memberId, editingExpense){
@@ -1234,6 +1289,7 @@
         + '<div class="items-section-head"><label>🧾 Itens da compra (opcional)</label></div>'
         + '<div class="items-hint">Tirou foto da nota fiscal? Registre aqui os produtos, quantidade e valor de cada item para poder consultar tudo depois pelo Resumo.</div>'
         + '<div class="items-list">' + existingItems.map(itemRowHTML).join('') + '</div>'
+        + itemsTotalRowHTML()
         + '<button type="button" class="secondary-btn add-item-btn" data-action="add-item">+ Adicionar item</button>'
       + '</div>'
       + '<div class="field">'
@@ -1480,6 +1536,12 @@
     if (state.currentTab === 'resumo') contentEl.innerHTML = renderResumo();
     else if (state.currentTab === 'meses') contentEl.innerHTML = renderMesesTab();
     else contentEl.innerHTML = renderMemberTab(state.currentTab);
+    // Se o formulário renderizado já tem itens (ex: editando uma conta com
+    // itens salvos), mostra o total dos itens desde já, não só depois de mexer.
+    var itemsListEl = contentEl.querySelector('form .items-list');
+    if (itemsListEl && itemsListEl.querySelectorAll('.item-row').length){
+      recalcItemsTotal(itemsListEl.closest('form'));
+    }
   }
 
   /* ---------- Settings modal ---------- */
@@ -1932,7 +1994,7 @@
     }
 
     // Linhas de cabeçalho/rodapé/metadados — nunca viram descrição nem item.
-    var skipRe = /TOTAL|SUBTOTAL|DESCONTO|TROCO|DINHEIRO|CART[ÃA]O|CNPJ|CPF|CUPOM|NOTA FISCAL|VALOR PAGO|FORMA DE PAGAMENTO|TRIBUTOS|OBSERVA|ENDERE|CONSUMIDOR|SQ\.?\s*C[ÓO]DIGO|DESCRI[ÇC][ÃA]O|^QTD\b|VL\.?\s*UNIT|^ST\b/i;
+    var skipRe = /TOTAL|SUBTOTAL|DESCONTO|TROCO|DINHEIRO|CART[ÃA]O|CNPJ|CPF|CUPOM|NOTA FISCAL|VALOR\s*A\s*PAGAR|VALOR PAGO|FORMA DE PAGAMENTO|TRIBUTOS|OBSERVA|ENDERE|CONSUMIDOR|SQ\.?\s*C[ÓO]DIGO|DESCRI[ÇC][ÃA]O|^QTD\b|VL\.?\s*UNIT|^ST\b/i;
     var qtyRe = /(\d+(?:[.,]\d+)?)\s*(UN|KG|UND|PC|CX|LT|G)\s*[Xx]\s*(\d{1,3}(?:\.\d{3})*,\d{2})/;
 
     // Tira código de barras/código interno do produto (sequências longas de dígitos)
@@ -2014,6 +2076,10 @@
     var itemsList = formEl.querySelector('.items-list');
     if (itemsList && parsed.items.length && itemsList.querySelectorAll('.item-row').length === 0){
       itemsList.innerHTML = parsed.items.map(itemRowHTML).join('');
+      // Guarda o total impresso na nota (se o OCR conseguiu ler) pra comparar
+      // com a soma dos itens no total exibido no fim da lista.
+      if (parsed.total != null) itemsList.dataset.ocrTotal = String(parsed.total);
+      else delete itemsList.dataset.ocrTotal;
       recalcItemsTotal(formEl);
       filled = true;
     } else {
@@ -2037,8 +2103,17 @@
       return;
     }
     setOcrStatus(formEl, '🔎 Lendo a nota automaticamente...', 'loading');
+    var worker = null;
     try {
-      var out = await Tesseract.recognize(imageSource, 'por');
+      // Usamos o worker diretamente (em vez do atalho Tesseract.recognize) pra
+      // poder ajustar o modo de segmentação de página: "6" diz pro Tesseract
+      // tratar a imagem como um bloco único de texto em colunas, o que costuma
+      // funcionar bem melhor em cupom fiscal do que o modo automático padrão.
+      worker = await Tesseract.createWorker('por');
+      if (worker.setParameters){
+        await worker.setParameters({ tessedit_pageseg_mode: '6', preserve_interword_spaces: '1' });
+      }
+      var out = await worker.recognize(imageSource);
       if (!formEl.isConnected) return;
       var text = (out && out.data && out.data.text) ? out.data.text : '';
       var parsed = parseReceiptText(text);
@@ -2046,6 +2121,10 @@
     } catch(e){
       console.error('OCR falhou', e);
       if (formEl.isConnected) setOcrStatus(formEl, '⚠️ Não consegui ler a nota automaticamente — preencha manualmente.', 'fail');
+    } finally {
+      if (worker){
+        try { await worker.terminate(); } catch(e2){ /* ignora falha ao encerrar */ }
+      }
     }
   }
 
