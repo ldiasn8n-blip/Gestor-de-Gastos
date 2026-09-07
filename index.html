@@ -872,6 +872,49 @@
     });
   }
 
+  // Versão da foto usada só para a leitura automática (OCR): maior resolução
+  // que a guardada no app, e em preto-e-branco com contraste realçado — isso
+  // ajuda bastante o reconhecimento de texto em cupons fiscais fotografados.
+  function prepareImageForOCR(file){
+    return new Promise(function(resolve, reject){
+      var reader = new FileReader();
+      reader.onload = function(e){
+        var img = new Image();
+        img.onload = function(){
+          var maxWidth = 1800;
+          var w = img.width, h = img.height;
+          if (w > maxWidth){ h = Math.round(h * (maxWidth / w)); w = maxWidth; }
+          var canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          var ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+          try {
+            var imgData = ctx.getImageData(0, 0, w, h);
+            var d = imgData.data;
+            var min = 255, max = 0, i;
+            for (i = 0; i < d.length; i += 4){
+              var g = 0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2];
+              d[i] = d[i+1] = d[i+2] = g;
+              if (g < min) min = g;
+              if (g > max) max = g;
+            }
+            var range = Math.max(1, max - min);
+            for (i = 0; i < d.length; i += 4){
+              var v = (d[i] - min) * (255 / range);
+              d[i] = d[i+1] = d[i+2] = v;
+            }
+            ctx.putImageData(imgData, 0, 0);
+          } catch(err){ /* segue sem o realce se o navegador não permitir */ }
+          resolve(canvas.toDataURL('image/jpeg', 0.9));
+        };
+        img.onerror = function(){ reject(new Error('Erro ao carregar imagem')); };
+        img.src = e.target.result;
+      };
+      reader.onerror = function(){ reject(new Error('Erro ao ler arquivo')); };
+      reader.readAsDataURL(file);
+    });
+  }
+
   /* ---------- Computation ---------- */
 
   function groupByCategory(list){
@@ -1870,7 +1913,7 @@
 
     for (var j = 0; j < Math.min(lines.length, 6); j++){
       var l = lines[j];
-      if (/[A-Za-zÀ-ÿ]{3,}/.test(l) && !/CNPJ|CUPOM|NOTA FISCAL|ENDERE|CONSUMIDOR/i.test(l)){
+      if (/[A-Za-zÀ-ÿ]{3,}/.test(l) && !/CNPJ|CUPOM|NOTA FISCAL|ENDERE|CONSUMIDOR|SQ\.?\s*C[ÓO]DIGO|DESCRI[ÇC][ÃA]O|VL\.?\s*UNIT/i.test(l) && !/^\d{1,3}\s+\d{6,}/.test(l)){
         var clean = l.replace(/[^A-Za-zÀ-ÿ0-9 .,-]/g, '').trim();
         if (clean.length >= 3){ result.storeName = clean; break; }
       }
@@ -1888,26 +1931,56 @@
       }
     }
 
-    var skipRe = /TOTAL|SUBTOTAL|DESCONTO|TROCO|DINHEIRO|CART[ÃA]O|CNPJ|CPF|CUPOM|NOTA FISCAL|VALOR PAGO|FORMA DE PAGAMENTO|TRIBUTOS|OBSERVA|ENDERE|CONSUMIDOR/i;
-    var qtyRe = /(\d+(?:[.,]\d+)?)\s*(UN|KG|UND|PC|CX|LT|G)\s*X\s*(\d{1,3}(?:\.\d{3})*,\d{2})/i;
+    // Linhas de cabeçalho/rodapé/metadados — nunca viram descrição nem item.
+    var skipRe = /TOTAL|SUBTOTAL|DESCONTO|TROCO|DINHEIRO|CART[ÃA]O|CNPJ|CPF|CUPOM|NOTA FISCAL|VALOR PAGO|FORMA DE PAGAMENTO|TRIBUTOS|OBSERVA|ENDERE|CONSUMIDOR|SQ\.?\s*C[ÓO]DIGO|DESCRI[ÇC][ÃA]O|^QTD\b|VL\.?\s*UNIT|^ST\b/i;
+    var qtyRe = /(\d+(?:[.,]\d+)?)\s*(UN|KG|UND|PC|CX|LT|G)\s*[Xx]\s*(\d{1,3}(?:\.\d{3})*,\d{2})/;
+
+    // Tira código de barras/código interno do produto (sequências longas de dígitos)
+    // e o número sequencial do item no início da linha (ex: "01 7891...  ARROZ 5KG" -> "ARROZ 5KG").
+    function cleanDescLine(raw){
+      var s = raw.replace(/\b[0-9][0-9A-Za-z]{6,}\b/g, ' ');
+      s = s.replace(/^\s*\d{1,3}\b/, ' ');
+      s = s.replace(/[^A-Za-zÀ-ÿ0-9.,\/\- ]/g, ' ');
+      s = s.replace(/\s{2,}/g, ' ').trim();
+      if (!s || !/[A-Za-zÀ-ÿ]{2,}/.test(s)) return '';
+      return s;
+    }
+
+    // Muitos cupons imprimem a descrição numa linha e a quantidade/valor na linha
+    // seguinte. Por isso percorremos as linhas guardando a última linha "de texto"
+    // (sem valor em R$) como candidata a descrição, e só fechamos um item quando
+    // encontramos uma linha com valor — usando o texto da própria linha se ela já
+    // tiver uma descrição decente, ou a linha de texto pendente caso contrário.
+    var pendingDesc = '';
     lines.forEach(function(line){
       if (skipRe.test(line)) return;
       var moneys = line.match(moneyRe);
-      if (!moneys || !moneys.length) return;
+      if (!moneys || !moneys.length){
+        var candidate = cleanDescLine(line);
+        if (candidate) pendingDesc = candidate;
+        return;
+      }
       var qm = line.match(qtyRe);
-      var desc = line, quantity = 1, unitValue = null, subtotal = null;
+      var quantity = 1, unitValue = null, subtotal = null, desc;
       if (qm){
+        // Padrão de quantidade reconhecido com confiança (ex: "1 UN X 12,59") —
+        // o texto antes dele nessa mesma linha é uma descrição confiável.
         quantity = parseBRLNumber(qm[1]) || parseFloat(String(qm[1]).replace(',', '.')) || 1;
         unitValue = parseBRLNumber(qm[3]);
-        desc = line.slice(0, qm.index).trim();
         subtotal = parseBRLNumber(moneys[moneys.length - 1]);
         if (subtotal == null && unitValue != null) subtotal = quantity * unitValue;
+        var cleanedInline = cleanDescLine(line.slice(0, qm.index));
+        desc = (cleanedInline && cleanedInline.length >= 3) ? cleanedInline : pendingDesc;
       } else {
+        // Não reconhecemos um padrão de quantidade confiável nessa linha
+        // (comum quando o OCR embaralha "1 UN X" em algo como "TUNX") — não dá
+        // pra confiar no texto que sobra dela, então priorizamos a descrição
+        // pendente da linha anterior; só usamos o texto desta linha em último caso.
         subtotal = parseBRLNumber(moneys[moneys.length - 1]);
         unitValue = subtotal;
-        desc = line.replace(moneyRe, '').trim();
+        desc = pendingDesc || cleanDescLine(line.replace(moneyRe, ''));
       }
-      desc = desc.replace(/^\d+\s+/, '').replace(/\s{2,}/g, ' ').trim();
+      pendingDesc = '';
       if (!desc || desc.length < 2 || subtotal == null || subtotal <= 0) return;
       if (unitValue == null) unitValue = subtotal / (quantity || 1);
       result.items.push({ description: desc, quantity: quantity, unitValue: unitValue });
@@ -1985,9 +2058,16 @@
       state.pendingPhoto = {thumb:results[0], full:results[1]};
       state.removeExistingPhoto = false;
       refreshPhotoSlot(formEl);
-      runReceiptOCR(results[1], formEl);
     } catch(e){
       alert('Não foi possível processar a imagem. Tente outra foto.');
+      return;
+    }
+    try {
+      var ocrImage = await prepareImageForOCR(file);
+      runReceiptOCR(ocrImage, formEl);
+    } catch(e){
+      console.error('Preparo da imagem para OCR falhou', e);
+      runReceiptOCR(file, formEl);
     }
   }
 
