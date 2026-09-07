@@ -1295,7 +1295,8 @@
       + '<div class="field">'
         + '<label>Comprovante</label>'
         + '<div class="photo-row">'
-          + '<label class="photo-btn">📷 Foto ou galeria<input type="file" accept="image/*" class="photo-input" style="display:none;"></label>'
+          + '<label class="photo-btn">📷 Tirar foto<input type="file" accept="image/*" capture="environment" class="photo-input" style="display:none;"></label>'
+          + '<label class="photo-btn">🖼️ Escolher da galeria<input type="file" accept="image/*" class="photo-input" style="display:none;"></label>'
           + '<span class="photo-preview-slot">' + renderPhotoSlotHTML(editingExpense) + '</span>'
         + '</div>'
         + '<div class="ocr-status"></div>'
@@ -1334,7 +1335,8 @@
       + '<div class="field">'
         + '<label>Comprovante</label>'
         + '<div class="photo-row">'
-          + '<label class="photo-btn">📷 Foto ou galeria<input type="file" accept="image/*" class="photo-input" style="display:none;"></label>'
+          + '<label class="photo-btn">📷 Tirar foto<input type="file" accept="image/*" capture="environment" class="photo-input" style="display:none;"></label>'
+          + '<label class="photo-btn">🖼️ Escolher da galeria<input type="file" accept="image/*" class="photo-input" style="display:none;"></label>'
           + '<span class="photo-preview-slot">' + renderPhotoSlotHTML(editingExpense) + '</span>'
         + '</div>'
         + '<div class="ocr-status"></div>'
@@ -1996,6 +1998,11 @@
     // Linhas de cabeçalho/rodapé/metadados — nunca viram descrição nem item.
     var skipRe = /TOTAL|SUBTOTAL|DESCONTO|TROCO|DINHEIRO|CART[ÃA]O|CNPJ|CPF|CUPOM|NOTA FISCAL|VALOR\s*A\s*PAGAR|VALOR PAGO|FORMA DE PAGAMENTO|TRIBUTOS|OBSERVA|ENDERE|CONSUMIDOR|SQ\.?\s*C[ÓO]DIGO|DESCRI[ÇC][ÃA]O|^QTD\b|VL\.?\s*UNIT|^ST\b/i;
     var qtyRe = /(\d+(?:[.,]\d+)?)\s*(UN|KG|UND|PC|CX|LT|G)\s*[Xx]\s*(\d{1,3}(?:\.\d{3})*,\d{2})/;
+    // Fallback para quando o "x" some no OCR (ex: "1 UN X" virou "TUNX") mas o
+    // número de unidades (o "2" antes de "UN") ainda dá pra ler. Sem isso a
+    // quantidade cai pra 1 por padrão e some — ex: uma compra de "2 UN" pode
+    // acabar registrada como se fosse 1 unidade, o que muda o valor unitário.
+    var qtyOnlyRe = /(\d+(?:[.,]\d+)?)\s*(UN|KG|UND|PC|CX|LT|G)\b/;
 
     // Tira código de barras/código interno do produto (sequências longas de dígitos)
     // e o número sequencial do item no início da linha (ex: "01 7891...  ARROZ 5KG" -> "ARROZ 5KG").
@@ -2039,8 +2046,16 @@
         // pra confiar no texto que sobra dela, então priorizamos a descrição
         // pendente da linha anterior; só usamos o texto desta linha em último caso.
         subtotal = parseBRLNumber(moneys[moneys.length - 1]);
-        unitValue = subtotal;
-        desc = pendingDesc || cleanDescLine(line.replace(moneyRe, ''));
+        var qOnly = line.match(qtyOnlyRe);
+        if (qOnly){
+          var qCandidate = parseBRLNumber(qOnly[1]);
+          if (qCandidate == null) qCandidate = parseFloat(String(qOnly[1]).replace(',', '.'));
+          // Só confia nesse número como quantidade se fizer sentido pra uma
+          // compra normal (evita pegar código de barras ou peso mal lido).
+          if (qCandidate && qCandidate > 0 && qCandidate < 1000) quantity = qCandidate;
+        }
+        unitValue = quantity > 0 ? subtotal / quantity : subtotal;
+        desc = pendingDesc || cleanDescLine(line.replace(moneyRe, '').replace(qtyOnlyRe, ' '));
       }
       pendingDesc = '';
       if (!desc || desc.length < 2 || subtotal == null || subtotal <= 0) return;
