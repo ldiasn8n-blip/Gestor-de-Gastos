@@ -768,16 +768,23 @@
   /* Evolução mensal */
   .trend-chart{ width:100%; height:132px; display:block; margin-top:2px; overflow:visible; }
   .trend-axis{ stroke:var(--line); stroke-width:1; }
-  .trend-bar rect{ fill:var(--neon2); opacity:.45; }
-  .trend-bar.is-current rect{ opacity:1; filter:drop-shadow(0 0 6px rgba(79,224,255,0.85)); }
-  .trend-bar:hover rect{ opacity:.8; filter:drop-shadow(0 0 5px rgba(79,224,255,0.7)); }
+  .trend-bar{ cursor:pointer; }
+  .trend-hit{ fill:transparent; }
+  .trend-bar .trend-mark{ fill:var(--neon2); opacity:.45; transition:opacity .12s ease; }
+  .trend-bar.is-selected .trend-mark{ opacity:1; filter:drop-shadow(0 0 6px rgba(79,224,255,0.85)); }
+  .trend-bar:hover .trend-mark{ opacity:.8; }
+  .trend-bar:focus{ outline:none; }
+  .trend-bar:focus-visible .trend-mark{ stroke:var(--ink); stroke-width:1.5; }
   .trend-val{ filter:drop-shadow(0 0 8px rgba(79,224,255,0.5)); }
-  .trend-bar.is-future rect{ opacity:.22; }
-  .trend-bar.is-future:hover rect{ opacity:.4; }
+  .trend-bar.is-future .trend-mark{ opacity:.22; }
+  .trend-bar.is-future.is-selected .trend-mark{ opacity:.85; }
+  .trend-bar.is-future:hover .trend-mark{ opacity:.45; }
   .trend-bar.is-future .trend-month{ opacity:.7; }
+  /* O mês de hoje ganha um ponto embaixo do nome, pra continuar identificável
+     mesmo quando você está olhando outro mês. */
+  .trend-bar.is-current .trend-month{ fill:var(--ink); font-weight:700; }
   .trend-legend{ font-size:11px; color:var(--ink-soft); margin-top:6px; line-height:1.4; }
   .trend-month{ fill:var(--ink-soft); font-size:9.5px; text-anchor:middle; font-family:inherit; }
-  .trend-bar.is-current .trend-month{ fill:var(--ink); font-weight:700; }
   .trend-val{ fill:var(--ink); font-size:10px; font-weight:700; text-anchor:middle; font-family:inherit; }
 
   @media (min-width:640px){
@@ -888,12 +895,11 @@
       align-items:start;
       max-width:1000px;
     }
-    /* A coluna dos dados fica grudada no topo enquanto você rola a lista de
-       itens — numa nota de 20 produtos, categoria e valor continuam à vista. */
-    form.add-form.two-col .form-col-main{
-      grid-area:main; min-width:0;
-      position:sticky; top:18px; align-self:start;
-    }
+    /* Esta coluna já foi "sticky" (grudada no topo ao rolar). Tirei porque o
+       navegador não prende o elemento na área do grid como deveria: ao rolar,
+       a coluna descia e passava POR CIMA do botão "Adicionar gasto",
+       escondendo o texto de baixo. Rolar normal é melhor do que esconder. */
+    form.add-form.two-col .form-col-main{ grid-area:main; min-width:0; }
     form.add-form.two-col .form-col-items{ grid-area:items; min-width:0; }
     form.add-form.two-col .form-submit-area{ grid-area:submit; margin-top:6px; }
     form.add-form.two-col .items-section{ margin-top:0; }
@@ -1523,7 +1529,17 @@
       map[g.year].total += g.total;
       if (g.isCurrent) map[g.year].hasCurrent = true;
     });
-    return order.sort(function(a,b){ return b-a; }).map(function(y){ return map[y]; });
+    // Ordem da lista: o ano atual sempre em cima, depois os anos que ainda vão
+    // chegar em ordem crescente (é a sequência natural do que vem pela frente),
+    // e por último o histórico, do mais recente pro mais antigo.
+    var anoAtual = new Date().getFullYear();
+    return order.sort(function(a,b){
+      if (a === anoAtual) return -1;
+      if (b === anoAtual) return 1;
+      var aFuturo = a > anoAtual, bFuturo = b > anoAtual;
+      if (aFuturo !== bFuturo) return aFuturo ? -1 : 1;
+      return aFuturo ? (a - b) : (b - a);
+    }).map(function(y){ return map[y]; });
   }
 
   function monthKeyFromDate(iso){ return String(iso||'').slice(0,7); }
@@ -1571,10 +1587,19 @@
     return copia;
   }
 
+  // Até onde um gasto fixo se projeta pra frente. Sem esse limite, bastava
+  // você lançar UMA conta lá em 2028 pra o app repetir todas as suas contas
+  // fixas em cada um dos 20 meses até lá, inflando os totais dos anos futuros.
+  // Dois meses à frente é o mesmo horizonte de "previsto" usado no gráfico.
+  function fixedHorizon(){ return monthKeyAdd(currentMonthKey(), 2); }
+
   function materializedForMonth(mk){
     var out = [];
+    var limite = fixedHorizon();
     state.expenses.forEach(function(e){
       if (e.fixed){
+        // O mês de origem entra sempre; as repetições param no horizonte.
+        if (mk > limite && mk !== monthKeyFromDate(e.date)) return;
         var occ = fixedOccurrence(e, mk);
         if (occ) out.push(occ);
       } else if (monthKeyFromDate(e.date) === mk){
@@ -2114,7 +2139,10 @@
   // das datas cruas) porque um gasto fixo dá movimento a meses onde você não
   // digitou nada. Só entram meses que realmente têm algum lançamento.
   function resumoAvailableMonths(){
-    return expenseMonthSpan()
+    // O mesmo alcance do gráfico (2 meses à frente): se a barra de novembro
+    // aparece lá, clicar nela tem que funcionar — senão o filtro rejeitaria o
+    // mês e voltaria calado pro mês atual.
+    return expenseMonthSpan(2)
       .filter(function(mk){ return materializedForMonth(mk).length > 0; })
       .sort(function(a,b){ return b.localeCompare(a); });
   }
@@ -2182,7 +2210,9 @@
   }
 
   // Evolução: 6 meses terminando no mês atual (ou no último com dados).
-  function monthlyTrendHTML(){
+  // As barras são clicáveis: tocar numa delas filtra o Resumo inteiro naquele
+  // mês, sem precisar ir no seletor lá em cima.
+  function monthlyTrendHTML(mesSelecionado){
     var timeline = buildCasalMonthsTimeline();
     if (!timeline.length) return '<div class="empty-state">Sem histórico ainda — ele aparece aqui depois do primeiro lançamento.</div>';
 
@@ -2213,14 +2243,23 @@
       var y = H - padB - h;
       var isCurrent = g.key === currentKey;
       var isFuture = g.key > currentKey;
+      // Aceso = o mês que o Resumo está mostrando agora. Quando o filtro está
+      // em "todos os meses", o mês atual fica aceso como referência.
+      var isSelected = (mesSelecionado && mesSelecionado !== 'all')
+        ? (g.key === mesSelecionado)
+        : isCurrent;
       // Só o maior mês e o mês atual recebem valor escrito — número em cima de
       // toda barra vira ruído e o gráfico deixa de ser lido de relance.
-      var label = (ix === maxIdx || isCurrent)
+      var label = (ix === maxIdx || isSelected)
         ? '<text class="trend-val" x="'+(x + barW/2).toFixed(1)+'" y="'+(y - 5).toFixed(1)+'">'+formatCompactBRL(g.total)+'</text>'
         : '';
-      return '<g class="trend-bar'+(isCurrent ? ' is-current' : '')+(isFuture ? ' is-future' : '')+'">'
-        + '<title>'+escapeHTML(monthLabelFromKey(g.key))+' — '+formatBRL(g.total)+(isFuture ? ' (previsto)' : '')+'</title>'
-        + '<rect x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+barW.toFixed(1)+'" height="'+h.toFixed(1)+'" rx="4"></rect>'
+      // A área de toque cobre a fatia inteira (não só a barra), pra acertar
+      // fácil no celular mesmo num mês de valor baixo, cuja barra é curtinha.
+      return '<g class="trend-bar'+(isSelected ? ' is-selected' : '')+(isCurrent ? ' is-current' : '')+(isFuture ? ' is-future' : '')+'"'
+        + ' data-action="pick-month" data-month="'+g.key+'" role="button" tabindex="0">'
+        + '<title>'+escapeHTML(monthLabelFromKey(g.key))+' — '+formatBRL(g.total)+(isFuture ? ' (previsto)' : '')+'. Toque pra ver só este mês.</title>'
+        + '<rect class="trend-hit" x="'+(offsetX + ix*slot).toFixed(1)+'" y="0" width="'+slot.toFixed(1)+'" height="'+H+'"></rect>'
+        + '<rect class="trend-mark" x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+barW.toFixed(1)+'" height="'+h.toFixed(1)+'" rx="4"></rect>'
         + label
         + '<text class="trend-month" x="'+(x + barW/2).toFixed(1)+'" y="'+(H - 6)+'">'+escapeHTML(shortMonthFromKey(g.key))+'</text>'
         + '</g>';
@@ -2230,7 +2269,9 @@
       + '<line class="trend-axis" x1="0" y1="'+(H - padB)+'" x2="'+W+'" y2="'+(H - padB)+'"></line>'
       + bars
       + '</svg>'
-      + (temFuturo ? '<div class="trend-legend">Barra mais fraca = mês que ainda não chegou (parcelas já compradas).</div>' : '');
+      + '<div class="trend-legend">Toque numa barra pra ver só aquele mês.'
+        + (temFuturo ? ' Barra mais fraca = mês que ainda não chegou (parcelas e contas fixas já comprometidas).' : '')
+      + '</div>';
   }
 
   function shortMonthFromKey(key){
@@ -2307,7 +2348,7 @@
           + '<section class="resumo-block neon-box acc-blue rb-compare"><div class="section-title">👥 Quem pagou quanto</div>' + compareHTML + '</section>'
         + '</div>'
         + '<div class="resumo-col resumo-col-b">'
-          + '<section class="resumo-block neon-box acc-cyan rb-trend"><div class="section-title">📈 Contas do casal por mês</div>' + monthlyTrendHTML() + '</section>'
+          + '<section class="resumo-block neon-box acc-cyan rb-trend"><div class="section-title">📈 Contas do casal por mês</div>' + monthlyTrendHTML(month) + '</section>'
           + '<section class="resumo-block neon-box acc-purple rb-pessoais"><div class="section-title">👤 Gastos pessoais</div>' + personalHTML
             + '<div class="note">Os gastos pessoais não entram na divisão — só as contas do casal são somadas e divididas conforme a porcentagem de cada um.</div></section>'
         + '</div>'
@@ -2323,7 +2364,10 @@
     var maxTotal = Math.max.apply(null, years.map(function(y){ return y.total; }).concat([1]));
     var cardsHTML = years.map(function(y){
       var pct = Math.max(4, Math.round(y.total / maxTotal * 100));
-      var tag = y.hasCurrent ? '<span class="month-tag current">Ano atual</span>' : '';
+      var anoAgora = new Date().getFullYear();
+      var tag = y.hasCurrent
+        ? '<span class="month-tag current">Ano atual</span>'
+        : (y.year > anoAgora ? '<span class="month-tag future">Previsto</span>' : '');
       return ''
         + '<button type="button" class="year-card" data-action="select-meses-year" data-year="'+y.year+'">'
         + '<div class="year-card-top"><span class="year-label">📅 '+y.year+tag+'</span><span class="year-total">'+formatBRL(y.total)+'</span></div>'
@@ -2641,7 +2685,8 @@
     if (!ok){ alert('Não foi possível salvar os dados de exemplo.'); return; }
     markDemoHandled();
     state.expenses = novos;
-    state.resumoMonth = 'all';
+    state.resumoMonth = null;   // volta pro mês atual, o padrão do app
+    state.entriesMonth = {};
     closeSettingsModal();
     render();
   }
@@ -3647,6 +3692,16 @@
         var formRI = removeItemBtn.closest('form');
         removeItemBtn.closest('.item-row').remove();
         recalcItemsTotal(formRI);
+        return;
+      }
+
+      // Clique numa barra do gráfico = filtro rápido daquele mês.
+      var barra = e.target.closest('[data-action="pick-month"]');
+      if (barra){
+        var mesBarra = barra.getAttribute('data-month');
+        // Tocar de novo no mês já selecionado volta pra visão de todos os meses.
+        state.resumoMonth = (state.resumoMonth === mesBarra) ? 'all' : mesBarra;
+        render();
         return;
       }
 
