@@ -418,7 +418,12 @@
   /* Campo 1 (Nº + Produto) ocupa a primeira linha inteira; campos 2, 3 e 4
      (Unidade, Peso e Valor) dividem a segunda. A quebra é forçada pelo
      .item-break pra ordem nunca mudar conforme a largura da tela. */
-  .item-field-pos{ flex:0 0 52px; }
+  .item-field-pos{ flex:0 0 56px; }
+  /* Sem as setinhas do input numérico sobra largura pro número aparecer
+     inteiro — "12" estava saindo cortado como "1C". */
+  .item-row .item-pos-input{ -moz-appearance:textfield; appearance:textfield; }
+  .item-row .item-pos-input::-webkit-outer-spin-button,
+  .item-row .item-pos-input::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
   .item-field-desc{ flex:1 1 120px; }
   .item-break{ flex:1 1 100%; height:0; margin:0; }
   .item-field-units{ flex:1 1 60px; }
@@ -590,6 +595,103 @@
   .mc-bar-fill{ height:100%;display:block;border-radius:3px;background:var(--positive); }
   .mc-future-tag{ font-size:9.5px;color:var(--ink-soft);font-weight:600; }
 
+  /* ================================================================
+     CAIXAS COM BORDA NEON
+     Cada bloco do app é uma caixa fechada com uma cor própria: a borda,
+     o brilho e a barrinha do título usam a mesma cor, então bate o olho e
+     já sabe o que é o quê. A cor de cada caixa vem da variável --accent,
+     definida por classe logo abaixo.
+     O brilho é feito com box-shadow colorido (nunca com filter/blur, que
+     borraria o texto dentro da caixa). ================================ */
+  .neon-box{
+    position:relative;
+    background:var(--paper-raised);
+    border:1px solid var(--accent-line, var(--line));
+    border-radius:var(--radius);
+    padding:15px 16px 16px;
+    box-shadow:
+      0 0 0 1px var(--accent-halo, transparent),
+      0 0 26px -4px var(--accent-glow, transparent),
+      inset 0 0 24px -18px var(--accent, transparent),
+      var(--shadow-sm);
+  }
+  /* Fio de luz no topo da caixa — o detalhe que dá o ar de neon sem
+     deixar o fundo inteiro colorido. */
+  .neon-box::before{
+    content:'';
+    position:absolute; left:16px; right:16px; top:-1px; height:1px;
+    background:linear-gradient(90deg, transparent, var(--accent, transparent), transparent);
+    opacity:.9;
+  }
+  .neon-box > .section-title{ margin-top:0; }
+
+  /* Título com barrinha acesa do lado */
+  .section-title{
+    font-size:13px; font-weight:700; color:var(--ink-soft); margin:22px 0 8px;
+    display:flex; align-items:center; gap:8px;
+  }
+  .neon-box > .section-title::before{
+    content:''; flex:0 0 3px; width:3px; height:13px; border-radius:2px;
+    background:var(--accent, var(--ink-soft));
+    box-shadow:0 0 7px var(--accent, transparent);
+  }
+  .neon-box > .section-title{ color:var(--ink); letter-spacing:.01em; }
+
+  /* Paleta das caixas. Cada área do app tem a sua cor fixa. */
+  .acc-cyan   { --accent:#4FE0FF; --accent-line:rgba(79,224,255,0.48); --accent-halo:rgba(79,224,255,0.10); --accent-glow:rgba(79,224,255,0.62); }
+  .acc-green  { --accent:#39FF88; --accent-line:rgba(57,255,136,0.44); --accent-halo:rgba(57,255,136,0.10); --accent-glow:rgba(57,255,136,0.56); }
+  .acc-pink   { --accent:#FF4D6D; --accent-line:rgba(255,77,109,0.46); --accent-halo:rgba(255,77,109,0.10); --accent-glow:rgba(255,77,109,0.58); }
+  .acc-purple { --accent:#B18CFF; --accent-line:rgba(177,140,255,0.46); --accent-halo:rgba(177,140,255,0.10); --accent-glow:rgba(177,140,255,0.58); }
+  .acc-amber  { --accent:#FFC24F; --accent-line:rgba(255,194,79,0.44); --accent-halo:rgba(255,194,79,0.10); --accent-glow:rgba(255,194,79,0.56); }
+  .acc-blue   { --accent:#4FA8FF; --accent-line:rgba(79,168,255,0.46); --accent-halo:rgba(79,168,255,0.10); --accent-glow:rgba(79,168,255,0.58); }
+
+  /* Ajustes pra nada virar caixa dentro de caixa */
+  .hero-settlement.neon-box{ padding:20px 18px; margin-bottom:0; }
+  .rb-acerto{ padding:0; background:transparent; border:none; box-shadow:none; }
+  .rb-acerto::before{ display:none; }
+  .rb-compare .compare{
+    border:none; background:transparent; box-shadow:none; padding:0; margin:0;
+  }
+
+  /* Caixas do resto do app com o mesmo tratamento */
+  .cat-group{
+    position:relative; padding:4px 15px 8px;
+    border:1px solid var(--accent-line, var(--line));
+    box-shadow:0 0 0 1px var(--accent-halo, transparent), 0 0 24px -6px var(--accent-glow, transparent), var(--shadow-sm);
+  }
+  .cat-group::before{
+    content:''; position:absolute; left:15px; right:15px; top:-1px; height:1px;
+    background:linear-gradient(90deg, transparent, var(--accent, transparent), transparent);
+  }
+  .cat-head .name{ color:var(--ink); }
+  .cat-head .total{ text-shadow:0 0 14px var(--accent-glow, transparent); }
+
+  .segmented{ border-color:rgba(79,224,255,0.22); }
+
+  /* As duas metades do formulário viram caixas rotuladas, em qualquer tela:
+     à esquerda os dados da conta, à direita os itens da nota. */
+  .form-col{
+    position:relative;
+    border:1px solid var(--accent-line, var(--line));
+    border-radius:12px; padding:14px 14px 4px; margin-bottom:14px;
+    box-shadow:0 0 0 1px var(--accent-halo, transparent), 0 0 18px -8px var(--accent-glow, transparent);
+  }
+  .form-col::before{
+    content:''; position:absolute; left:14px; right:14px; top:-1px; height:1px;
+    background:linear-gradient(90deg, transparent, var(--accent, transparent), transparent);
+  }
+  .form-col-title{
+    font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:.05em;
+    color:var(--accent); margin:-2px 0 12px; display:flex; align-items:center; gap:7px;
+  }
+  .form-col-title::before{
+    content:''; width:5px; height:5px; border-radius:50%;
+    background:var(--accent); box-shadow:0 0 6px var(--accent);
+  }
+
+  /* Botão de enviar com brilho na cor da pessoa */
+  .submit-btn{ box-shadow:0 0 22px -8px currentColor; }
+
   /* ---------- Resumo: barra de mês, indicadores, grade e gráficos ---------- */
   .resumo-toolbar{
     display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:14px;
@@ -608,16 +710,21 @@
   .resumo-scope{ font-size:12px; color:var(--ink-soft); }
 
   .kpi-row{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-bottom:16px; }
-  .kpi-tile{
-    background:var(--paper-raised); border:1px solid var(--line);
-    border-radius:12px; padding:11px 13px; min-width:0;
+  .kpi-tile{ padding:11px 13px 12px; border-radius:12px; min-width:0; }
+  .kpi-tile::before{ left:12px; right:12px; }
+  .kpi-label{
+    font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.05em;
+    color:var(--accent, var(--ink-soft)); display:flex; align-items:center; gap:6px;
   }
-  .kpi-label{ font-size:11px; color:var(--ink-soft); font-weight:600; text-transform:uppercase; letter-spacing:.04em; }
+  .kpi-label::before{
+    content:''; width:5px; height:5px; border-radius:50%;
+    background:var(--accent); box-shadow:0 0 6px var(--accent);
+  }
   .kpi-value{
-    font-size:20px; font-weight:700; margin-top:4px; color:var(--ink);
+    font-size:20px; font-weight:700; margin-top:5px; color:var(--ink);
     font-variant-numeric:tabular-nums; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    text-shadow:0 0 16px var(--accent-glow, transparent);
   }
-  .kpi-alert .kpi-value{ color:var(--alert); }
   .kpi-hint{ font-size:11px; color:var(--ink-soft); margin-top:3px; }
 
   /* No celular as colunas "somem" (display:contents) e os blocos viram
@@ -649,9 +756,10 @@
   /* Evolução mensal */
   .trend-chart{ width:100%; height:132px; display:block; margin-top:2px; overflow:visible; }
   .trend-axis{ stroke:var(--line); stroke-width:1; }
-  .trend-bar rect{ fill:var(--neon2); opacity:.55; }
-  .trend-bar.is-current rect{ opacity:1; }
-  .trend-bar:hover rect{ opacity:.85; }
+  .trend-bar rect{ fill:var(--neon2); opacity:.45; }
+  .trend-bar.is-current rect{ opacity:1; filter:drop-shadow(0 0 6px rgba(79,224,255,0.85)); }
+  .trend-bar:hover rect{ opacity:.8; filter:drop-shadow(0 0 5px rgba(79,224,255,0.7)); }
+  .trend-val{ filter:drop-shadow(0 0 8px rgba(79,224,255,0.5)); }
   .trend-month{ fill:var(--ink-soft); font-size:9.5px; text-anchor:middle; font-family:inherit; }
   .trend-bar.is-current .trend-month{ fill:var(--ink); font-weight:700; }
   .trend-val{ fill:var(--ink); font-size:10px; font-weight:700; text-anchor:middle; font-family:inherit; }
@@ -746,16 +854,7 @@
     }
     .resumo-col-a, .resumo-col-b{ flex:1 1 44%; }
     .resumo-col-c{ flex:1 1 100%; }
-    .resumo-block{
-      background:var(--paper-raised); border:1px solid var(--line);
-      border-radius:var(--radius); padding:16px 18px;
-    }
-    /* O acerto e o comparativo já vêm dentro do próprio cartão; aqui o bloco
-       externo some pra não virar cartão dentro de cartão. */
-    .rb-acerto{ padding:0; background:transparent; border:none; }
-    .rb-compare{ padding:0; background:transparent; border:none; }
-    .rb-compare .section-title{ padding:0 2px; }
-    .hero-settlement, .compare{ margin-bottom:0; }
+    .resumo-block{ padding:16px 18px 17px; }
     .trend-chart{ height:150px; }
 
     /* Formulário do casal em duas colunas: dados da conta à esquerda,
@@ -774,10 +873,7 @@
       grid-area:main; min-width:0;
       position:sticky; top:18px; align-self:start;
     }
-    form.add-form.two-col .form-col-items{
-      grid-area:items; min-width:0;
-      border-left:1px solid var(--line); padding-left:26px;
-    }
+    form.add-form.two-col .form-col-items{ grid-area:items; min-width:0; }
     form.add-form.two-col .form-submit-area{ grid-area:submit; margin-top:6px; }
     form.add-form.two-col .items-section{ margin-top:0; }
   }
@@ -1605,7 +1701,8 @@
     var installmentsPaid = (editingExpense && typeof editingExpense.installmentsPaid === 'number') ? editingExpense.installmentsPaid : 0;
     return ''
       + '<form class="add-form two-col" data-member="'+escapeHTML(memberId)+'">'
-      + '<div class="form-col form-col-main">'
+      + '<div class="form-col form-col-main acc-blue">'
+      + '<div class="form-col-title">Dados da conta</div>'
       + '<div class="field"><label>Categoria</label>' + cat.html + '</div>'
       + '<div class="field custom-cat-field" style="display:'+(cat.customSelected?'block':'none')+';"><label>Nome da categoria</label><input type="text" class="custom-category-input" placeholder="Ex: Pet, Presente..." value="'+(cat.customSelected?escapeHTML(editingExpense.category):'')+'"></div>'
       + '<div class="field"><label>Descrição</label><input type="text" class="description-input" placeholder="Ex: Compra do mês" value="'+(editingExpense?escapeHTML(editingExpense.description):'')+'"></div>'
@@ -1620,9 +1717,9 @@
       + '</div>'
       + '<div class="items-hint" style="margin:-4px 0 12px;">Se essa conta parcelada entrar aqui, o acerto da casa vai contar só as parcelas já pagas — as próximas aparecem na aba Meses.</div>'
       + '</div>'
-      + '<div class="form-col form-col-items">'
+      + '<div class="form-col form-col-items acc-green">'
+      + '<div class="form-col-title">Itens da nota (opcional)</div>'
       + '<div class="field items-section">'
-        + '<div class="items-section-head"><label>🧾 Itens da compra (opcional)</label></div>'
         + '<div class="items-hint">Tirou foto da nota fiscal? Cada item vira uma linha com <b>Nº + Produto</b>, <b>Unidade</b>, <b>Peso</b> (só se for vendido por quilo — pode deixar em branco) e <b>Valor</b>. As linhas com faixa colorida são as que não consegui ler com certeza: confira só elas.</div>'
         + '<div class="items-list">' + existingItems.map(itemRowHTML).join('') + '</div>'
         + itemsTotalRowHTML()
@@ -1656,6 +1753,8 @@
     var installmentsPaid = (editingExpense && typeof editingExpense.installmentsPaid === 'number') ? editingExpense.installmentsPaid : 0;
     return ''
       + '<form class="add-form" data-member="'+escapeHTML(memberId)+'">'
+      + '<div class="form-col acc-blue">'
+      + '<div class="form-col-title">O que você comprou</div>'
       + '<div class="field"><label>Categoria</label>' + cat.html + '</div>'
       + '<div class="field custom-cat-field" style="display:'+(cat.customSelected?'block':'none')+';"><label>Nome da categoria</label><input type="text" class="custom-category-input" placeholder="Ex: Pet, Presente..." value="'+(cat.customSelected?escapeHTML(editingExpense.category):'')+'"></div>'
       + '<div class="field"><label>Produto/Descrição</label><input type="text" class="description-input" placeholder="Ex: Fone Bluetooth" value="'+(editingExpense?escapeHTML(editingExpense.description):'')+'"></div>'
@@ -1663,6 +1762,9 @@
         + '<div class="field"><label>Valor total (R$)</label><input type="number" inputmode="decimal" class="value-input" step="0.01" min="0" placeholder="0,00" value="'+(editingExpense?editingExpense.value:'')+'"></div>'
         + '<div class="field"><label>Data da compra</label><input type="date" class="date-input" value="'+(editingExpense?editingExpense.date:todayISO())+'"></div>'
       + '</div>'
+      + '</div>'
+      + '<div class="form-col acc-amber">'
+      + '<div class="form-col-title">Como foi pago</div>'
       + '<div class="field"><label>Forma de pagamento</label><select class="payment-method-select"><option value="credito"'+(isCredito?' selected':'')+'>💳 Crédito</option><option value="debito"'+(!isCredito?' selected':'')+'>💵 Débito</option></select></div>'
       + '<div class="field card-only-field" style="display:'+(isCredito?'block':'none')+';"><label>Cartão</label>' + card.html + '</div>'
       + '<div class="field custom-card-field" style="display:'+(card.customSelected?'block':'none')+';"><label>Nome do cartão</label><input type="text" class="custom-card-input" placeholder="Ex: C6, PicPay..." value="'+(card.customSelected&&editingExpense?escapeHTML(editingExpense.card):'')+'"></div>'
@@ -1671,8 +1773,10 @@
         + '<div class="field"><label>Nº de parcelas</label><input type="number" inputmode="numeric" min="1" step="1" class="installments-total-input" value="'+installmentsTotal+'"></div>'
         + '<div class="field"><label>Parcelas pagas</label><input type="number" inputmode="numeric" min="0" step="1" class="installments-paid-input" value="'+installmentsPaid+'"></div>'
       + '</div>'
+      + '</div>'
+      + '<div class="form-col acc-purple">'
+      + '<div class="form-col-title">Comprovante</div>'
       + '<div class="field">'
-        + '<label>Comprovante</label>'
         + '<div class="photo-row">'
           + '<label class="photo-btn">📷 Tirar foto<input type="file" accept="image/*" capture="environment" class="photo-input" style="display:none;"></label>'
           + '<label class="photo-btn">🖼️ Escolher da galeria<input type="file" accept="image/*" class="photo-input" style="display:none;"></label>'
@@ -1680,8 +1784,11 @@
         + '</div>'
         + '<div class="ocr-status"></div>'
       + '</div>'
+      + '</div>'
+      + '<div class="form-submit-area">'
       + '<button type="submit" class="submit-btn" style="background:'+member.color+';">' + (editingExpense ? 'Salvar alterações' : 'Adicionar gasto') + '</button>'
       + (editingExpense ? '<button type="button" class="cancel-edit-btn" data-action="cancel-edit">Cancelar edição</button>' : '')
+      + '</div>'
       + '</form>';
   }
 
@@ -1708,8 +1815,12 @@
           + '<button class="del" data-action="delete-expense" data-id="'+e.id+'">🗑️</button>'
           + '</div>';
       }).join('');
+      // Cada grupo brilha na cor da própria categoria — dá pra achar
+      // "Mercado" no meio da lista sem precisar ler.
+      var gc = catColor(g.category);
+      var accentVars = '--accent:'+gc+';--accent-line:'+hexToRgba(gc,0.30)+';--accent-halo:'+hexToRgba(gc,0.06)+';--accent-glow:'+hexToRgba(gc,0.38)+';';
       return ''
-        + '<div class="cat-group">'
+        + '<div class="cat-group" style="'+accentVars+'">'
         + '<div class="cat-head"><span class="name">'+catChipHTML(g.category,22)+' '+escapeHTML(g.category)+'</span><span class="total">'+formatBRL(g.total)+'</span></div>'
         + rows
         + '</div>';
@@ -1742,8 +1853,12 @@
     var groups = groupByCategory(list);
     return groups.map(function(g){
       var rows = g.items.map(renderPersonalEntryRow).join('');
+      // Cada grupo brilha na cor da própria categoria — dá pra achar
+      // "Mercado" no meio da lista sem precisar ler.
+      var gc = catColor(g.category);
+      var accentVars = '--accent:'+gc+';--accent-line:'+hexToRgba(gc,0.30)+';--accent-halo:'+hexToRgba(gc,0.06)+';--accent-glow:'+hexToRgba(gc,0.38)+';';
       return ''
-        + '<div class="cat-group">'
+        + '<div class="cat-group" style="'+accentVars+'">'
         + '<div class="cat-head"><span class="name">'+catChipHTML(g.category,22)+' '+escapeHTML(g.category)+'</span><span class="total">'+formatBRL(g.total)+'</span></div>'
         + rows
         + '</div>';
@@ -1830,8 +1945,8 @@
       .reduce(function(s,g){ return s + g.total; }, 0);
   }
 
-  function kpiTileHTML(label, value, hint, tone){
-    return '<div class="kpi-tile'+(tone ? ' kpi-'+tone : '')+'">'
+  function kpiTileHTML(label, value, hint, accent){
+    return '<div class="kpi-tile neon-box '+(accent || 'acc-cyan')+'">'
       + '<div class="kpi-label">'+escapeHTML(label)+'</div>'
       + '<div class="kpi-value">'+value+'</div>'
       + '<div class="kpi-hint">'+(hint || '')+'</div>'
@@ -1853,7 +1968,7 @@
           + '<span class="cat-bar-name">'+catChipHTML(g.category, 22)+'<span class="cat-bar-label">'+escapeHTML(g.category)+'</span></span>'
           + '<span class="cat-bar-val">'+formatBRL(g.total)+'<span class="cat-bar-share">'+share+'%</span></span>'
         + '</span>'
-        + '<span class="cat-bar-track"><span class="cat-bar-fill" style="width:'+pct.toFixed(2)+'%;background:'+color+';"></span></span>'
+        + '<span class="cat-bar-track"><span class="cat-bar-fill" style="width:'+pct.toFixed(2)+'%;background:'+color+';box-shadow:0 0 10px '+hexToRgba(color,0.75)+';"></span></span>'
         + '</button>';
     }).join('') + '</div>';
   }
@@ -1921,19 +2036,19 @@
     var res = computeSettlement(month);
     var heroHTML;
     if (res.totalCasal === 0){
-      heroHTML = '<div class="hero-settlement"><div class="label">Acerto entre a casa</div><div class="amount settled">Nenhum gasto do casal registrado ainda</div></div>';
+      heroHTML = '<div class="hero-settlement neon-box acc-pink"><div class="label">Acerto entre a casa</div><div class="amount settled">Nenhum gasto do casal registrado ainda</div></div>';
     } else if (res.transfers.length === 0){
-      heroHTML = '<div class="hero-settlement"><div class="label">Acerto entre a casa</div><div class="amount settled">Tudo certo — cada um pagou sua parte ✓</div></div>';
+      heroHTML = '<div class="hero-settlement neon-box acc-pink"><div class="label">Acerto entre a casa</div><div class="amount settled">Tudo certo — cada um pagou sua parte ✓</div></div>';
     } else {
       var rows = res.transfers.map(function(t){
         return '<div class="transfer-row"><span class="direction">'+escapeHTML(t.from)+' → '+escapeHTML(t.to)+'</span><span class="amount'+(res.transfers.length===1?' single':'')+'">'+formatBRL(t.amount)+'</span></div>';
       }).join('');
-      heroHTML = '<div class="hero-settlement"><div class="label">Acerto entre a casa</div>' + rows + '</div>';
+      heroHTML = '<div class="hero-settlement neon-box acc-pink"><div class="label">Acerto entre a casa</div>' + rows + '</div>';
     }
 
     var maxVal = Math.max.apply(null, res.balances.map(function(b){ return b.spent; }).concat([1]));
     var compareHTML = '<div class="compare">' + res.balances.map(function(b){
-      return '<div class="compare-row"><div class="top"><span class="who" style="color:'+b.color+';">'+escapeHTML(b.name)+'</span><span class="val">'+formatBRL(b.spent)+'</span></div><div class="track"><div class="fill" style="width:'+(b.spent/maxVal*100)+'%;background:'+b.color+';"></div></div></div>';
+      return '<div class="compare-row"><div class="top"><span class="who" style="color:'+b.color+';text-shadow:0 0 14px '+hexToRgba(b.color,0.6)+';">'+escapeHTML(b.name)+'</span><span class="val">'+formatBRL(b.spent)+'</span></div><div class="track"><div class="fill" style="width:'+(b.spent/maxVal*100)+'%;background:'+b.color+';box-shadow:0 0 10px '+hexToRgba(b.color,0.75)+';"></div></div></div>';
     }).join('') + '</div>';
 
     var casalList = state.expenses.filter(function(e){
@@ -1961,11 +2076,13 @@
         + '<span class="resumo-scope">'+(month === 'all' ? 'Somando tudo desde o começo' : 'Mostrando só ' + escapeHTML(monthLabelFromKey(month)))+'</span>'
       + '</div>';
 
+    // Cada indicador tem cor fixa, sempre a mesma — a cor vira um atalho de
+    // leitura: rosa é sempre "o que falta", verde é sempre "já é seu".
     var kpiHTML = '<div class="kpi-row">'
-      + kpiTileHTML('Contas do casal', formatBRL(res.totalCasal), byCat.length + (byCat.length === 1 ? ' categoria' : ' categorias'))
-      + kpiTileHTML('Gastos pessoais', formatBRL(totalPessoal), 'Fora da divisão')
-      + kpiTileHTML('Falta pagar', formatBRL(totalAPagar), 'Parcelas pessoais em aberto', totalAPagar > 0.005 ? 'alert' : null)
-      + kpiTileHTML('Próximos meses', formatBRL(futuro), 'Parcelas do casal já comprometidas')
+      + kpiTileHTML('Contas do casal', formatBRL(res.totalCasal), byCat.length + (byCat.length === 1 ? ' categoria' : ' categorias'), 'acc-cyan')
+      + kpiTileHTML('Gastos pessoais', formatBRL(totalPessoal), 'Fora da divisão', 'acc-purple')
+      + kpiTileHTML('Falta pagar', formatBRL(totalAPagar), 'Parcelas pessoais em aberto', totalAPagar > 0.005 ? 'acc-pink' : 'acc-green')
+      + kpiTileHTML('Próximos meses', formatBRL(futuro), 'Parcelas do casal já comprometidas', 'acc-amber')
       + '</div>';
 
     return ''
@@ -1978,15 +2095,15 @@
       + '<div class="resumo-grid">'
         + '<div class="resumo-col resumo-col-a">'
           + '<section class="resumo-block rb-acerto">' + heroHTML + '</section>'
-          + '<section class="resumo-block rb-compare"><div class="section-title">Quem pagou quanto</div>' + compareHTML + '</section>'
+          + '<section class="resumo-block neon-box acc-blue rb-compare"><div class="section-title">👥 Quem pagou quanto</div>' + compareHTML + '</section>'
         + '</div>'
         + '<div class="resumo-col resumo-col-b">'
-          + '<section class="resumo-block rb-trend"><div class="section-title">Contas do casal por mês</div>' + monthlyTrendHTML() + '</section>'
-          + '<section class="resumo-block rb-pessoais"><div class="section-title">Gastos pessoais</div>' + personalHTML
+          + '<section class="resumo-block neon-box acc-cyan rb-trend"><div class="section-title">📈 Contas do casal por mês</div>' + monthlyTrendHTML() + '</section>'
+          + '<section class="resumo-block neon-box acc-purple rb-pessoais"><div class="section-title">👤 Gastos pessoais</div>' + personalHTML
             + '<div class="note">Os gastos pessoais não entram na divisão — só as contas do casal são somadas e divididas conforme a porcentagem de cada um.</div></section>'
         + '</div>'
         + '<div class="resumo-col resumo-col-c">'
-          + '<section class="resumo-block rb-cats"><div class="section-title">Contas do casal por categoria</div>' + categoryBarsHTML(byCat) + '</section>'
+          + '<section class="resumo-block neon-box acc-green rb-cats"><div class="section-title">🧾 Contas do casal por categoria</div>' + categoryBarsHTML(byCat) + '</section>'
         + '</div>'
       + '</div>';
   }
