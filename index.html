@@ -6,6 +6,11 @@
 <title>Gastos da Casa</title>
 <style>
   :root{
+    /* Avisa o navegador que o app é escuro. Sem isso ele desenha as partes
+       nativas — a listinha que abre no seletor de mês, o calendário do campo
+       de data, a barra de rolagem — com fundo branco, e o texto claro do app
+       fica ilegível em cima. */
+    color-scheme:dark;
     --paper:#0A0C10;
     --paper-raised:#161A21;
     --input-bg:#1F2530;
@@ -545,6 +550,10 @@
   .cat-group.current-month{ box-shadow:var(--shadow-md), inset 0 0 0 1.5px var(--positive); }
   .cat-group.future-month{ opacity:0.82; }
   .installment-badge{ font-size:11px;font-weight:600;white-space:nowrap; }
+  .fixed-tag{
+    color:var(--neon2); font-weight:700;
+    text-shadow:0 0 10px rgba(79,224,255,0.55);
+  }
   .entry.month-item.pending-item .value{ color:var(--ink-soft); }
 
   /* Meses tab: navegação anos → meses → detalhe */
@@ -707,6 +716,9 @@
     font-size:13.5px; font-weight:600; font-family:inherit; padding:3px 2px; cursor:pointer;
   }
   .resumo-month-select:focus{ outline:none; }
+  /* Reforço pros navegadores que ignoram o color-scheme nas opções. */
+  select option{ background:var(--paper-raised); color:var(--ink); }
+  select option:disabled{ color:var(--ink-soft); }
   .resumo-scope{ font-size:12px; color:var(--ink-soft); }
 
   .kpi-row{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-bottom:16px; }
@@ -760,6 +772,10 @@
   .trend-bar.is-current rect{ opacity:1; filter:drop-shadow(0 0 6px rgba(79,224,255,0.85)); }
   .trend-bar:hover rect{ opacity:.8; filter:drop-shadow(0 0 5px rgba(79,224,255,0.7)); }
   .trend-val{ filter:drop-shadow(0 0 8px rgba(79,224,255,0.5)); }
+  .trend-bar.is-future rect{ opacity:.22; }
+  .trend-bar.is-future:hover rect{ opacity:.4; }
+  .trend-bar.is-future .trend-month{ opacity:.7; }
+  .trend-legend{ font-size:11px; color:var(--ink-soft); margin-top:6px; line-height:1.4; }
   .trend-month{ fill:var(--ink-soft); font-size:9.5px; text-anchor:middle; font-family:inherit; }
   .trend-bar.is-current .trend-month{ fill:var(--ink); font-weight:700; }
   .trend-val{ fill:var(--ink); font-size:10px; font-weight:700; text-anchor:middle; font-family:inherit; }
@@ -785,6 +801,11 @@
       min-height:100vh;
       display:grid;
       grid-template-columns:232px minmax(0,1fr);
+      /* Sem definir as linhas, o grid estica as duas igualmente quando o
+         conteúdo é curto: o cabeçalho crescia e descia o app inteiro pro meio
+         da tela (dava pra ver na aba Meses com poucos lançamentos).
+         "auto 1fr" prende o cabeçalho na altura dele e dá o resto pro miolo. */
+      grid-template-rows:auto 1fr;
       grid-template-areas:"header header" "nav main";
       background:var(--paper);
     }
@@ -1010,9 +1031,10 @@
     itemsModalGroup: false,
     itemsModalMonth: 'all',
     mesesView: {mode:'years', year:null, month:null},
-    // Mês exibido no Resumo. 'all' = tudo desde sempre (comportamento antigo,
-    // mantido como padrão pra não mudar o que você já vê ao abrir o app).
-    resumoMonth: 'all'
+    // Mês exibido no Resumo e nas listas de cada pessoa. null = ainda não
+    // escolhido, então cai no mês atual.
+    resumoMonth: null,
+    entriesMonth: {}
   };
 
   var storageAvailable = false;
@@ -1037,9 +1059,49 @@
     return f ? f.icon : '🏷️';
   }
 
+  // Categoria que você criou (iFood, Cachorro, Guardar...) também ganha cor.
+  // Antes toda categoria personalizada saía cinza, e no gráfico do Resumo
+  // várias barras ficavam iguais. A cor é derivada do nome, então é sempre a
+  // mesma pra mesma categoria — não muda a cada vez que a tela recarrega.
+  var CUSTOM_CATEGORY_COLORS = ['#9BE564','#FF7BC8','#6C9BFF','#F2A65A','#5FD3D8'];
+  function hashString(s){
+    var h = 0;
+    s = String(s || '');
+    for (var i = 0; i < s.length; i++){ h = (h * 31 + s.charCodeAt(i)) >>> 0; }
+    return h;
+  }
+  // Só o hash não bastava: duas categorias diferentes podiam cair na mesma
+  // cor (iFood e Cachorro caíram). Aqui a cor sugerida pelo hash é o ponto de
+  // partida, e se ela já estiver ocupada anda pra próxima livre — assim
+  // nenhuma categoria repete cor enquanto houver cor sobrando.
+  var customColorMap = null;
+  function invalidateCustomColors(){ customColorMap = null; }
+  function buildCustomColorMap(){
+    var seen = {};
+    state.expenses.forEach(function(e){
+      if (!e.category) return;
+      if (CATEGORIES.some(function(c){ return c.id === e.category; })) return;
+      seen[e.category] = true;
+    });
+    var nomes = Object.keys(seen).sort();
+    var n = CUSTOM_CATEGORY_COLORS.length;
+    var usados = {}, map = {};
+    nomes.forEach(function(nome){
+      var base = hashString(nome) % n;
+      for (var k = 0; k < n; k++){
+        var idx = (base + k) % n;
+        if (!usados[idx]){ usados[idx] = true; map[nome] = CUSTOM_CATEGORY_COLORS[idx]; return; }
+      }
+      map[nome] = CUSTOM_CATEGORY_COLORS[base]; // mais categorias do que cores
+    });
+    return map;
+  }
   function catColor(cat){
     var f = CATEGORIES.find(function(c){ return c.id === cat; });
-    return (f && f.color) ? f.color : DEFAULT_CATEGORY_COLOR;
+    if (f && f.color) return f.color;
+    if (!cat) return DEFAULT_CATEGORY_COLOR;
+    if (!customColorMap) customColorMap = buildCustomColorMap();
+    return customColorMap[cat] || CUSTOM_CATEGORY_COLORS[hashString(cat) % CUSTOM_CATEGORY_COLORS.length];
   }
 
   function catChipHTML(cat, size){
@@ -1297,9 +1359,7 @@
   // filtro, então o comportamento delas não muda.
   function computeSettlement(monthKey){
     var members = state.settings.members;
-    var casalExpenses = state.expenses.filter(function(e){
-      return e.type === 'casal' && (!monthKey || monthKey === 'all' || monthKeyFromDate(e.date) === monthKey);
-    });
+    var casalExpenses = expensesFor(monthKey).filter(function(e){ return e.type === 'casal'; });
     var totalCasal = casalExpenses.reduce(function(s,e){ return s+casalCalc(e).paidValue; }, 0);
     var pctSum = members.reduce(function(s,m){ return s + (Number(m.percentage)||0); }, 0) || 1;
 
@@ -1367,9 +1427,8 @@
   }
 
   function personalSummary(memberId, monthKey){
-    var list = state.expenses.filter(function(e){
-      return e.person===memberId && e.type==='pessoal'
-        && (!monthKey || monthKey === 'all' || monthKeyFromDate(e.date) === monthKey);
+    var list = expensesFor(monthKey).filter(function(e){
+      return e.person===memberId && e.type==='pessoal';
     });
     var totals = {totalComprado:0, totalPago:0, totalAPagar:0, parcelasRestantes:0};
     list.forEach(function(e){
@@ -1412,7 +1471,9 @@
   }
 
   function buildCasalMonthsTimeline(){
-    var casalExpenses = state.expenses.filter(function(e){ return e.type === 'casal'; });
+    // 2 meses à frente: as parcelas e os gastos fixos que já estão contratados
+    // aparecem como "previsto" antes de chegar a data.
+    var casalExpenses = materializedAll(2).filter(function(e){ return e.type === 'casal'; });
     var map = {};
     function addTo(key, year, month, item){
       if (!map[key]) map[key] = {year:year, month:month, items:[]};
@@ -1467,6 +1528,97 @@
 
   function monthKeyFromDate(iso){ return String(iso||'').slice(0,7); }
 
+  function currentMonthKey(){
+    var d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+  }
+  function monthKeyAdd(mk, n){
+    var p = String(mk).split('-');
+    var y = Number(p[0]), m = Number(p[1]) - 1 + n;
+    y += Math.floor(m / 12);
+    m = ((m % 12) + 12) % 12;
+    return y + '-' + String(m + 1).padStart(2,'0');
+  }
+  // Dia 31 num mês de 30 vira dia 30 — senão a data do gasto fixo escorregaria
+  // pro mês seguinte e ele sumiria do mês certo.
+  function dateInMonth(mk, day){
+    var p = String(mk).split('-');
+    var y = Number(p[0]), m = Number(p[1]);
+    var ultimo = new Date(y, m, 0).getDate();
+    return mk + '-' + String(Math.min(day || 1, ultimo)).padStart(2,'0');
+  }
+
+  /* ---------- Gastos fixos ----------
+     Um gasto fixo é lançado UMA vez e vale de lá pra frente. Em vez de gravar
+     uma cópia dele em cada mês (o que encheria o armazenamento e faria você ter
+     que editar 12 lugares pra mudar o valor do aluguel), guardamos só o
+     original e "materializamos" uma cópia na hora de mostrar cada mês.
+     A cópia tem id "original@2026-10" — é assim que editar ou excluir uma
+     repetição sabe voltar pro lançamento de verdade. */
+
+  function baseExpenseId(id){ return String(id || '').split('@')[0]; }
+
+  function fixedOccurrence(e, mk){
+    if (!e.fixed) return null;
+    var inicio = monthKeyFromDate(e.date);
+    if (!inicio || mk < inicio) return null;
+    if (mk === inicio) return e;
+    var dia = parseInt(String(e.date).slice(8,10), 10) || 1;
+    var copia = Object.assign({}, e);
+    copia.id = e.id + '@' + mk;
+    copia.date = dateInMonth(mk, dia);
+    copia.virtual = true;
+    return copia;
+  }
+
+  function materializedForMonth(mk){
+    var out = [];
+    state.expenses.forEach(function(e){
+      if (e.fixed){
+        var occ = fixedOccurrence(e, mk);
+        if (occ) out.push(occ);
+      } else if (monthKeyFromDate(e.date) === mk){
+        out.push(e);
+      }
+    });
+    return out;
+  }
+
+  // Meses que o app precisa considerar: do primeiro lançamento até o mês atual
+  // (ou até o último lançamento, se você já lançou algo à frente).
+  function expenseMonthSpan(mesesAdiante){
+    var atual = currentMonthKey();
+    var keys = state.expenses.map(function(e){ return monthKeyFromDate(e.date); })
+      .filter(Boolean).sort();
+    if (!keys.length) return [atual];
+    var primeiro = keys[0];
+    var ultimo = keys[keys.length - 1];
+    if (ultimo < atual) ultimo = atual;
+    if (mesesAdiante){
+      var limite = monthKeyAdd(atual, mesesAdiante);
+      if (limite > ultimo) ultimo = limite;
+    }
+    var out = [], mk = primeiro, guarda = 0;
+    while (mk <= ultimo && guarda++ < 600){ out.push(mk); mk = monthKeyAdd(mk, 1); }
+    return out;
+  }
+
+  function materializedAll(mesesAdiante){
+    var out = [];
+    expenseMonthSpan(mesesAdiante).forEach(function(mk){
+      out = out.concat(materializedForMonth(mk));
+    });
+    return out;
+  }
+
+  // Ponto único de leitura: 'all' (ou vazio) devolve todos os meses,
+  // 'YYYY-MM' devolve só aquele mês. Tudo que soma dinheiro passa por aqui.
+  function expensesFor(monthKey, mesesAdiante){
+    return (!monthKey || monthKey === 'all')
+      ? materializedAll(mesesAdiante)
+      : materializedForMonth(monthKey);
+  }
+
   function monthLabelFromKey(key){
     var parts = key.split('-');
     if (parts.length !== 2) return key;
@@ -1476,7 +1628,7 @@
   }
 
   function getCategoryItems(category){
-    var expenses = state.expenses.filter(function(e){ return e.type === 'casal' && e.category === category; });
+    var expenses = materializedAll().filter(function(e){ return e.type === 'casal' && e.category === category; });
     var items = [];
     expenses.forEach(function(e){
       if (Array.isArray(e.items) && e.items.length){
@@ -1697,6 +1849,7 @@
     var existingItems = (editingExpense && Array.isArray(editingExpense.items)) ? editingExpense.items : [];
     var hasItems = existingItems.length > 0;
     var isInstallment = editingExpense ? !!editingExpense.installment : false;
+    var isFixed = editingExpense ? !!editingExpense.fixed : false;
     var installmentsTotal = (editingExpense && editingExpense.installmentsTotal) ? editingExpense.installmentsTotal : 2;
     var installmentsPaid = (editingExpense && typeof editingExpense.installmentsPaid === 'number') ? editingExpense.installmentsPaid : 0;
     return ''
@@ -1710,8 +1863,10 @@
         + '<div class="field"><label>Valor (R$)</label><input type="number" inputmode="decimal" class="value-input'+(hasItems?' computed-value':'')+'" step="0.01" min="0" placeholder="0,00" value="'+(editingExpense?editingExpense.value:'')+'"'+(hasItems?' readonly':'')+'></div>'
         + '<div class="field"><label>Data</label><input type="date" class="date-input" value="'+(editingExpense?editingExpense.date:todayISO())+'"></div>'
       + '</div>'
-      + '<div class="field"><label>Foi parcelado?</label><select class="installment-toggle-select"><option value="nao"'+(!isInstallment?' selected':'')+'>Não</option><option value="sim"'+(isInstallment?' selected':'')+'>Sim</option></select></div>'
-      + '<div class="row2 installment-fields" style="display:'+(isInstallment?'flex':'none')+';">'
+      + '<div class="field"><label>É um gasto fixo?</label><select class="fixed-toggle-select"><option value="nao"'+(!isFixed?' selected':'')+'>Não, só deste mês</option><option value="sim"'+(isFixed?' selected':'')+'>Sim, repete todo mês</option></select>'
+        + '<div class="items-hint" style="margin:6px 0 0;">Marcando como fixo, esse gasto aparece sozinho em todos os meses seguintes com o mesmo valor — você não precisa lançar de novo.</div></div>'
+      + '<div class="field not-fixed-field" style="display:'+(isFixed?'none':'block')+';"><label>Foi parcelado?</label><select class="installment-toggle-select"><option value="nao"'+(!isInstallment?' selected':'')+'>Não</option><option value="sim"'+(isInstallment?' selected':'')+'>Sim</option></select></div>'
+      + '<div class="row2 installment-fields" style="display:'+((isInstallment&&!isFixed)?'flex':'none')+';">'
         + '<div class="field"><label>Nº de parcelas</label><input type="number" inputmode="numeric" min="1" step="1" class="installments-total-input" value="'+installmentsTotal+'"></div>'
         + '<div class="field"><label>Parcelas pagas</label><input type="number" inputmode="numeric" min="0" step="1" class="installments-paid-input" value="'+installmentsPaid+'"></div>'
       + '</div>'
@@ -1748,6 +1903,7 @@
     var paymentMethod = editingExpense ? (editingExpense.paymentMethod || 'credito') : 'credito';
     var isCredito = paymentMethod === 'credito';
     var isInstallment = editingExpense ? !!editingExpense.installment : false;
+    var isFixed = editingExpense ? !!editingExpense.fixed : false;
     var card = cardSelectHTML(editingExpense ? editingExpense.card : null);
     var installmentsTotal = (editingExpense && editingExpense.installmentsTotal) ? editingExpense.installmentsTotal : 2;
     var installmentsPaid = (editingExpense && typeof editingExpense.installmentsPaid === 'number') ? editingExpense.installmentsPaid : 0;
@@ -1762,14 +1918,16 @@
         + '<div class="field"><label>Valor total (R$)</label><input type="number" inputmode="decimal" class="value-input" step="0.01" min="0" placeholder="0,00" value="'+(editingExpense?editingExpense.value:'')+'"></div>'
         + '<div class="field"><label>Data da compra</label><input type="date" class="date-input" value="'+(editingExpense?editingExpense.date:todayISO())+'"></div>'
       + '</div>'
+      + '<div class="field"><label>É um gasto fixo?</label><select class="fixed-toggle-select"><option value="nao"'+(!isFixed?' selected':'')+'>Não, só deste mês</option><option value="sim"'+(isFixed?' selected':'')+'>Sim, repete todo mês</option></select>'
+        + '<div class="items-hint" style="margin:6px 0 0;">Academia, streaming, plano do celular — marcado como fixo, ele aparece sozinho todo mês.</div></div>'
       + '</div>'
       + '<div class="form-col acc-amber">'
       + '<div class="form-col-title">Como foi pago</div>'
       + '<div class="field"><label>Forma de pagamento</label><select class="payment-method-select"><option value="credito"'+(isCredito?' selected':'')+'>💳 Crédito</option><option value="debito"'+(!isCredito?' selected':'')+'>💵 Débito</option></select></div>'
       + '<div class="field card-only-field" style="display:'+(isCredito?'block':'none')+';"><label>Cartão</label>' + card.html + '</div>'
       + '<div class="field custom-card-field" style="display:'+(card.customSelected?'block':'none')+';"><label>Nome do cartão</label><input type="text" class="custom-card-input" placeholder="Ex: C6, PicPay..." value="'+(card.customSelected&&editingExpense?escapeHTML(editingExpense.card):'')+'"></div>'
-      + '<div class="field card-only-field" style="display:'+(isCredito?'block':'none')+';"><label>Parcelado?</label><select class="installment-toggle-select"><option value="nao"'+(!isInstallment?' selected':'')+'>Não</option><option value="sim"'+(isInstallment?' selected':'')+'>Sim</option></select></div>'
-      + '<div class="row2 installment-fields" style="display:'+((isCredito&&isInstallment)?'flex':'none')+';">'
+      + '<div class="field card-only-field not-fixed-field" style="display:'+((isCredito&&!isFixed)?'block':'none')+';"><label>Parcelado?</label><select class="installment-toggle-select"><option value="nao"'+(!isInstallment?' selected':'')+'>Não</option><option value="sim"'+(isInstallment?' selected':'')+'>Sim</option></select></div>'
+      + '<div class="row2 installment-fields" style="display:'+((isCredito&&isInstallment&&!isFixed)?'flex':'none')+';">'
         + '<div class="field"><label>Nº de parcelas</label><input type="number" inputmode="numeric" min="1" step="1" class="installments-total-input" value="'+installmentsTotal+'"></div>'
         + '<div class="field"><label>Parcelas pagas</label><input type="number" inputmode="numeric" min="0" step="1" class="installments-paid-input" value="'+installmentsPaid+'"></div>'
       + '</div>'
@@ -1805,7 +1963,7 @@
         var c = casalCalc(e);
         var detailLine = c.installment
           ? (' · '+c.total+'x de '+formatBRL(c.parcelValue)+' · ✅ '+c.paid+' pagas'+(c.remaining>0?(' · ⏳ '+c.remaining+' restantes'):''))
-          : '';
+          : (e.fixed ? ' · <span class="fixed-tag">🔁 fixo</span>' : '');
         return ''
           + '<div class="entry">'
           + thumb
@@ -1835,7 +1993,8 @@
     var cardLabel = (e.paymentMethod === 'credito' && e.card) ? (' — ' + escapeHTML(e.card)) : (e.paymentMethod === 'debito' ? ' — Débito' : '');
     var detailLine = c.installment
       ? (c.total + 'x de ' + formatBRL(c.parcelValue) + ' · ✅ ' + c.paid + ' pagas · ⏳ ' + c.remaining + ' restantes' + (c.remainingValue>0.005 ? (' · Falta ' + formatBRL(c.remainingValue)) : ''))
-      : (e.paymentMethod === 'debito' ? 'Débito · pago' : 'Crédito à vista · pago');
+      : (e.paymentMethod === 'debito' ? 'Débito · pago' : 'Crédito à vista · pago')
+        + (e.fixed ? ' · <span class="fixed-tag">🔁 fixo</span>' : '');
     return ''
       + '<div class="entry personal-entry">'
       + thumb
@@ -1886,13 +2045,34 @@
     return '<div class="section-title">Próximos meses</div><div class="hero-settlement stat-grid" style="padding:16px 18px;">'+rows+'</div>';
   }
 
+  // Meses em que essa pessoa tem lançamentos desse tipo.
+  function memberAvailableMonths(memberId, sub){
+    return expenseMonthSpan().filter(function(mk){
+      return materializedForMonth(mk).some(function(e){
+        return e.person === memberId && e.type === sub;
+      });
+    }).sort(function(a,b){ return b.localeCompare(a); });
+  }
+  function entriesMonthKey(memberId, sub){
+    var chave = memberId + ':' + sub;
+    var meses = memberAvailableMonths(memberId, sub);
+    var atual = state.entriesMonth[chave];
+    if (atual && (atual === 'all' || meses.indexOf(atual) !== -1)) return atual;
+    return defaultMonthKey(meses);
+  }
+
   function renderMemberTab(memberId){
     var member = memberById(memberId);
     var sub = state.subTab[memberId] || 'casal';
-    var list = state.expenses.filter(function(e){ return e.person===memberId && e.type===sub; });
+    // A lista abre no mês atual — antes vinha tudo misturado e o aluguel de
+    // agosto, setembro e outubro apareciam empilhados no mesmo bloco.
+    var mesLista = entriesMonthKey(memberId, sub);
+    var mesesLista = memberAvailableMonths(memberId, sub);
+    var list = expensesFor(mesLista).filter(function(e){ return e.person===memberId && e.type===sub; });
     var editingExpense = null;
     if (state.editingId){
-      var found = state.expenses.find(function(e){ return e.id === state.editingId; });
+      var alvo = baseExpenseId(state.editingId);
+      var found = state.expenses.find(function(e){ return e.id === alvo; });
       if (found && found.person === memberId && found.type === sub) editingExpense = found;
     }
     var softA = hexToRgba(member.color, 0.14);
@@ -1900,17 +2080,21 @@
         + '<button data-subtab="casal" style="'+(sub==='casal'?('background:'+softA+';color:'+member.color+';'):'')+'">Contas do casal</button>'
         + '<button data-subtab="pessoal" style="'+(sub==='pessoal'?('background:'+softA+';color:'+member.color+';'):'')+'">Contas pessoais</button>'
       + '</div>';
+    var barraMes = monthBarHTML('entries-month', mesLista, mesesLista, memberId + ':' + sub);
+
     if (sub === 'pessoal'){
       return ''
         + segmentedHTML
         + renderFormHTML(memberId, sub, editingExpense)
         + renderPersonalSummaryHTML(memberId)
+        + barraMes
         + renderPersonalEntriesHTML(list)
         + renderUpcomingMonthsHTML(memberId);
     }
     return ''
       + segmentedHTML
       + renderFormHTML(memberId, sub, editingExpense)
+      + barraMes
       + renderEntriesHTML(list);
   }
 
@@ -1926,14 +2110,38 @@
      é o texto. Num gráfico de rosca a cor seria a única pista, e várias fatias
      ficariam impossíveis de distinguir. */
 
-  // Meses que aparecem no seletor do Resumo (só os que têm lançamento).
+  // Meses que aparecem no seletor do Resumo. Sai do intervalo completo (e não
+  // das datas cruas) porque um gasto fixo dá movimento a meses onde você não
+  // digitou nada. Só entram meses que realmente têm algum lançamento.
   function resumoAvailableMonths(){
-    var keys = {};
-    state.expenses.forEach(function(e){
-      var k = monthKeyFromDate(e.date);
-      if (k) keys[k] = true;
-    });
-    return Object.keys(keys).sort(function(a,b){ return b.localeCompare(a); });
+    return expenseMonthSpan()
+      .filter(function(mk){ return materializedForMonth(mk).length > 0; })
+      .sort(function(a,b){ return b.localeCompare(a); });
+  }
+
+  // O app abre sempre no mês atual. Se ele ainda não tem nada, cai no mês mais
+  // recente que tem — melhor abrir com conteúdo do que numa tela vazia.
+  function defaultMonthKey(disponiveis){
+    var atual = currentMonthKey();
+    if (!disponiveis || !disponiveis.length) return atual;
+    if (disponiveis.indexOf(atual) !== -1) return atual;
+    return disponiveis[0];
+  }
+
+  // Barra de seleção de mês, usada no Resumo e nas listas de cada pessoa.
+  function monthBarHTML(action, selecionado, meses, sufixo){
+    var opts = '<option value="all"'+(selecionado==='all'?' selected':'')+'>Todos os meses</option>'
+      + meses.map(function(k){
+          return '<option value="'+k+'"'+(selecionado===k?' selected':'')+'>'+monthLabelFromKey(k)+'</option>';
+        }).join('');
+    var texto = selecionado === 'all'
+      ? 'Somando tudo desde o começo'
+      : (selecionado === currentMonthKey() ? 'Mês atual' : 'Mostrando ' + monthLabelFromKey(selecionado));
+    return '<div class="resumo-toolbar">'
+      + '<label class="resumo-month"><span class="resumo-month-icon">🗓️</span>'
+      + '<select class="resumo-month-select" data-action="'+action+'"'+(sufixo?' data-scope="'+escapeHTML(sufixo)+'"':'')+'>'+opts+'</select></label>'
+      + '<span class="resumo-scope">'+escapeHTML(texto)+'</span>'
+      + '</div>';
   }
 
   // Soma das parcelas do casal que ainda vão cair nos próximos meses.
@@ -1980,39 +2188,49 @@
 
     var now = new Date();
     var currentKey = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
-    var endIdx = -1;
-    for (var i = 0; i < timeline.length; i++){ if (timeline[i].key <= currentKey) endIdx = i; }
-    if (endIdx < 0) endIdx = Math.min(timeline.length - 1, 5);
+    var curIdx = -1;
+    for (var i = 0; i < timeline.length; i++){ if (timeline[i].key <= currentKey) curIdx = i; }
+    if (curIdx < 0) curIdx = 0;
+    // Mostramos até 2 meses à frente: as parcelas que já estão compradas mas
+    // ainda vão cair fazem parte do quadro. Antes o gráfico cortava no mês
+    // atual e um mês futuro com lançamento simplesmente não aparecia.
+    var endIdx = Math.min(timeline.length - 1, curIdx + 2);
     var slice = timeline.slice(Math.max(0, endIdx - 5), endIdx + 1);
+    var temFuturo = slice.some(function(g){ return g.key > currentKey; });
 
     var max = slice.reduce(function(m,g){ return Math.max(m, g.total); }, 0) || 1;
     var W = 320, H = 132, padB = 22, padT = 16;
-    var slot = W / slice.length;
+    // Com poucos meses as barras não se espalham pela largura toda: ficariam
+    // isoladas nos cantos. O grupo é centralizado com um passo máximo fixo.
+    var slot = Math.min(W / slice.length, 62);
+    var offsetX = (W - slot * slice.length) / 2;
     var barW = Math.min(34, slot - 10);
     var maxIdx = slice.reduce(function(bi,g,ix){ return g.total > slice[bi].total ? ix : bi; }, 0);
 
     var bars = slice.map(function(g, ix){
       var h = Math.max(2, (g.total / max) * (H - padB - padT));
-      var x = ix * slot + (slot - barW) / 2;
+      var x = offsetX + ix * slot + (slot - barW) / 2;
       var y = H - padB - h;
       var isCurrent = g.key === currentKey;
+      var isFuture = g.key > currentKey;
       // Só o maior mês e o mês atual recebem valor escrito — número em cima de
       // toda barra vira ruído e o gráfico deixa de ser lido de relance.
       var label = (ix === maxIdx || isCurrent)
         ? '<text class="trend-val" x="'+(x + barW/2).toFixed(1)+'" y="'+(y - 5).toFixed(1)+'">'+formatCompactBRL(g.total)+'</text>'
         : '';
-      return '<g class="trend-bar'+(isCurrent ? ' is-current' : '')+'">'
-        + '<title>'+escapeHTML(monthLabelFromKey(g.key))+' — '+formatBRL(g.total)+'</title>'
+      return '<g class="trend-bar'+(isCurrent ? ' is-current' : '')+(isFuture ? ' is-future' : '')+'">'
+        + '<title>'+escapeHTML(monthLabelFromKey(g.key))+' — '+formatBRL(g.total)+(isFuture ? ' (previsto)' : '')+'</title>'
         + '<rect x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+barW.toFixed(1)+'" height="'+h.toFixed(1)+'" rx="4"></rect>'
         + label
         + '<text class="trend-month" x="'+(x + barW/2).toFixed(1)+'" y="'+(H - 6)+'">'+escapeHTML(shortMonthFromKey(g.key))+'</text>'
         + '</g>';
     }).join('');
 
-    return '<svg class="trend-chart" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" role="img" aria-label="Gastos do casal nos últimos meses">'
+    return '<svg class="trend-chart" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" role="img" aria-label="Gastos do casal por mês">'
       + '<line class="trend-axis" x1="0" y1="'+(H - padB)+'" x2="'+W+'" y2="'+(H - padB)+'"></line>'
       + bars
-      + '</svg>';
+      + '</svg>'
+      + (temFuturo ? '<div class="trend-legend">Barra mais fraca = mês que ainda não chegou (parcelas já compradas).</div>' : '');
   }
 
   function shortMonthFromKey(key){
@@ -2030,9 +2248,10 @@
   }
 
   function renderResumo(){
-    var month = state.resumoMonth || 'all';
     var months = resumoAvailableMonths();
-    if (month !== 'all' && months.indexOf(month) === -1){ month = 'all'; state.resumoMonth = 'all'; }
+    var month = state.resumoMonth || defaultMonthKey(months);
+    if (month !== 'all' && months.indexOf(month) === -1) month = defaultMonthKey(months);
+    state.resumoMonth = month;
     var res = computeSettlement(month);
     var heroHTML;
     if (res.totalCasal === 0){
@@ -2051,9 +2270,7 @@
       return '<div class="compare-row"><div class="top"><span class="who" style="color:'+b.color+';text-shadow:0 0 14px '+hexToRgba(b.color,0.6)+';">'+escapeHTML(b.name)+'</span><span class="val">'+formatBRL(b.spent)+'</span></div><div class="track"><div class="fill" style="width:'+(b.spent/maxVal*100)+'%;background:'+b.color+';box-shadow:0 0 10px '+hexToRgba(b.color,0.75)+';"></div></div></div>';
     }).join('') + '</div>';
 
-    var casalList = state.expenses.filter(function(e){
-      return e.type==='casal' && (month === 'all' || monthKeyFromDate(e.date) === month);
-    });
+    var casalList = expensesFor(month).filter(function(e){ return e.type==='casal'; });
     var byCat = groupByCategory(casalList);
 
     var totalPessoal = 0, totalAPagar = 0;
@@ -2066,15 +2283,7 @@
     }).join('');
 
     var futuro = futureCommitment();
-    var monthOpts = '<option value="all"'+(month==='all'?' selected':'')+'>Todos os meses</option>'
-      + months.map(function(k){ return '<option value="'+k+'"'+(month===k?' selected':'')+'>'+monthLabelFromKey(k)+'</option>'; }).join('');
-
-    var toolbarHTML = ''
-      + '<div class="resumo-toolbar">'
-        + '<label class="resumo-month"><span class="resumo-month-icon">🗓️</span>'
-        + '<select class="resumo-month-select" data-action="resumo-month">'+monthOpts+'</select></label>'
-        + '<span class="resumo-scope">'+(month === 'all' ? 'Somando tudo desde o começo' : 'Mostrando só ' + escapeHTML(monthLabelFromKey(month)))+'</span>'
-      + '</div>';
+    var toolbarHTML = monthBarHTML('resumo-month', month, months);
 
     // Cada indicador tem cor fixa, sempre a mesma — a cor vira um atalho de
     // leitura: rosa é sempre "o que falta", verde é sempre "já é seu".
@@ -2082,7 +2291,7 @@
       + kpiTileHTML('Contas do casal', formatBRL(res.totalCasal), byCat.length + (byCat.length === 1 ? ' categoria' : ' categorias'), 'acc-cyan')
       + kpiTileHTML('Gastos pessoais', formatBRL(totalPessoal), 'Fora da divisão', 'acc-purple')
       + kpiTileHTML('Falta pagar', formatBRL(totalAPagar), 'Parcelas pessoais em aberto', totalAPagar > 0.005 ? 'acc-pink' : 'acc-green')
-      + kpiTileHTML('Próximos meses', formatBRL(futuro), 'Parcelas do casal já comprometidas', 'acc-amber')
+      + kpiTileHTML('Próximos meses', formatBRL(futuro), 'Parcelas e contas fixas já comprometidas', 'acc-amber')
       + '</div>';
 
     return ''
@@ -2203,6 +2412,9 @@
   function render(){
     renderTabBar();
     updateHeaderText();
+    // As cores das categorias personalizadas dependem de quais existem, então
+    // são recalculadas quando a lista de gastos pode ter mudado.
+    invalidateCustomColors();
     // Só o Resumo usa a largura toda da tela; o resto continua numa coluna
     // estreita, que é mais confortável de ler e de preencher.
     contentEl.classList.toggle('wide', state.currentTab === 'resumo');
@@ -2259,8 +2471,191 @@
       + '<button type="button" id="add-member-btn" class="secondary-btn">+ Adicionar pessoa</button>'
       + '<div class="field" style="margin-top:18px;"><label>Cartões cadastrados (gastos pessoais)</label>' + cardRows + '</div>'
       + '<button type="button" id="add-card-btn" class="secondary-btn">+ Adicionar cartão</button>'
+      + '<div class="field" style="margin-top:22px;"><label>Dados de exemplo</label>'
+        + '<div class="note" style="margin:-2px 0 8px;">Preenche agosto, setembro e outubro de 2026 pra você ver como fica com o app cheio. Fica marcado como exemplo — dá pra tirar depois sem mexer no que é seu.</div>'
+        + '<button type="button" id="load-demo-btn" class="secondary-btn">🧪 Carregar 3 meses de exemplo</button>'
+        + '<button type="button" id="remove-demo-btn" class="secondary-btn" style="margin-top:8px;">Remover os dados de exemplo</button>'
+      + '</div>'
       + '<div class="field" style="margin-top:22px;"><label style="color:var(--alert);">Zona de risco</label><button type="button" id="open-reset-btn" class="secondary-btn" style="border-color:var(--alert);color:var(--alert);">🗑️ Zerar dados</button></div>'
       + '<div class="settings-actions"><button type="button" id="cancel-settings-btn" class="secondary-btn">Cancelar</button><button type="button" id="save-settings-btn" class="submit-btn" style="background:var(--ink);">Salvar</button></div>';
+  }
+
+  /* ---------- Dados de exemplo (pra testar a visualização) ----------
+     Três meses de contas: agosto, setembro e outubro de 2026. Setembro usa
+     exatamente a lista que você passou (soma 7.778); agosto e outubro variam
+     em torno de 7 mil, como acontece na vida real — o botijão de gás, por
+     exemplo, não entra todo mês.
+     Todo lançamento criado aqui leva a marca demo:true, então o botão de
+     remover apaga só estes e nunca encosta nos seus lançamentos de verdade. */
+
+  function demoExpenseSeed(){
+    var members = state.settings.members;
+    var H = (members[0] && members[0].id) || 'homem';
+    var M = (members[1] && members[1].id) || H;
+    var cards = (state.settings.cards && state.settings.cards.length) ? state.settings.cards : DEFAULT_CARDS;
+    var card1 = cards[0], card2 = cards[1] || cards[0];
+
+    // Contas que não mudam de valor entram como GASTO FIXO: são lançadas uma
+    // vez em agosto e o app repete sozinho em setembro, outubro e daí pra
+    // frente. É o recurso funcionando com dado de verdade.
+    // [pessoa, categoria, descrição, valor, data]
+    var fixosCasal = [
+      [H,'Aluguel/Financiamento','Aluguel',        1700, '2026-08-05'],
+      [H,'Transporte',           'Seguro do carro', 328, '2026-08-10'],
+      [M,'Guardar',              'Reserva do mês', 1000, '2026-08-30']
+    ];
+    var fixosPessoais = [
+      [H,'Saúde','Academia', 150, '2026-08-05', 'debito', null]
+    ];
+
+    // O que varia de mês pra mês continua lançado mês a mês.
+    // [pessoa, categoria, descrição, valor, dia]
+    var casal = {
+      '2026-08': [
+        [M,'Mercado',           'Mercado do mês',     1180, '08'],
+        [M,'Mercado',           'Feira e hortifruti',  180, '19'],
+        [H,'iFood',             'iFood do mês',        640, '22'],
+        [H,'Transporte',        'Gasolina',            640, '14'],
+        [M,'Cachorro',          'Ração e petshop',     280, '16'],
+        [M,'Luz',               'Conta de luz',        420, '12'],
+        [H,'Água',              'Conta de água',       190, '12'],
+        [M,'Gás',               'Botijão de gás',      130, '25'],
+        [H,'Internet/Telefone', 'Internet e celulares', 320, '07']
+      ],
+      '2026-09': [
+        [M,'iFood',             'iFood do mês',        800, '20'],
+        [M,'Mercado',           'Mercado do mês',     1500, '09'],
+        [H,'Transporte',        'Gasolina',            600, '15'],
+        [M,'Cachorro',          'Ração e petshop',     300, '17'],
+        [M,'Luz',               'Conta de luz',        460, '12'],
+        [H,'Água',              'Conta de água',       210, '12'],
+        [H,'Gás',               'Botijão de gás',      330, '03'],
+        [H,'Internet/Telefone', 'Internet e celulares', 550, '07']
+      ],
+      '2026-10': [
+        [H,'iFood',             'iFood do mês',        720, '21'],
+        [M,'Mercado',           'Mercado do mês',     1380, '08'],
+        [H,'Transporte',        'Gasolina',            520, '16'],
+        [M,'Cachorro',          'Ração e petshop',     260, '18'],
+        [M,'Luz',               'Conta de luz',        390, '12'],
+        [H,'Água',              'Conta de água',       175, '12'],
+        [H,'Internet/Telefone', 'Internet e celulares', 550, '07']
+      ]
+    };
+
+    // [pessoa, categoria, descrição, valor, dia, forma, cartão]
+    var pessoal = {
+      '2026-08': [
+        [H,'Lazer',   'Cinema e bar',   370, '15', 'credito', card1],
+        [M,'Lazer',   'Salão',          280, '12', 'debito',  null],
+        [M,'Educação','Curso online',   200, '20', 'credito', card2]
+      ],
+      '2026-09': [
+        [H,'Lazer',   'Bar com amigos', 350, '19', 'credito', card1],
+        [M,'Lazer',   'Salão',          300, '11', 'debito',  null],
+        [M,'Educação','Curso online',   200, '20', 'credito', card2]
+      ],
+      '2026-10': [
+        [H,'Lazer',   'Jogo do time',   330, '18', 'credito', card1],
+        [M,'Lazer',   'Salão',          320, '10', 'debito',  null],
+        [M,'Saúde',   'Farmácia',       200, '22', 'debito',  null]
+      ]
+    };
+
+    var out = [];
+    var n = 0;
+    function nextId(){ n += 1; return 'demo_' + n + '_' + Math.random().toString(36).slice(2,7); }
+
+    fixosCasal.forEach(function(r){
+      out.push({
+        id:nextId(), demo:true, person:r[0], type:'casal',
+        category:r[1], description:r[2], value:r[3], date:r[4],
+        thumb:null, items:null, fixed:true, installment:false,
+        installmentsTotal:null, installmentsPaid:null
+      });
+    });
+    fixosPessoais.forEach(function(r){
+      out.push({
+        id:nextId(), demo:true, person:r[0], type:'pessoal',
+        category:r[1], description:r[2], value:r[3], date:r[4],
+        thumb:null, paymentMethod:r[5], card:r[6], fixed:true,
+        installment:false, installmentsTotal:null, installmentsPaid:null
+      });
+    });
+
+    Object.keys(casal).forEach(function(mk){
+      casal[mk].forEach(function(r){
+        out.push({
+          id:nextId(), demo:true, person:r[0], type:'casal',
+          category:r[1], description:r[2], value:r[3], date:mk + '-' + r[4],
+          thumb:null, items:null, fixed:false, installment:false,
+          installmentsTotal:null, installmentsPaid:null
+        });
+      });
+    });
+
+    Object.keys(pessoal).forEach(function(mk){
+      pessoal[mk].forEach(function(r){
+        out.push({
+          id:nextId(), demo:true, person:r[0], type:'pessoal',
+          category:r[1], description:r[2], value:r[3], date:mk + '-' + r[4],
+          thumb:null, paymentMethod:r[5], card:r[6], fixed:false,
+          installment:false, installmentsTotal:null, installmentsPaid:null
+        });
+      });
+    });
+
+    // A parcelada que você pediu: compra de setembro, R$ 1.000 em 3x, 1 paga.
+    // No acerto e nos indicadores ela entra como R$ 333,33 já pagos e
+    // R$ 666,67 em aberto; as duas parcelas restantes caem em out e nov.
+    out.push({
+      id:nextId(), demo:true, person:H, type:'pessoal',
+      category:'Outros', description:'Fone de ouvido bluetooth',
+      value:1000, date:'2026-09-14', thumb:null,
+      paymentMethod:'credito', card:card1, fixed:false,
+      installment:true, installmentsTotal:3, installmentsPaid:1
+    });
+
+    return out;
+  }
+
+  // Marca que você já decidiu o que fazer com os dados de exemplo, pra o app
+  // não voltar a preenchê-los sozinho depois que você removeu.
+  function demoAlreadyHandled(){
+    try { return localStorage.getItem('gastos_casa_demo_feito') === '1'; }
+    catch(e){ return false; }
+  }
+  function markDemoHandled(){
+    try { localStorage.setItem('gastos_casa_demo_feito', '1'); } catch(e){ /* segue sem marcar */ }
+  }
+
+  async function loadDemoData(){
+    var jaTem = state.expenses.some(function(e){ return e.demo; });
+    var msg = jaTem
+      ? 'Recarregar os dados de exemplo? Os de exemplo que já estão aí serão trocados pelos novos. Seus lançamentos de verdade não são tocados.'
+      : 'Carregar 3 meses de lançamentos de exemplo (agosto, setembro e outubro de 2026)? Seus lançamentos de verdade continuam onde estão.';
+    if (!confirm(msg)) return;
+    var reais = state.expenses.filter(function(e){ return !e.demo; });
+    var novos = reais.concat(demoExpenseSeed());
+    var ok = await saveExpenses(novos);
+    if (!ok){ alert('Não foi possível salvar os dados de exemplo.'); return; }
+    markDemoHandled();
+    state.expenses = novos;
+    state.resumoMonth = 'all';
+    closeSettingsModal();
+    render();
+  }
+
+  async function removeDemoData(){
+    var reais = state.expenses.filter(function(e){ return !e.demo; });
+    if (reais.length === state.expenses.length){ alert('Não há dados de exemplo carregados.'); return; }
+    if (!confirm('Remover só os lançamentos de exemplo? Os seus continuam.')) return;
+    var ok = await saveExpenses(reais);
+    if (!ok){ alert('Não foi possível remover os dados de exemplo.'); return; }
+    markDemoHandled();
+    state.expenses = reais;
+    closeSettingsModal();
+    render();
   }
 
   /* ---------- Reset (zerar dados) modal ---------- */
@@ -2342,6 +2737,7 @@
     el = form.querySelector('.payment-method-select'); if (el) draft.paymentMethod = el.value;
     el = form.querySelector('.card-select'); if (el) draft.card = el.value;
     el = form.querySelector('.custom-card-input'); if (el) draft.customCard = el.value;
+    el = form.querySelector('.fixed-toggle-select'); if (el) draft.fixedToggle = el.value;
     el = form.querySelector('.installment-toggle-select'); if (el) draft.installmentToggle = el.value;
     el = form.querySelector('.installments-total-input'); if (el) draft.installmentsTotal = el.value;
     el = form.querySelector('.installments-paid-input'); if (el) draft.installmentsPaid = el.value;
@@ -2376,6 +2772,8 @@
     el = form.querySelector('.card-select');
     if (el && draft.card != null){ el.value = draft.card; el.dispatchEvent(new Event('change', {bubbles:true})); }
     el = form.querySelector('.custom-card-input'); if (el && draft.customCard != null) el.value = draft.customCard;
+    el = form.querySelector('.fixed-toggle-select');
+    if (el && draft.fixedToggle != null){ el.value = draft.fixedToggle; el.dispatchEvent(new Event('change', {bubbles:true})); }
     el = form.querySelector('.installment-toggle-select');
     if (el && draft.installmentToggle != null){ el.value = draft.installmentToggle; el.dispatchEvent(new Event('change', {bubbles:true})); }
     el = form.querySelector('.installments-total-input'); if (el && draft.installmentsTotal != null) el.value = draft.installmentsTotal;
@@ -2513,6 +2911,8 @@
     if (!value || value <= 0){ alert('Digite um valor válido.'); return; }
 
     var extra = {};
+    var fixedToggleEl = form.querySelector('.fixed-toggle-select');
+    extra.fixed = !!fixedToggleEl && fixedToggleEl.value === 'sim';
     if (type === 'pessoal'){
       var paymentMethodEl = form.querySelector('.payment-method-select');
       var paymentMethod = paymentMethodEl ? paymentMethodEl.value : 'credito';
@@ -2528,7 +2928,7 @@
         if (!cardValue){ alert('Selecione o cartão.'); return; }
         extra.card = cardValue;
         var instToggleEl = form.querySelector('.installment-toggle-select');
-        var isInstallment = !!instToggleEl && instToggleEl.value === 'sim';
+        var isInstallment = !!instToggleEl && instToggleEl.value === 'sim' && !extra.fixed;
         extra.installment = isInstallment;
         if (isInstallment){
           var totalInst = parseInt(form.querySelector('.installments-total-input').value, 10);
@@ -2568,7 +2968,7 @@
       extra.items = items.length ? items : null;
 
       var instToggleC = form.querySelector('.installment-toggle-select');
-      var isInstallmentC = !!instToggleC && instToggleC.value === 'sim';
+      var isInstallmentC = !!instToggleC && instToggleC.value === 'sim' && !extra.fixed;
       extra.installment = isInstallmentC;
       if (isInstallmentC){
         var totalInstC = parseInt(form.querySelector('.installments-total-input').value, 10);
@@ -2614,22 +3014,31 @@
   }
 
   async function handleDeleteExpense(id){
-    if (!confirm('Excluir este gasto?')) return;
-    var idx = state.expenses.findIndex(function(e){ return e.id === id; });
+    // A linha clicada pode ser a repetição de um gasto fixo — nesse caso o que
+    // existe de verdade é o lançamento original, e apagar tira de todos os meses.
+    var alvo = baseExpenseId(id);
+    var idx = state.expenses.findIndex(function(e){ return e.id === alvo; });
     if (idx === -1) return;
     var removed = state.expenses[idx];
+    var pergunta = removed.fixed
+      ? 'Este é um gasto fixo: excluir tira ele de TODOS os meses, inclusive dos que já passaram e já entraram no acerto. Excluir mesmo assim?'
+      : 'Excluir este gasto?';
+    if (!confirm(pergunta)) return;
     state.expenses.splice(idx, 1);
     var saved = await saveExpenses(state.expenses);
     if (!saved){ state.expenses.splice(idx, 0, removed); alert('Não foi possível excluir. Tente de novo.'); return; }
-    if (removed.thumb) await deleteFullReceipt(id);
-    if (state.editingId === id){ state.editingId = null; state.pendingPhoto = null; state.removeExistingPhoto = false; }
+    if (removed.thumb) await deleteFullReceipt(alvo);
+    if (baseExpenseId(state.editingId) === alvo){ state.editingId = null; state.pendingPhoto = null; state.removeExistingPhoto = false; }
     render();
   }
 
   function handleEditStart(id){
-    var exp = state.expenses.find(function(e){ return e.id === id; });
+    // Editar uma repetição edita o lançamento original — mudar o valor do
+    // aluguel muda em todos os meses, que é o esperado num gasto fixo.
+    var alvo = baseExpenseId(id);
+    var exp = state.expenses.find(function(e){ return e.id === alvo; });
     if (!exp) return;
-    state.editingId = id;
+    state.editingId = alvo;
     state.pendingPhoto = null;
     state.removeExistingPhoto = false;
     render();
@@ -2637,7 +3046,7 @@
 
   async function handleViewReceipt(id){
     openModalLoading();
-    var full = await loadFullReceipt(id);
+    var full = await loadFullReceipt(baseExpenseId(id));
     if (full) showModalImage(full);
     else { closeModal(); alert('Não foi possível carregar o comprovante.'); }
   }
@@ -3294,6 +3703,29 @@
         render();
         return;
       }
+      if (e.target.matches('[data-action="entries-month"]')){
+        state.entriesMonth[e.target.getAttribute('data-scope')] = e.target.value;
+        render();
+        return;
+      }
+      // Gasto fixo e parcelamento não convivem: um repete pra sempre com o
+      // mesmo valor, o outro divide um valor único em N vezes.
+      if (e.target.matches('.fixed-toggle-select')){
+        var formFx = e.target.closest('form');
+        var ehFixo = e.target.value === 'sim';
+        formFx.querySelectorAll('.not-fixed-field').forEach(function(el){
+          var pagamentoCredito = !el.classList.contains('card-only-field')
+            || (formFx.querySelector('.payment-method-select') || {}).value === 'credito';
+          el.style.display = (ehFixo || !pagamentoCredito) ? 'none' : 'block';
+        });
+        if (ehFixo){
+          var tog = formFx.querySelector('.installment-toggle-select');
+          if (tog) tog.value = 'nao';
+          var campos = formFx.querySelector('.installment-fields');
+          if (campos) campos.style.display = 'none';
+        }
+        return;
+      }
       if (e.target.matches('.category-select')){
         var form = e.target.closest('form');
         var customField = form.querySelector('.custom-cat-field');
@@ -3409,6 +3841,8 @@
       }
       if (e.target.closest('#save-settings-btn')){ saveSettingsAndClose(); return; }
       if (e.target.closest('#cancel-settings-btn')){ closeSettingsModal(); return; }
+      if (e.target.closest('#load-demo-btn')){ loadDemoData(); return; }
+      if (e.target.closest('#remove-demo-btn')){ removeDemoData(); return; }
       if (e.target.closest('#open-reset-btn')){ closeSettingsModal(); openResetModal(); return; }
     });
 
@@ -3460,6 +3894,16 @@
     state.expenses = await loadExpenses();
     state.settings = await loadSettings();
     ensureSubTabDefaults();
+
+    // App vazio abrindo pela primeira vez: já entra com os 3 meses de exemplo,
+    // pra você ver como fica cheio sem precisar cadastrar nada. Acontece uma
+    // vez só — depois que você carregar ou remover os exemplos pelo menu de
+    // configurações, o app nunca mais preenche sozinho.
+    if (storageAvailable && state.expenses.length === 0 && !demoAlreadyHandled()){
+      state.expenses = demoExpenseSeed();
+      await saveExpenses(state.expenses);
+      markDemoHandled();
+    }
 
     wireEvents();
 
