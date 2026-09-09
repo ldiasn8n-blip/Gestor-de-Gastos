@@ -753,6 +753,10 @@
   /* Reforço pros navegadores que ignoram o color-scheme nas opções. */
   select option{ background:var(--paper-raised); color:var(--ink); }
   select option:disabled{ color:var(--ink-soft); }
+  select option.mes-atual{ color:var(--neon2); font-weight:700; }
+  /* Quando o mês corrente é o que está selecionado, o próprio campo acende. */
+  .resumo-month.is-current{ border-color:rgba(79,224,255,0.5); box-shadow:0 0 16px -4px rgba(79,224,255,0.55); }
+  .resumo-month.is-current .resumo-month-select{ color:var(--neon2); }
   .resumo-scope{ font-size:12px; color:var(--ink-soft); }
 
   .kpi-row{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-bottom:16px; }
@@ -799,27 +803,47 @@
   .cat-bar-track{ display:block; height:6px; border-radius:3px; background:var(--hover-soft); overflow:hidden; }
   .cat-bar-fill{ display:block; height:100%; border-radius:3px; min-width:3px; }
 
-  /* Evolução mensal */
-  .trend-chart{ width:100%; height:132px; display:block; margin-top:2px; overflow:visible; }
-  .trend-axis{ stroke:var(--line); stroke-width:1; }
-  .trend-bar{ cursor:pointer; }
-  .trend-hit{ fill:transparent; }
-  .trend-bar .trend-mark{ fill:var(--neon2); opacity:.45; transition:opacity .12s ease; }
-  .trend-bar.is-selected .trend-mark{ opacity:1; filter:drop-shadow(0 0 6px rgba(79,224,255,0.85)); }
-  .trend-bar:hover .trend-mark{ opacity:.8; }
-  .trend-bar:focus{ outline:none; }
-  .trend-bar:focus-visible .trend-mark{ stroke:var(--ink); stroke-width:1.5; }
-  .trend-val{ filter:drop-shadow(0 0 8px rgba(79,224,255,0.5)); }
-  .trend-bar.is-future .trend-mark{ opacity:.22; }
-  .trend-bar.is-future.is-selected .trend-mark{ opacity:.85; }
-  .trend-bar.is-future:hover .trend-mark{ opacity:.45; }
-  .trend-bar.is-future .trend-month{ opacity:.7; }
-  /* O mês de hoje ganha um ponto embaixo do nome, pra continuar identificável
-     mesmo quando você está olhando outro mês. */
-  .trend-bar.is-current .trend-month{ fill:var(--ink); font-weight:700; }
-  .trend-legend{ font-size:11px; color:var(--ink-soft); margin-top:6px; line-height:1.4; }
-  .trend-month{ fill:var(--ink-soft); font-size:9.5px; text-anchor:middle; font-family:inherit; }
-  .trend-val{ fill:var(--ink); font-size:10px; font-weight:700; text-anchor:middle; font-family:inherit; }
+  /* Evolução mensal — barras em HTML/CSS.
+     A altura da área do gráfico é fixa e as barras dividem a largura entre si,
+     então a proporção não muda quando a caixa fica mais larga. */
+  .trend-chart{
+    display:flex; align-items:stretch; justify-content:center;
+    gap:10px; height:172px; margin-top:4px;
+    border-bottom:1px solid var(--line); padding-bottom:0;
+  }
+  .trend-bar{
+    flex:1 1 0; max-width:78px; min-width:0;
+    display:flex; flex-direction:column; align-items:center;
+    background:transparent; border:none; padding:0; margin:0;
+    font-family:inherit; cursor:pointer; color:inherit;
+    border-radius:8px 8px 0 0;
+  }
+  .trend-bar:hover{ background:var(--hover-soft); }
+  .trend-cap{
+    height:17px; font-size:11px; font-weight:700; color:var(--ink);
+    white-space:nowrap; line-height:17px;
+    text-shadow:0 0 10px rgba(79,224,255,0.45);
+  }
+  .trend-plot{ flex:1; width:100%; display:flex; align-items:flex-end; justify-content:center; padding:0 2px; }
+  .trend-mark{
+    width:100%; max-width:46px; border-radius:5px 5px 2px 2px;
+    background:var(--neon2); opacity:.42; transition:opacity .12s ease;
+  }
+  .trend-bar.is-selected .trend-mark{
+    opacity:1; box-shadow:0 0 12px -1px rgba(79,224,255,0.85);
+  }
+  .trend-bar:hover .trend-mark{ opacity:.72; }
+  .trend-bar.is-future .trend-mark{ opacity:.2; }
+  .trend-bar.is-future.is-selected .trend-mark{ opacity:.8; }
+  .trend-bar.is-future:hover .trend-mark{ opacity:.4; }
+  .trend-month{
+    height:22px; line-height:22px; font-size:10.5px; color:var(--ink-soft);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;
+  }
+  /* O mês de hoje fica sempre identificável, mesmo olhando outro mês. */
+  .trend-bar.is-current .trend-month{ color:var(--neon2); font-weight:700; }
+  .trend-bar.is-future .trend-month{ opacity:.72; }
+  .trend-legend{ font-size:11px; color:var(--ink-soft); margin-top:8px; line-height:1.45; }
 
   @media (min-width:640px){
     .months-grid{ grid-template-columns:repeat(4,1fr); }
@@ -917,7 +941,7 @@
     .resumo-col-a, .resumo-col-b{ flex:1 1 44%; }
     .resumo-col-c{ flex:1 1 100%; }
     .resumo-block{ padding:16px 18px 17px; }
-    .trend-chart{ height:150px; }
+    .trend-chart{ height:190px; }
 
     /* Formulário do casal em duas colunas: dados da conta à esquerda,
        itens da nota à direita (que é a parte que cresce sem parar). */
@@ -1814,7 +1838,7 @@
     var html = '<button data-tab="resumo" class="tab-btn' + (state.currentTab==='resumo' ? ' active' : '') + '">'
       + '<span class="ic">📊</span><span>Resumo</span></button>';
     html += '<button data-tab="fixas" class="tab-btn' + (state.currentTab==='fixas' ? ' active' : '') + '">'
-      + '<span class="ic">🔁</span><span>Fixas</span></button>';
+      + '<span class="ic">🔁</span><span>Contas Fixas</span></button>';
     html += '<button data-tab="meses" class="tab-btn' + (state.currentTab==='meses' ? ' active' : '') + '">'
       + '<span class="ic">📅</span><span>Meses</span></button>';
     state.settings.members.forEach(function(m){
@@ -2279,15 +2303,20 @@
 
   // Barra de seleção de mês, usada no Resumo e nas listas de cada pessoa.
   function monthBarHTML(action, selecionado, meses, sufixo){
+    var atual = currentMonthKey();
+    // O mês corrente vai aceso na lista e com um marcador de texto junto: cor
+    // sozinha não basta, tem navegador que ignora estilo em <option>.
     var opts = '<option value="all"'+(selecionado==='all'?' selected':'')+'>Todos os meses</option>'
       + meses.map(function(k){
-          return '<option value="'+k+'"'+(selecionado===k?' selected':'')+'>'+monthLabelFromKey(k)+'</option>';
+          var ehAtual = k === atual;
+          return '<option value="'+k+'"'+(selecionado===k?' selected':'')+(ehAtual?' class="mes-atual"':'')+'>'
+            + monthLabelFromKey(k) + (ehAtual ? '  ●  mês atual' : '') + '</option>';
         }).join('');
     var texto = selecionado === 'all'
       ? 'Somando tudo desde o começo'
       : (selecionado === currentMonthKey() ? 'Mês atual' : 'Mostrando ' + monthLabelFromKey(selecionado));
     return '<div class="resumo-toolbar">'
-      + '<label class="resumo-month"><span class="resumo-month-icon">🗓️</span>'
+      + '<label class="resumo-month'+(selecionado === atual ? ' is-current' : '')+'"><span class="resumo-month-icon">🗓️</span>'
       + '<select class="resumo-month-select" data-action="'+action+'"'+(sufixo?' data-scope="'+escapeHTML(sufixo)+'"':'')+'>'+opts+'</select></label>'
       + '<span class="resumo-scope">'+escapeHTML(texto)+'</span>'
       + '</div>';
@@ -2301,28 +2330,38 @@
       .map(function(g){ return {key:g.key, total:g.total}; });
   }
 
-  // Soma dos próximos meses. state.futureMonths = null significa "todos";
-  // quando você escolhe meses específicos na janela, só eles entram na conta.
+  // Quais meses futuros entram na conta. state.futureMonths = null é o padrão:
+  // só o PRÓXIMO mês. Somar tudo que vem pela frente de cara assusta e não
+  // ajuda — o que interessa no dia a dia é o mês que vem. Os outros a pessoa
+  // adiciona na janela quando quiser olhar mais longe.
+  function futureSelectedKeys(){
+    var todos = futureMonthsList().map(function(m){ return m.key; });
+    if (state.futureMonths){
+      return state.futureMonths.filter(function(k){ return todos.indexOf(k) !== -1; });
+    }
+    return todos.length ? [todos[0]] : [];
+  }
+
   function futureCommitment(){
-    var sel = state.futureMonths;
+    var sel = futureSelectedKeys();
     return futureMonthsList()
-      .filter(function(m){ return !sel || sel.indexOf(m.key) !== -1; })
+      .filter(function(m){ return sel.indexOf(m.key) !== -1; })
       .reduce(function(s,m){ return s + m.total; }, 0);
   }
 
   function futureTileHTML(valor){
     var todos = futureMonthsList();
-    var sel = state.futureMonths;
-    var escolhidos = sel ? todos.filter(function(m){ return sel.indexOf(m.key) !== -1; }).length : todos.length;
-    var dica = !todos.length
-      ? 'Nada marcado pra frente'
-      : (escolhidos === todos.length
-          ? 'Parcelas e contas fixas · toque pra filtrar'
-          : escolhidos + ' de ' + todos.length + ' meses · toque pra mudar');
+    var sel = futureSelectedKeys();
+    var dica;
+    if (!todos.length) dica = 'Nada marcado pra frente';
+    else if (sel.length === 0) dica = 'Nenhum mês marcado · toque pra escolher';
+    else if (sel.length === 1) dica = escapeHTML(monthLabelFromKey(sel[0])) + ' · toque pra somar outros';
+    else if (sel.length === todos.length) dica = 'Todos os ' + todos.length + ' meses · toque pra mudar';
+    else dica = sel.length + ' de ' + todos.length + ' meses · toque pra mudar';
     return '<button type="button" class="kpi-tile neon-box acc-amber kpi-clickable" data-action="open-future">'
       + '<div class="kpi-label">Próximos meses</div>'
       + '<div class="kpi-value">'+formatBRL(valor)+'</div>'
-      + '<div class="kpi-hint">'+escapeHTML(dica)+' <span class="kpi-caret">›</span></div>'
+      + '<div class="kpi-hint">'+dica+' <span class="kpi-caret">›</span></div>'
       + '</button>';
   }
 
@@ -2363,59 +2402,44 @@
     acaoClique = acaoClique || 'pick-month';
     if (!timeline.length) return '<div class="empty-state">Sem histórico ainda — ele aparece aqui depois do primeiro lançamento.</div>';
 
-    var now = new Date();
-    var currentKey = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+    var atual = currentMonthKey();
     var curIdx = -1;
-    for (var i = 0; i < timeline.length; i++){ if (timeline[i].key <= currentKey) curIdx = i; }
+    for (var i = 0; i < timeline.length; i++){ if (timeline[i].key <= atual) curIdx = i; }
     if (curIdx < 0) curIdx = 0;
-    // Mostramos até 2 meses à frente: as parcelas que já estão compradas mas
-    // ainda vão cair fazem parte do quadro. Antes o gráfico cortava no mês
-    // atual e um mês futuro com lançamento simplesmente não aparecia.
+    // Até 2 meses à frente: as parcelas e contas fixas já contratadas fazem
+    // parte do quadro mesmo antes de a data chegar.
     var endIdx = Math.min(timeline.length - 1, curIdx + 2);
     var slice = timeline.slice(Math.max(0, endIdx - 5), endIdx + 1);
-    var temFuturo = slice.some(function(g){ return g.key > currentKey; });
+    var temFuturo = slice.some(function(g){ return g.key > atual; });
 
     var max = slice.reduce(function(m,g){ return Math.max(m, g.total); }, 0) || 1;
-    var W = 320, H = 132, padB = 22, padT = 16;
-    // Com poucos meses as barras não se espalham pela largura toda: ficariam
-    // isoladas nos cantos. O grupo é centralizado com um passo máximo fixo.
-    var slot = Math.min(W / slice.length, 62);
-    var offsetX = (W - slot * slice.length) / 2;
-    var barW = Math.min(34, slot - 10);
     var maxIdx = slice.reduce(function(bi,g,ix){ return g.total > slice[bi].total ? ix : bi; }, 0);
 
-    var bars = slice.map(function(g, ix){
-      var h = Math.max(2, (g.total / max) * (H - padB - padT));
-      var x = offsetX + ix * slot + (slot - barW) / 2;
-      var y = H - padB - h;
-      var isCurrent = g.key === currentKey;
-      var isFuture = g.key > currentKey;
-      // Aceso = o mês que o Resumo está mostrando agora. Quando o filtro está
-      // em "todos os meses", o mês atual fica aceso como referência.
-      var isSelected = (mesSelecionado && mesSelecionado !== 'all')
-        ? (g.key === mesSelecionado)
-        : isCurrent;
-      // Só o maior mês e o mês atual recebem valor escrito — número em cima de
-      // toda barra vira ruído e o gráfico deixa de ser lido de relance.
-      var label = (ix === maxIdx || isSelected)
-        ? '<text class="trend-val" x="'+(x + barW/2).toFixed(1)+'" y="'+(y - 5).toFixed(1)+'">'+formatCompactBRL(g.total)+'</text>'
-        : '';
-      // A área de toque cobre a fatia inteira (não só a barra), pra acertar
-      // fácil no celular mesmo num mês de valor baixo, cuja barra é curtinha.
-      return '<g class="trend-bar'+(isSelected ? ' is-selected' : '')+(isCurrent ? ' is-current' : '')+(isFuture ? ' is-future' : '')+'"'
-        + ' data-action="'+acaoClique+'" data-month="'+g.key+'" role="button" tabindex="0">'
-        + '<title>'+escapeHTML(monthLabelFromKey(g.key))+' — '+formatBRL(g.total)+(isFuture ? ' (previsto)' : '')+'. Toque pra ver só este mês.</title>'
-        + '<rect class="trend-hit" x="'+(offsetX + ix*slot).toFixed(1)+'" y="0" width="'+slot.toFixed(1)+'" height="'+H+'"></rect>'
-        + '<rect class="trend-mark" x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+barW.toFixed(1)+'" height="'+h.toFixed(1)+'" rx="4"></rect>'
-        + label
-        + '<text class="trend-month" x="'+(x + barW/2).toFixed(1)+'" y="'+(H - 6)+'">'+escapeHTML(shortMonthFromKey(g.key))+'</text>'
-        + '</g>';
+    var barras = slice.map(function(g, ix){
+      var isCurrent = g.key === atual;
+      var isFuture = g.key > atual;
+      // Aceso = o mês que a tela está mostrando. Com o filtro em "todos os
+      // meses", o mês atual fica aceso como referência.
+      var isSelected = (mesSelecionado && mesSelecionado !== 'all') ? (g.key === mesSelecionado) : isCurrent;
+      // Altura mínima de 3% pra um mês de valor baixo não sumir e virar uma
+      // barra invisível que ninguém consegue clicar.
+      var alt = Math.max(3, g.total / max * 100);
+      // Só o maior mês e o mês selecionado ganham valor escrito — número em
+      // cima de toda barra vira ruído e o gráfico deixa de ser lido de relance.
+      var rotulo = (ix === maxIdx || isSelected) ? formatCompactBRL(g.total) : '';
+      var classes = 'trend-bar' + (isSelected ? ' is-selected' : '') + (isCurrent ? ' is-current' : '') + (isFuture ? ' is-future' : '');
+      return '<button type="button" class="'+classes+'" data-action="'+acaoClique+'" data-month="'+g.key+'"'
+        + ' title="'+escapeHTML(monthLabelFromKey(g.key))+' — '+formatBRL(g.total)+(isFuture ? ' (previsto)' : '')+'. Toque pra ver só este mês.">'
+        + '<span class="trend-cap">'+escapeHTML(rotulo)+'</span>'
+        + '<span class="trend-plot"><span class="trend-mark" style="height:'+alt.toFixed(1)+'%;"></span></span>'
+        + '<span class="trend-month">'+escapeHTML(shortMonthFromKey(g.key))+'</span>'
+        + '</button>';
     }).join('');
 
-    return '<svg class="trend-chart" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" role="img" aria-label="Gastos do casal por mês">'
-      + '<line class="trend-axis" x1="0" y1="'+(H - padB)+'" x2="'+W+'" y2="'+(H - padB)+'"></line>'
-      + bars
-      + '</svg>'
+    // Barras em HTML, não em SVG: um SVG esticado até a largura da caixa
+    // engorda as barras e deforma o texto. Com flexbox a proporção fica igual
+    // no celular e num monitor largo.
+    return '<div class="trend-chart">' + barras + '</div>'
       + '<div class="trend-legend">Toque numa barra pra ver só aquele mês.'
         + (temFuturo ? ' Barra mais fraca = mês que ainda não chegou (parcelas e contas fixas já comprometidas).' : '')
       + '</div>';
@@ -2590,10 +2614,36 @@
      fixos pessoais de cada um. É a resposta pra "quanto da nossa renda já
      está comprometido antes do mês começar". */
 
+  // Formulário curto pra cadastrar uma conta da casa direto nesta aba: só o
+  // essencial de um gasto fixo (o quê, quanto, quem paga e desde quando).
+  function fixaFormHTML(){
+    var cat = categorySelectHTML(null);
+    var opcoesPessoa = state.settings.members.map(function(m){
+      return '<option value="'+escapeHTML(m.id)+'">'+escapeHTML(m.name)+'</option>';
+    }).join('');
+    return ''
+      + '<form class="add-form" id="fixa-form">'
+      + '<div class="form-col acc-cyan">'
+        + '<div class="form-col-title">Nova conta fixa da casa</div>'
+        + '<div class="field"><label>Categoria</label>' + cat.html + '</div>'
+        + '<div class="field custom-cat-field" style="display:none;"><label>Nome da categoria</label><input type="text" class="custom-category-input" placeholder="Ex: Condomínio, Streaming..."></div>'
+        + '<div class="field"><label>Descrição</label><input type="text" class="description-input" placeholder="Ex: Aluguel, Internet, Seguro do carro"></div>'
+        + '<div class="row2">'
+          + '<div class="field"><label>Valor por mês (R$)</label><input type="number" inputmode="decimal" class="value-input" step="0.01" min="0" placeholder="0,00"></div>'
+          + '<div class="field"><label>Quem paga</label><select class="fixa-person-select">'+opcoesPessoa+'</select></div>'
+        + '</div>'
+        + '<div class="field"><label>A partir de quando</label><input type="date" class="date-input" value="'+todayISO()+'">'
+          + '<div class="items-hint" style="margin:6px 0 0;">A conta passa a aparecer deste mês em diante. Se ela já vem sendo paga há um tempo, coloque a data do primeiro mês.</div></div>'
+      + '</div>'
+      + '<div class="form-submit-area"><button type="submit" class="submit-btn" style="background:var(--neon2);color:#06222c;">Adicionar conta fixa</button></div>'
+      + '</form>';
+  }
+
   function renderFixasTab(){
     var fixos = state.expenses.filter(function(e){ return e.fixed; });
     if (!fixos.length){
-      return '<div class="empty-state">Nenhuma conta fixa ainda.<br><br>Ao lançar um gasto na aba de qualquer pessoa, marque <b>“Sim, repete todo mês”</b> no campo <b>É um gasto fixo?</b> — aluguel, internet, seguro, academia. Ele passa a aparecer sozinho em todos os meses e some daqui a digitação repetida.</div>';
+      return fixaFormHTML()
+        + '<div class="empty-state">Nenhuma conta fixa ainda. Cadastre a primeira aí em cima — aluguel, internet, seguro, condomínio.<br><br>Ela passa a aparecer sozinha em todos os meses, e você nunca mais digita a mesma conta duas vezes.</div>';
     }
 
     var daCasa = fixos.filter(function(e){ return e.type === 'casal'; });
@@ -2657,6 +2707,7 @@
 
     return cartoes
       + '<div class="meses-hint" style="margin:14px 0 12px;">Estas contas aparecem sozinhas em todos os meses. Editar aqui muda o valor em todos eles; excluir tira de todos, inclusive dos meses que já passaram.</div>'
+      + fixaFormHTML()
       + quemPaga
       + listaFixos(daCasa, '🏠 Fixas da casa', 'acc-cyan')
       + pessoaisHTML;
@@ -2944,8 +2995,8 @@
 
   function renderFutureModal(){
     var meses = futureMonthsList();
-    var sel = state.futureMonths;
-    function marcado(k){ return !sel || sel.indexOf(k) !== -1; }
+    var sel = futureSelectedKeys();
+    function marcado(k){ return sel.indexOf(k) !== -1; }
 
     if (!meses.length){
       futurePanelEl.innerHTML = '<h2>📅 Próximos meses</h2>'
@@ -2964,10 +3015,10 @@
 
     futurePanelEl.innerHTML = ''
       + '<h2>📅 Próximos meses</h2>'
-      + '<div class="note" style="margin:6px 0 12px;">Marque os meses que você quer somar. Desmarcar não apaga nada — só tira o mês da conta do indicador.</div>'
+      + '<div class="note" style="margin:6px 0 12px;">O indicador mostra só o mês que vem. Marque aqui os outros meses que você quer somar junto — desmarcar não apaga nada, só tira o mês da conta.</div>'
       + '<div class="future-actions" style="display:flex;gap:8px;margin-bottom:8px;">'
         + '<button type="button" class="secondary-btn" data-action="future-all" style="flex:1;">Marcar todos</button>'
-        + '<button type="button" class="secondary-btn" data-action="future-none" style="flex:1;">Desmarcar todos</button>'
+        + '<button type="button" class="secondary-btn" data-action="future-none" style="flex:1;">Só o mês que vem</button>'
       + '</div>'
       + linhas
       + '<div class="future-total"><span>Total selecionado</span><span class="v">'+formatBRL(futureCommitment())+'</span></div>'
@@ -2977,10 +3028,9 @@
   // Guarda a escolha e atualiza o total sem fechar a janela, pra você poder ir
   // marcando e vendo o número mudar.
   function applyFutureSelection(){
-    var todos = futureMonthsList().map(function(m){ return m.key; });
     var marcados = [];
     futurePanelEl.querySelectorAll('.future-check:checked').forEach(function(cb){ marcados.push(cb.value); });
-    state.futureMonths = (marcados.length === todos.length) ? null : marcados;
+    state.futureMonths = marcados;   // escolha explícita, mesmo que seja igual ao padrão
     renderFutureModal();
     render();
   }
@@ -3337,6 +3387,43 @@
     if (!saved){ state.expenses.pop(); alert('Não foi possível salvar o gasto. Verifique se o navegador permite armazenamento local e tente novamente.'); return; }
     if (photo) await saveFullReceipt(id, photo.full);
     state.pendingPhoto = null;
+    render();
+  }
+
+  // Cadastro rápido de conta fixa da casa, feito na própria aba Contas Fixas.
+  async function handleFixaSubmit(form){
+    var catSel = form.querySelector('.category-select');
+    var categoria = catSel ? catSel.value : '';
+    if (categoria === '__custom__'){
+      categoria = (form.querySelector('.custom-category-input').value || '').trim();
+      if (!categoria){ alert('Digite o nome da categoria.'); return; }
+    }
+    if (!categoria){ alert('Escolha a categoria.'); return; }
+
+    var descricao = (form.querySelector('.description-input').value || '').trim();
+    if (!descricao){ alert('Escreva a descrição da conta (ex: Aluguel).'); return; }
+
+    var valor = parseFloat(form.querySelector('.value-input').value);
+    if (!valor || valor <= 0){ alert('Informe o valor da conta.'); return; }
+
+    var data = form.querySelector('.date-input').value;
+    if (!data){ alert('Informe a partir de quando essa conta vale.'); return; }
+
+    var pessoa = form.querySelector('.fixa-person-select').value;
+
+    var nova = {
+      id: generateId(), person: pessoa, type: 'casal',
+      category: categoria, description: descricao, value: valor, date: data,
+      thumb: null, items: null, fixed: true,
+      installment: false, installmentsTotal: null, installmentsPaid: null
+    };
+    state.expenses.push(nova);
+    var ok = await saveExpenses(state.expenses);
+    if (!ok){
+      state.expenses.pop();
+      alert('Não foi possível salvar a conta fixa. Tente de novo.');
+      return;
+    }
     render();
   }
 
@@ -4120,6 +4207,7 @@
     });
 
     contentEl.addEventListener('submit', function(e){
+      if (e.target.matches('#fixa-form')){ e.preventDefault(); handleFixaSubmit(e.target); return; }
       if (e.target.matches('.add-form')){ e.preventDefault(); handleFormSubmit(e.target); }
     });
 
@@ -4207,8 +4295,14 @@
     futureModalEl.addEventListener('click', function(e){ if (e.target === futureModalEl) closeFutureModal(); });
     futurePanelEl.addEventListener('click', function(e){
       if (e.target.closest('[data-action="close-future"]')){ closeFutureModal(); return; }
-      if (e.target.closest('[data-action="future-all"]')){ state.futureMonths = null; renderFutureModal(); render(); return; }
-      if (e.target.closest('[data-action="future-none"]')){ state.futureMonths = []; renderFutureModal(); render(); return; }
+      if (e.target.closest('[data-action="future-all"]')){
+        state.futureMonths = futureMonthsList().map(function(m){ return m.key; });
+        renderFutureModal(); render(); return;
+      }
+      if (e.target.closest('[data-action="future-none"]')){
+        state.futureMonths = null;   // null = o padrão, só o mês que vem
+        renderFutureModal(); render(); return;
+      }
     });
     futurePanelEl.addEventListener('change', function(e){
       if (e.target.matches('.future-check')) applyFutureSelection();
