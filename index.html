@@ -568,6 +568,20 @@
   .meta-pe{ display:flex; justify-content:space-between; gap:10px; margin-top:6px; font-size:11px; color:var(--ink-soft); }
   .meta-tag{ font-weight:800; text-transform:uppercase; letter-spacing:.04em; }
 
+  /* Dois números no mesmo canto: o do mês em destaque (é o que a pessoa
+     procura) e o valor cheio ao lado, mais apagado. */
+  .total-duplo{ display:flex; align-items:baseline; gap:14px; text-align:right; }
+  .total-duplo small{
+    display:block; font-size:10px; font-weight:600; letter-spacing:.02em;
+    color:var(--ink-soft); margin-top:1px; text-transform:none;
+  }
+  .total-mes{ color:var(--ink); }
+  .total-tudo{ color:var(--ink-soft); font-weight:600; }
+  @media (max-width:420px){
+    .total-duplo{ gap:10px; }
+    .total-duplo small{ font-size:9.5px; }
+  }
+
   .parcela-linha{ display:flex; align-items:center; gap:10px; }
   .parcela-linha input{ flex:0 0 84px; text-align:center; }
   .parcela-x{ font-size:14px; color:var(--ink-soft); font-weight:600; }
@@ -586,8 +600,45 @@
   .link-gerenciar:hover{ color:var(--neon2); }
 
   .cat-linha{
-    display:flex; align-items:center; gap:10px;
+    display:flex; align-items:center; gap:8px;
     padding:10px 0; border-bottom:1px solid var(--line);
+  }
+  /* Setas empilhadas: ocupam a largura de um botão só e mesmo assim dão dois
+     alvos de toque separados. */
+  .cat-ordem{ display:flex; flex-direction:column; gap:2px; flex:0 0 auto; }
+  .cat-seta{
+    background:transparent; border:1px solid var(--line); color:var(--ink-soft);
+    border-radius:5px; width:24px; height:17px; line-height:1;
+    font-size:8px; cursor:pointer; padding:0; font-family:inherit;
+  }
+  .cat-seta:hover:not(:disabled){ border-color:var(--neon2); color:var(--neon2); }
+  .cat-seta:disabled{ opacity:.25; cursor:default; }
+  .cat-icone-btn{
+    background:transparent; border:1px dashed var(--line); border-radius:9px;
+    padding:3px; cursor:pointer; flex:0 0 auto; line-height:0;
+  }
+  .cat-icone-btn:hover{ border-color:var(--neon2); border-style:solid; }
+
+  .icone-atual{
+    display:flex; align-items:center; gap:12px;
+    padding:12px 14px; margin-bottom:14px;
+    border:1px solid var(--line); border-radius:12px;
+    font-size:12.5px; color:var(--ink-soft);
+  }
+  .icone-grade{
+    display:grid; grid-template-columns:repeat(auto-fill, minmax(46px,1fr));
+    gap:7px;
+  }
+  .icone-op{
+    aspect-ratio:1; display:grid; place-items:center;
+    background:var(--hover-soft); border:1px solid transparent;
+    border-radius:10px; font-size:21px; cursor:pointer; padding:0;
+    font-family:inherit;
+  }
+  .icone-op:hover{ border-color:var(--neon2); }
+  .icone-op.is-on{
+    border-color:var(--neon2); background:rgba(79,224,255,0.12);
+    box-shadow:0 0 12px -3px rgba(79,224,255,0.7);
   }
   .cat-linha:last-of-type{ border-bottom:none; }
   .cat-linha-nome{ flex:1; min-width:0; display:flex; align-items:center; gap:9px; font-size:14px; font-weight:600; }
@@ -1392,6 +1443,7 @@
       // A lista de categorias passou a ser da casa: dá pra criar, renomear e
       // apagar. Começa com as de fábrica, e cada casa molda a sua.
       categories: CATEGORIES.map(function(c){ return c.id; }),
+      categoryIcons: {},
       // Metas do mês. geral = teto das contas do casal; categorias = teto por
       // categoria. Vazio = a pessoa nunca configurou, e aí nada de meta
       // aparece na tela.
@@ -1473,9 +1525,25 @@
   }
 
   function catIcon(cat){
+    // Ícone escolhido pela casa ganha do de fábrica.
+    var meus = state.settings && state.settings.categoryIcons;
+    if (meus && meus[cat]) return meus[cat];
     var f = CATEGORIES.find(function(c){ return c.id === cat; });
     return f ? f.icon : '🏷️';
   }
+
+  // Ícones oferecidos na hora de escolher. Cobrem o que uma casa gasta —
+  // não é uma lista de emoji, é um cardápio de categoria de despesa.
+  var ICONES_CATEGORIA = [
+    '🛒','🍎','🥖','🍽️','🍕','🛵','🍺','☕',
+    '🏠','🔑','🛋️','🧹','🧴','🔧','🪑','📦',
+    '💡','⚡','💧','🔥','📶','📱','💻','📺',
+    '🚗','⛽','🚌','🚲','🛞','🅿️','✈️','🏖️',
+    '💊','🏥','🦷','🧘','⚽','🎸','🎮','🎬',
+    '🎓','📚','✏️','👶','🐶','🐱','🎁','🎉',
+    '👕','👟','💄','💇','💳','🏦','💰','🐖',
+    '📄','🧾','🛡️','⚖️','🏷️','⭐','❤️','🌱'
+  ];
 
   // Categoria de fábrica que a casa apagou não pode voltar sozinha só porque
   // ainda existe na tabela do código.
@@ -1970,6 +2038,7 @@
           cards: Array.isArray(rc.data.cartoes) && rc.data.cartoes.length ? rc.data.cartoes : DEFAULT_CARDS.slice(),
           goals: normalizarMetas(rc.data.metas),
           categories: normalizarCategorias(rc.data.categorias),
+          categoryIcons: iconesDaLista(rc.data.categorias),
           members: (rm.data || []).map(function(m){
             return { id:m.id, name:m.nome, color:m.cor, percentage:Number(m.percentual)||0 };
           })
@@ -1984,6 +2053,7 @@
     if (!Array.isArray(loaded.cards) || !loaded.cards.length) loaded.cards = DEFAULT_CARDS.slice();
     loaded.goals = normalizarMetas(loaded.goals);
     loaded.categories = normalizarCategorias(loaded.categories);
+    if (!loaded.categoryIcons || typeof loaded.categoryIcons !== 'object') loaded.categoryIcons = {};
     return loaded;
   }
 
@@ -1996,7 +2066,7 @@
           nome: s.householdName || 'Gastos da Casa',
           cartoes: s.cards || [],
           metas: normalizarMetas(s.goals),
-          categorias: normalizarCategorias(s.categories)
+          categorias: categoriasParaBanco(s)
         })
         .eq('id', casaId);
       if (r1.error) throw r1.error;
@@ -2588,6 +2658,14 @@
     return String(b.id || '').localeCompare(String(a.id || ''));
   }
 
+  // Uma compra em 3x tem dois números diferentes e os dois importam: o que
+  // sai agora e o que a compra custa inteira. Antes o cabeçalho da categoria
+  // mostrava só o valor cheio, e o mês parecia mais caro do que foi.
+  function calcDoGasto(e){
+    if (e.installment && e.installmentsTotal) return computeInstallment(e);
+    return {installment:false, parcelValue:e.value, total:1, paid:1, remaining:0, paidValue:e.value, remainingValue:0};
+  }
+
   function groupByCategory(list){
     var map = {};
     list.forEach(function(e){
@@ -2597,7 +2675,9 @@
     var groups = Object.keys(map).map(function(cat){
       var items = map[cat].slice().sort(ordemMaisRecente);
       var total = items.reduce(function(s,e){ return s+e.value; }, 0);
-      return {category:cat, items:items, total:total};
+      var noMes = items.reduce(function(s,e){ return s + calcDoGasto(e).paidValue; }, 0);
+      var futuro = items.reduce(function(s,e){ return s + calcDoGasto(e).remainingValue; }, 0);
+      return {category:cat, items:items, total:total, noMes:noMes, futuro:futuro};
     });
     groups.sort(function(a,b){ return b.total - a.total; });
     return groups;
@@ -3059,15 +3139,33 @@
     return CATEGORIES.map(function(x){ return x.id; });
   }
 
+  // No banco a lista pode vir como ['Mercado', ...] (formato antigo) ou como
+  // [{n:'Mercado', i:'🛒'}, ...] (com ícone). Os dois entram aqui.
   function normalizarCategorias(lista){
     var vistos = {}, out = [];
     (Array.isArray(lista) ? lista : []).forEach(function(c){
-      var nome = String(c || '').trim();
+      var nome = (c && typeof c === 'object') ? String(c.n || '').trim() : String(c || '').trim();
       if (!nome || vistos[nome]) return;
       vistos[nome] = true;
       out.push(nome);
     });
     return out.length ? out : CATEGORIES.map(function(x){ return x.id; });
+  }
+
+  function iconesDaLista(lista){
+    var out = {};
+    (Array.isArray(lista) ? lista : []).forEach(function(c){
+      if (c && typeof c === 'object' && c.n && c.i) out[String(c.n).trim()] = String(c.i);
+    });
+    return out;
+  }
+
+  // Vai pro banco no formato com ícone, uma coluna só.
+  function categoriasParaBanco(s){
+    var icones = (s && s.categoryIcons) || {};
+    return normalizarCategorias(s && s.categories).map(function(nome){
+      return icones[nome] ? {n:nome, i:icones[nome]} : {n:nome};
+    });
   }
 
   function categorySelectHTML(selected){
@@ -3096,12 +3194,14 @@
   function trocarNomeCategoria(antiga, nova){
     state.expenses.forEach(function(e){ if (e.category === antiga) e.category = nova; });
     var lista = catsDaCasa().map(function(c){ return c === antiga ? nova : c; });
+    var icones = Object.assign({}, state.settings.categoryIcons || {});
+    if (icones[antiga]){ icones[nova] = icones[antiga]; delete icones[antiga]; }
     var metas = normalizarMetas(state.settings.goals);
     if (metas.categorias[antiga] !== undefined){
       metas.categorias[nova] = Math.max(Number(metas.categorias[nova]) || 0, Number(metas.categorias[antiga]) || 0);
       delete metas.categorias[antiga];
     }
-    return Object.assign({}, state.settings, {categories: normalizarCategorias(lista), goals: metas});
+    return Object.assign({}, state.settings, {categories: normalizarCategorias(lista), categoryIcons: icones, goals: metas});
   }
 
   // Apagar não pode sumir com gasto lançado. Quando a categoria está em uso,
@@ -3109,9 +3209,11 @@
   function removerCategoria(nome, destino){
     if (destino) state.expenses.forEach(function(e){ if (e.category === nome) e.category = destino; });
     var lista = catsDaCasa().filter(function(c){ return c !== nome; });
+    var icones = Object.assign({}, state.settings.categoryIcons || {});
+    delete icones[nome];
     var metas = normalizarMetas(state.settings.goals);
     delete metas.categorias[nome];
-    return Object.assign({}, state.settings, {categories: normalizarCategorias(lista), goals: metas});
+    return Object.assign({}, state.settings, {categories: normalizarCategorias(lista), categoryIcons: icones, goals: metas});
   }
 
   // Um só lugar define as formas de pagamento, pros dois formulários dizerem
@@ -3412,6 +3514,16 @@
       + '</form>';
   }
 
+  // Cabeçalho da categoria. Quando não há parcela pendurada, os dois números
+  // são o mesmo — aí mostra um só, pra não inventar informação.
+  function totalDoGrupoHTML(g){
+    if (!(g.futuro > 0.005)) return '<span class="total">'+formatBRL(g.total)+'</span>';
+    return '<span class="total total-duplo">'
+      + '<span class="total-mes">'+formatBRL(g.noMes)+'<small>neste mês</small></span>'
+      + '<span class="total-tudo">'+formatBRL(g.total)+'<small>com as parcelas</small></span>'
+      + '</span>';
+  }
+
   function renderEntriesHTML(list){
     if (list.length === 0){
       return '<div class="empty-state">Nenhum gasto registrado aqui ainda.</div>';
@@ -3441,7 +3553,7 @@
       var accentVars = '--accent:'+gc+';--accent-line:'+hexToRgba(gc,0.30)+';--accent-halo:'+hexToRgba(gc,0.06)+';--accent-glow:'+hexToRgba(gc,0.38)+';';
       return ''
         + '<div class="cat-group" style="'+accentVars+'">'
-        + '<div class="cat-head"><span class="name">'+catChipHTML(g.category,22)+' '+escapeHTML(g.category)+'</span><span class="total">'+formatBRL(g.total)+'</span></div>'
+        + '<div class="cat-head"><span class="name">'+catChipHTML(g.category,22)+' '+escapeHTML(g.category)+'</span>'+totalDoGrupoHTML(g)+'</div>'
         + rows
         + '</div>';
     }).join('');
@@ -3486,7 +3598,7 @@
       var accentVars = '--accent:'+gc+';--accent-line:'+hexToRgba(gc,0.30)+';--accent-halo:'+hexToRgba(gc,0.06)+';--accent-glow:'+hexToRgba(gc,0.38)+';';
       return ''
         + '<div class="cat-group" style="'+accentVars+'">'
-        + '<div class="cat-head"><span class="name">'+catChipHTML(g.category,22)+' '+escapeHTML(g.category)+'</span><span class="total">'+formatBRL(g.total)+'</span></div>'
+        + '<div class="cat-head"><span class="name">'+catChipHTML(g.category,22)+' '+escapeHTML(g.category)+'</span>'+totalDoGrupoHTML(g)+'</div>'
         + rows
         + '</div>';
     }).join('');
@@ -4955,6 +5067,7 @@
   /* ---------- Janela das categorias ---------- */
 
   function openCatsModal(){
+    catIconeEditando = null;
     renderCatsModal();
     catsModalEl.classList.remove('hidden');
   }
@@ -4965,12 +5078,25 @@
     if (metasModalEl && !metasModalEl.classList.contains('hidden') && metasDraft) renderMetasModal();
   }
 
+  // Qual categoria está com o seletor de ícone aberto (null = lista normal).
+  var catIconeEditando = null;
+
   function renderCatsModal(){
+    if (catIconeEditando){ renderEscolherIcone(catIconeEditando); return; }
+
     var lista = catsDaCasa();
-    var linhas = lista.map(function(c){
+    var linhas = lista.map(function(c, i){
       var usos = usosDaCategoria(c);
       return '<div class="cat-linha">'
-        + '<span class="cat-linha-nome">' + catChipHTML(c, 24)
+        + '<span class="cat-ordem">'
+          + '<button type="button" class="cat-seta" data-action="subir-cat" data-cat="'+escapeHTML(c)+'"'+(i === 0 ? ' disabled' : '')+' title="Subir">▲</button>'
+          + '<button type="button" class="cat-seta" data-action="descer-cat" data-cat="'+escapeHTML(c)+'"'+(i === lista.length-1 ? ' disabled' : '')+' title="Descer">▼</button>'
+        + '</span>'
+        // O próprio ícone é o botão de trocar o ícone: é onde a pessoa olha
+        // quando quer mudá-lo.
+        + '<button type="button" class="cat-icone-btn" data-action="trocar-icone" data-cat="'+escapeHTML(c)+'" title="Trocar o ícone">'
+          + catChipHTML(c, 30) + '</button>'
+        + '<span class="cat-linha-nome">'
           + '<span>' + escapeHTML(c)
             + '<span class="cat-linha-uso">' + (usos ? usos + (usos === 1 ? ' lançamento' : ' lançamentos') : 'sem lançamentos') + '</span></span></span>'
         + '<button type="button" class="meta-cfg-acao" data-action="renomear-cat" data-cat="'+escapeHTML(c)+'" title="Renomear">✏️</button>'
@@ -4980,7 +5106,7 @@
 
     catsPanelEl.innerHTML = ''
       + '<h2>🏷️ Categorias da casa</h2>'
-      + '<div class="note" style="margin:6px 0 14px;">Renomear troca o nome em todos os lançamentos antigos de uma vez. Apagar uma categoria que já tem gasto não perde nada: os lançamentos são movidos pra outra categoria que você escolhe.</div>'
+      + '<div class="note" style="margin:6px 0 14px;">Toque no ícone pra trocar. As setas mudam a ordem em que elas aparecem na hora de lançar — deixe as que vocês mais usam no topo. Renomear troca o nome em todos os lançamentos antigos de uma vez, e apagar uma categoria com gasto move os lançamentos pra outra em vez de perdê-los.</div>'
       + '<div class="field"><label>Criar categoria</label>'
         + '<div class="cat-add-linha">'
           + '<input type="text" id="cat-nova" placeholder="Ex: iFood, Cachorro, Guardar" autocomplete="off">'
@@ -4991,6 +5117,49 @@
       + '<div class="settings-actions" style="margin-top:14px;">'
         + '<button type="button" class="secondary-btn" data-action="fechar-categorias">Fechar</button>'
       + '</div>';
+  }
+
+  function renderEscolherIcone(cat){
+    var atual = catIcon(cat);
+    var cor = catColor(cat);
+    var grade = ICONES_CATEGORIA.map(function(ic){
+      return '<button type="button" class="icone-op'+(ic === atual ? ' is-on' : '')+'" data-action="usar-icone" data-icone="'+ic+'">'+ic+'</button>';
+    }).join('');
+    catsPanelEl.innerHTML = ''
+      + '<h2>Ícone de ' + escapeHTML(cat) + '</h2>'
+      + '<div class="note" style="margin:6px 0 14px;">Escolha um. Ele passa a aparecer em toda lista e gráfico onde essa categoria entra.</div>'
+      + '<div class="icone-atual" style="border-color:'+hexToRgba(cor,0.5)+';">'
+        + '<span style="font-size:30px;">'+atual+'</span>'
+        + '<span>Ícone de agora</span>'
+      + '</div>'
+      + '<div class="icone-grade">' + grade + '</div>'
+      + '<div class="settings-actions" style="margin-top:16px;">'
+        + '<button type="button" class="secondary-btn" data-action="voltar-categorias">Voltar</button>'
+      + '</div>';
+  }
+
+  async function acaoMoverCategoria(nome, passo){
+    var lista = catsDaCasa();
+    var i = lista.indexOf(nome);
+    var j = i + passo;
+    if (i === -1 || j < 0 || j >= lista.length) return;
+    lista.splice(j, 0, lista.splice(i, 1)[0]);
+    var novo = Object.assign({}, state.settings, {categories: normalizarCategorias(lista)});
+    if (!await salvarCategorias(novo, false)) return;
+    renderCatsModal();
+    render();
+  }
+
+  async function acaoUsarIcone(icone){
+    var cat = catIconeEditando;
+    if (!cat) return;
+    var icones = Object.assign({}, state.settings.categoryIcons || {});
+    icones[cat] = icone;
+    var novo = Object.assign({}, state.settings, {categoryIcons: icones});
+    if (!await salvarCategorias(novo, false)) return;
+    catIconeEditando = null;
+    renderCatsModal();
+    render();
   }
 
   async function salvarCategorias(novoSettings, tambemGastos){
@@ -5135,7 +5304,7 @@
       }).join('');
     }
 
-    var faltandoCat = CATEGORIES.map(function(c){ return c.id; })
+    var faltandoCat = catsDaCasa()
       .filter(function(c){ return !metasDraft.categorias[c] && !g.categorias[c]; });
     var faltandoCartao = listaDeCartoes()
       .filter(function(c){ return !metasDraft.cartoes[c] && !g.cartoes[c]; });
@@ -5246,7 +5415,7 @@
     var usos = quantosUsam(tipo, antigo);
     var existe = tipo === 'cartao'
       ? listaDeCartoes().indexOf(novo) !== -1
-      : (CATEGORIES.some(function(c){ return c.id === novo; }) || state.expenses.some(function(e){ return e.category === novo; }));
+      : (catExiste(novo) || state.expenses.some(function(e){ return e.category === novo; }));
 
     var aviso = usos
       ? 'Isso vai renomear em ' + usos + ' lançamento' + (usos === 1 ? '' : 's') + ' já registrado' + (usos === 1 ? '' : 's') + '.'
@@ -6777,6 +6946,15 @@
       if (ren){ acaoRenomearCategoria(ren.getAttribute('data-cat')); return; }
       var apg = e.target.closest('[data-action="apagar-cat"]');
       if (apg){ acaoApagarCategoria(apg.getAttribute('data-cat')); return; }
+      var sobe = e.target.closest('[data-action="subir-cat"]');
+      if (sobe){ acaoMoverCategoria(sobe.getAttribute('data-cat'), -1); return; }
+      var desce = e.target.closest('[data-action="descer-cat"]');
+      if (desce){ acaoMoverCategoria(desce.getAttribute('data-cat'), 1); return; }
+      var troca = e.target.closest('[data-action="trocar-icone"]');
+      if (troca){ catIconeEditando = troca.getAttribute('data-cat'); renderCatsModal(); return; }
+      if (e.target.closest('[data-action="voltar-categorias"]')){ catIconeEditando = null; renderCatsModal(); return; }
+      var usa = e.target.closest('[data-action="usar-icone"]');
+      if (usa){ acaoUsarIcone(usa.getAttribute('data-icone')); return; }
     });
     catsPanelEl.addEventListener('keydown', function(e){
       if (e.key === 'Enter' && e.target.matches('#cat-nova')){ e.preventDefault(); criarCategoria(); }
