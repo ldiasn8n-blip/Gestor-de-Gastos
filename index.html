@@ -568,21 +568,59 @@
   .meta-pe{ display:flex; justify-content:space-between; gap:10px; margin-top:6px; font-size:11px; color:var(--ink-soft); }
   .meta-tag{ font-weight:800; text-transform:uppercase; letter-spacing:.04em; }
 
-  #metas-modal, #future-modal{
+  .parcela-linha{ display:flex; align-items:center; gap:10px; }
+  .parcela-linha input{ flex:0 0 84px; text-align:center; }
+  .parcela-x{ font-size:14px; color:var(--ink-soft); font-weight:600; }
+  .parcela-previa{
+    font-size:15px; font-weight:700; color:var(--ink);
+    font-variant-numeric:tabular-nums;
+  }
+  .parcela-explica b{ color:var(--ink); }
+  .parcela-ajuste-link{ margin-top:10px; }
+
+  .link-gerenciar{
+    display:block; margin-top:7px; background:transparent; border:none; padding:0;
+    font-family:inherit; font-size:12px; font-weight:600; color:var(--ink-soft);
+    text-decoration:underline; cursor:pointer;
+  }
+  .link-gerenciar:hover{ color:var(--neon2); }
+
+  .cat-linha{
+    display:flex; align-items:center; gap:10px;
+    padding:10px 0; border-bottom:1px solid var(--line);
+  }
+  .cat-linha:last-of-type{ border-bottom:none; }
+  .cat-linha-nome{ flex:1; min-width:0; display:flex; align-items:center; gap:9px; font-size:14px; font-weight:600; }
+  .cat-linha-nome span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .cat-linha-uso{ display:block; font-size:11px; color:var(--ink-soft); font-weight:500; }
+
+  #cats-modal{ z-index:80; }
+  #cats-modal, #metas-modal, #future-modal{
     position:fixed;inset:0;background:var(--backdrop);
     display:flex;align-items:flex-end;justify-content:center;z-index:70;
     opacity:1;visibility:visible;transition:opacity .18s ease, visibility .18s ease;
   }
-  #metas-modal.hidden, #future-modal.hidden{opacity:0;visibility:hidden;pointer-events:none;}
+  #cats-modal.hidden, #metas-modal.hidden, #future-modal.hidden{opacity:0;visibility:hidden;pointer-events:none;}
+  #cats-modal.hidden #cats-panel{ transform:translateY(24px); }
   #future-modal.hidden #future-panel{ transform:translateY(24px); }
   #metas-modal.hidden #metas-panel{ transform:translateY(24px); }
-  #metas-panel, #future-panel{
+  #cats-panel, #metas-panel, #future-panel{
     background:var(--paper-raised);width:100%;max-width:480px;
     border-radius:18px 18px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));
     max-height:85vh;overflow-y:auto;box-shadow:var(--shadow-lg);
     transform:translateY(0);transition:transform .2s ease;
   }
-  #metas-panel h2, #future-panel h2{font-size:17px;margin:0 0 6px;}
+  #cats-panel h2, #metas-panel h2, #future-panel h2{font-size:17px;margin:0 0 6px;}
+  #cats-panel .field{ margin-bottom:14px; }
+  #cats-panel label{ display:block; font-size:12px; color:var(--ink-soft); margin-bottom:6px; }
+  #cats-panel input[type="text"]{
+    width:100%; padding:10px; border:1px solid var(--line); border-radius:8px;
+    font-size:16px; font-family:inherit; background:var(--input-bg); color:var(--ink);
+  }
+  #cats-panel input:focus{ outline:none; border-color:var(--positive); box-shadow:0 0 0 3px var(--focus-ring); }
+  .cat-add-linha{ display:flex; gap:8px; }
+  .cat-add-linha input{ flex:1; min-width:0; }
+  .cat-add-linha button{ flex:0 0 auto; width:auto; padding:10px 16px; }
   .meta-linha-cfg{
     display:flex; align-items:center; gap:10px;
     padding:9px 0; border-bottom:1px solid var(--line);
@@ -967,6 +1005,9 @@
   .resumo-month.is-current{ border-color:rgba(79,224,255,0.5); box-shadow:0 0 16px -4px rgba(79,224,255,0.55); }
   .resumo-month.is-current .resumo-month-select{ color:var(--neon2); }
   .resumo-scope{ font-size:12px; color:var(--ink-soft); }
+  /* No celular o seletor de mês já diz qual mês está na tela, então este
+     texto repetido sai pra caber o botão de metas na mesma linha. */
+  @media (max-width:560px){ .resumo-scope{ display:none; } }
 
   .kpi-row{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-bottom:16px; }
   .kpi-tile{ padding:11px 13px 12px; border-radius:12px; min-width:0; }
@@ -1097,8 +1138,8 @@
 
   /* ---------- Tablet ---------- */
   @media (min-width:640px){
-    #settings-modal, #items-modal, #reset-modal, #future-modal, #metas-modal{ align-items:center; }
-    #settings-panel, #items-panel, #reset-panel, #future-panel, #metas-panel{ border-radius:16px; max-height:80vh; }
+    #settings-modal, #items-modal, #reset-modal, #future-modal, #metas-modal, #cats-modal{ align-items:center; }
+    #settings-panel, #items-panel, #reset-panel, #future-panel, #metas-panel, #cats-panel{ border-radius:16px; max-height:80vh; }
     .row2, .row2.installment-fields{ gap:14px; }
   }
 
@@ -1301,6 +1342,10 @@
   <div id="metas-panel"></div>
 </div>
 
+<div id="cats-modal" class="hidden">
+  <div id="cats-panel"></div>
+</div>
+
 <!--
   Tesseract.js faz a leitura automática (OCR) das notas fiscais direto no
   navegador da pessoa, sem precisar de servidor nem de chave de API.
@@ -1344,6 +1389,9 @@
         {id:'mulher', name:'Mulher', percentage:50, color:PALETTE[1]}
       ],
       cards: DEFAULT_CARDS.slice(),
+      // A lista de categorias passou a ser da casa: dá pra criar, renomear e
+      // apagar. Começa com as de fábrica, e cada casa molda a sua.
+      categories: CATEGORIES.map(function(c){ return c.id; }),
       // Metas do mês. geral = teto das contas do casal; categorias = teto por
       // categoria. Vazio = a pessoa nunca configurou, e aí nada de meta
       // aparece na tela.
@@ -1411,6 +1459,7 @@
   var itemsModalEl, itemsPanelEl;
   var futureModalEl, futurePanelEl;
   var metasModalEl, metasPanelEl;
+  var catsModalEl, catsPanelEl;
   var resetModalEl, resetPanelEl;
 
   function ensureSubTabDefaults(){
@@ -1427,6 +1476,10 @@
     var f = CATEGORIES.find(function(c){ return c.id === cat; });
     return f ? f.icon : '🏷️';
   }
+
+  // Categoria de fábrica que a casa apagou não pode voltar sozinha só porque
+  // ainda existe na tabela do código.
+  function catExiste(nome){ return catsDaCasa().indexOf(nome) !== -1; }
 
   // Categoria que você criou (iFood, Cachorro, Guardar...) também ganha cor.
   // Antes toda categoria personalizada saía cinza, e no gráfico do Resumo
@@ -1907,7 +1960,7 @@
   async function loadSettings(){
     if (modoNuvem()){
       try {
-        var rc = await supa.from('casas').select('nome, cartoes, codigo_convite, metas').eq('id', casaId).single();
+        var rc = await supa.from('casas').select('nome, cartoes, codigo_convite, metas, categorias').eq('id', casaId).single();
         var rm = await supa.from('membros').select('*').eq('casa_id', casaId).order('ordem');
         if (rc.error) throw rc.error;
         if (rm.error) throw rm.error;
@@ -1916,6 +1969,7 @@
           householdName: rc.data.nome || 'Gastos da Casa',
           cards: Array.isArray(rc.data.cartoes) && rc.data.cartoes.length ? rc.data.cartoes : DEFAULT_CARDS.slice(),
           goals: normalizarMetas(rc.data.metas),
+          categories: normalizarCategorias(rc.data.categorias),
           members: (rm.data || []).map(function(m){
             return { id:m.id, name:m.nome, color:m.cor, percentage:Number(m.percentual)||0 };
           })
@@ -1929,6 +1983,7 @@
     var loaded = (cache && Array.isArray(cache.members)) ? cache : defaultSettings();
     if (!Array.isArray(loaded.cards) || !loaded.cards.length) loaded.cards = DEFAULT_CARDS.slice();
     loaded.goals = normalizarMetas(loaded.goals);
+    loaded.categories = normalizarCategorias(loaded.categories);
     return loaded;
   }
 
@@ -1937,7 +1992,12 @@
     if (!modoNuvem()) return storageAvailable;
     try {
       var r1 = await supa.from('casas')
-        .update({ nome: s.householdName || 'Gastos da Casa', cartoes: s.cards || [], metas: normalizarMetas(s.goals) })
+        .update({
+          nome: s.householdName || 'Gastos da Casa',
+          cartoes: s.cards || [],
+          metas: normalizarMetas(s.goals),
+          categorias: normalizarCategorias(s.categories)
+        })
         .eq('id', casaId);
       if (r1.error) throw r1.error;
 
@@ -2518,6 +2578,16 @@
 
   /* ---------- Computation ---------- */
 
+  // Mais novo em cima. A data resolve a maioria dos casos, mas quatro compras
+  // no MESMO dia empatavam e ficavam na ordem em que foram digitadas — quem
+  // acabou de lançar via o item novo lá embaixo. O id carrega a hora exata do
+  // lançamento (id_<timestamp>_...), então ele desempata.
+  function ordemMaisRecente(a, b){
+    var d = String(b.date || '').localeCompare(String(a.date || ''));
+    if (d !== 0) return d;
+    return String(b.id || '').localeCompare(String(a.id || ''));
+  }
+
   function groupByCategory(list){
     var map = {};
     list.forEach(function(e){
@@ -2525,7 +2595,7 @@
       map[e.category].push(e);
     });
     var groups = Object.keys(map).map(function(cat){
-      var items = map[cat].slice().sort(function(a,b){ return b.date.localeCompare(a.date); });
+      var items = map[cat].slice().sort(ordemMaisRecente);
       var total = items.reduce(function(s,e){ return s+e.value; }, 0);
       return {category:cat, items:items, total:total};
     });
@@ -2757,6 +2827,21 @@
     var d = new Date();
     return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
   }
+  // Quantos meses separam dois meses (chaves '2026-09').
+  function mesesEntre(de, ate){
+    var a = String(de).split('-'), b = String(ate).split('-');
+    return (Number(b[0]) - Number(a[0])) * 12 + (Number(b[1]) - Number(a[1]));
+  }
+
+  // Parcelas que já venceram, contando a partir do mês da compra (a 1ª vence
+  // no próprio mês). É esta conta que o app passou a fazer sozinho — antes a
+  // pessoa tinha que calcular de cabeça e digitar.
+  function parcelasVencidas(dataISO, total){
+    total = Math.max(1, Number(total) || 1);
+    var n = mesesEntre(monthKeyFromDate(dataISO), currentMonthKey()) + 1;
+    return Math.min(total, Math.max(0, n));
+  }
+
   function monthKeyAdd(mk, n){
     var p = String(mk).split('-');
     var y = Number(p[0]), m = Number(p[1]) - 1 + n;
@@ -2928,7 +3013,7 @@
     if (sort === 'qty_desc') arr.sort(function(a,b){ return b.quantity - a.quantity; });
     else if (sort === 'value_desc') arr.sort(function(a,b){ return b.subtotal - a.subtotal; });
     else if (sort === 'value_asc') arr.sort(function(a,b){ return a.subtotal - b.subtotal; });
-    else arr.sort(function(a,b){ return b.date.localeCompare(a.date); });
+    else arr.sort(function(a,b){ return ordemMaisRecente({date:a.date, id:a.id}, {date:b.date, id:b.id}); });
     return arr;
   }
 
@@ -2967,14 +3052,66 @@
     }
   }
 
+  // Categorias da casa. Se a casa nunca mexeu nisso, são as de fábrica.
+  function catsDaCasa(){
+    var c = state.settings && state.settings.categories;
+    if (Array.isArray(c) && c.length) return c.slice();
+    return CATEGORIES.map(function(x){ return x.id; });
+  }
+
+  function normalizarCategorias(lista){
+    var vistos = {}, out = [];
+    (Array.isArray(lista) ? lista : []).forEach(function(c){
+      var nome = String(c || '').trim();
+      if (!nome || vistos[nome]) return;
+      vistos[nome] = true;
+      out.push(nome);
+    });
+    return out.length ? out : CATEGORIES.map(function(x){ return x.id; });
+  }
+
   function categorySelectHTML(selected){
-    var isKnown = CATEGORIES.some(function(c){ return c.id === selected; });
-    var opts = CATEGORIES.map(function(c){
-      return '<option value="'+escapeHTML(c.id)+'"'+(c.id===selected?' selected':'')+'>'+c.icon+' '+escapeHTML(c.id)+'</option>';
+    var lista = catsDaCasa();
+    var isKnown = lista.indexOf(selected) !== -1;
+    var opts = lista.map(function(c){
+      return '<option value="'+escapeHTML(c)+'"'+(c===selected?' selected':'')+'>'+catIcon(c)+' '+escapeHTML(c)+'</option>';
     }).join('');
     var customSelected = !!selected && !isKnown;
     opts += '<option value="__custom__"'+(customSelected?' selected':'')+'>✏️ Outra categoria…</option>';
-    return {html: '<select class="category-select">'+opts+'</select>', customSelected: customSelected};
+    return {
+      html: '<select class="category-select">'+opts+'</select>'
+        + '<button type="button" class="link-gerenciar" data-action="abrir-categorias">✏️ criar, renomear ou apagar categorias</button>',
+      customSelected: customSelected
+    };
+  }
+
+  /* ---------- Mexer nas categorias (usado pelo gerenciador e pelas metas) ---------- */
+
+  function usosDaCategoria(nome){
+    return state.expenses.filter(function(e){ return e.category === nome; }).length;
+  }
+
+  // Troca o nome em tudo que aponta pra ele: lançamentos antigos, a lista da
+  // casa e a meta. Mudar num lugar só deixaria gasto órfão com o nome velho.
+  function trocarNomeCategoria(antiga, nova){
+    state.expenses.forEach(function(e){ if (e.category === antiga) e.category = nova; });
+    var lista = catsDaCasa().map(function(c){ return c === antiga ? nova : c; });
+    var metas = normalizarMetas(state.settings.goals);
+    if (metas.categorias[antiga] !== undefined){
+      metas.categorias[nova] = Math.max(Number(metas.categorias[nova]) || 0, Number(metas.categorias[antiga]) || 0);
+      delete metas.categorias[antiga];
+    }
+    return Object.assign({}, state.settings, {categories: normalizarCategorias(lista), goals: metas});
+  }
+
+  // Apagar não pode sumir com gasto lançado. Quando a categoria está em uso,
+  // os lançamentos são movidos pra outra em vez de desaparecerem.
+  function removerCategoria(nome, destino){
+    if (destino) state.expenses.forEach(function(e){ if (e.category === nome) e.category = destino; });
+    var lista = catsDaCasa().filter(function(c){ return c !== nome; });
+    var metas = normalizarMetas(state.settings.goals);
+    delete metas.categorias[nome];
+    return Object.assign({}, state.settings, {categories: normalizarCategorias(lista), goals: metas});
   }
 
   // Um só lugar define as formas de pagamento, pros dois formulários dizerem
@@ -2989,6 +3126,73 @@
     return '<select class="payment-method-select">' + opcoes.map(function(o){
       return '<option value="'+o[0]+'"'+(o[0]===selected?' selected':'')+'>'+o[1]+'</option>';
     }).join('') + '</select>';
+  }
+
+  /* ---------- Parcelamento ----------
+     Antes eram dois campos: "nº de parcelas" e "parcelas pagas" — e o segundo
+     obrigava a pessoa a contar nos dedos quantas já venceram desde a compra.
+     Agora só o número de vezes é digitado; as pagas saem da data da compra,
+     que o app já tem. Quem precisar corrigir (comprou e a 1ª só vem no mês
+     seguinte, ou já adiantou parcelas) abre o ajuste manual. */
+  function parcelaCamposHTML(editingExpense, visivel){
+    var total = (editingExpense && editingExpense.installmentsTotal) ? editingExpense.installmentsTotal : 2;
+    var data = (editingExpense && editingExpense.date) ? editingExpense.date : todayISO();
+    var auto = parcelasVencidas(data, total);
+    var pagas = (editingExpense && typeof editingExpense.installmentsPaid === 'number') ? editingExpense.installmentsPaid : auto;
+    var manual = !!editingExpense && pagas !== auto;
+    return ''
+      + '<div class="installment-fields" style="display:'+(visivel?'block':'none')+';">'
+        + '<div class="field"><label>Em quantas vezes?</label>'
+          + '<div class="parcela-linha">'
+            + '<input type="number" inputmode="numeric" min="1" max="99" step="1" class="installments-total-input" value="'+total+'">'
+            + '<span class="parcela-x">x</span>'
+            + '<span class="parcela-previa">—</span>'
+          + '</div>'
+          + '<div class="items-hint parcela-explica" style="margin:8px 0 0;"></div>'
+        + '</div>'
+        + '<button type="button" class="link-gerenciar parcela-ajuste-link" data-action="ajustar-parcelas">ajustar quantas já foram pagas</button>'
+        + '<div class="field parcela-ajuste" style="display:'+(manual?'block':'none')+';margin-top:8px;">'
+          + '<label>Parcelas já pagas</label>'
+          + '<input type="number" inputmode="numeric" min="0" step="1" class="installments-paid-input" value="'+pagas+'">'
+          + '<div class="items-hint" style="margin:6px 0 0;">Deixe em branco pra o app contar sozinho pela data da compra.</div>'
+        + '</div>'
+      + '</div>';
+  }
+
+  // Escreve, em português, o que aquele parcelamento significa: valor da
+  // parcela, quando começa, quando acaba e quantas já venceram.
+  function atualizarPreviaParcela(form){
+    if (!form) return;
+    var bloco = form.querySelector('.installment-fields');
+    if (!bloco) return;
+    var totalEl = form.querySelector('.installments-total-input');
+    var valorEl = form.querySelector('.value-input');
+    var dataEl = form.querySelector('.date-input');
+    var pagasEl = form.querySelector('.installments-paid-input');
+    var ajuste = form.querySelector('.parcela-ajuste');
+
+    var total = Math.max(1, parseInt(totalEl ? totalEl.value : '', 10) || 1);
+    var valor = parseFloat(valorEl ? valorEl.value : '') || 0;
+    var data = (dataEl && dataEl.value) ? dataEl.value : todayISO();
+    var auto = parcelasVencidas(data, total);
+
+    var previa = form.querySelector('.parcela-previa');
+    if (previa) previa.textContent = valor > 0 ? formatBRL(valor / total) : 'de ?';
+
+    var manualLigado = ajuste && ajuste.style.display !== 'none';
+    var pagas = manualLigado && pagasEl && pagasEl.value !== ''
+      ? Math.min(total, Math.max(0, parseInt(pagasEl.value, 10) || 0))
+      : auto;
+    if (!manualLigado && pagasEl) pagasEl.value = auto;
+
+    var primeiro = monthKeyFromDate(data);
+    var ultimo = monthKeyAdd(primeiro, total - 1);
+    var explica = form.querySelector('.parcela-explica');
+    if (explica){
+      explica.innerHTML = 'De ' + escapeHTML(monthLabelFromKey(primeiro)) + ' a ' + escapeHTML(monthLabelFromKey(ultimo))
+        + '. Até hoje, <b>' + pagas + ' de ' + total + '</b> já ' + (pagas === 1 ? 'venceu' : 'venceram') + '.'
+        + (pagas < total ? ' As que faltam aparecem na aba Meses.' : '');
+    }
   }
 
   function cardSelectHTML(selected){
@@ -3130,11 +3334,7 @@
       + '<div class="field"><label>É um gasto fixo?</label><select class="fixed-toggle-select"><option value="nao"'+(!isFixed?' selected':'')+'>Não, só deste mês</option><option value="sim"'+(isFixed?' selected':'')+'>Sim, repete todo mês</option></select>'
         + '<div class="items-hint" style="margin:6px 0 0;">Marcando como fixo, esse gasto aparece sozinho em todos os meses seguintes com o mesmo valor — você não precisa lançar de novo.</div></div>'
       + '<div class="field parcelavel-field" style="display:'+((isFixed||paymentMethod==='debito')?'none':'block')+';"><label>Foi parcelado?</label><select class="installment-toggle-select"><option value="nao"'+(!isInstallment?' selected':'')+'>Não</option><option value="sim"'+(isInstallment?' selected':'')+'>Sim</option></select></div>'
-      + '<div class="row2 installment-fields" style="display:'+((isInstallment&&!isFixed)?'flex':'none')+';">'
-        + '<div class="field"><label>Nº de parcelas</label><input type="number" inputmode="numeric" min="1" step="1" class="installments-total-input" value="'+installmentsTotal+'"></div>'
-        + '<div class="field"><label>Parcelas pagas</label><input type="number" inputmode="numeric" min="0" step="1" class="installments-paid-input" value="'+installmentsPaid+'"></div>'
-      + '</div>'
-      + '<div class="items-hint" style="margin:-4px 0 12px;">Se essa conta parcelada entrar aqui, o acerto da casa vai contar só as parcelas já pagas — as próximas aparecem na aba Meses.</div>'
+      + parcelaCamposHTML(editingExpense, isInstallment && !isFixed)
       + '</div>'
       + '<div class="form-col form-col-items acc-green">'
       + '<div class="form-col-title">Itens da nota (opcional)</div>'
@@ -3192,10 +3392,7 @@
       + '<div class="field card-field" style="display:'+(usaCartao?'block':'none')+';"><label>Cartão / conta</label>' + card.html + '</div>'
       + '<div class="field custom-card-field" style="display:'+((usaCartao&&card.customSelected)?'block':'none')+';"><label>Nome do cartão</label><input type="text" class="custom-card-input" placeholder="Ex: C6, PicPay..." value="'+(card.customSelected&&editingExpense?escapeHTML(editingExpense.card):'')+'"></div>'
       + '<div class="field credito-only-field" style="display:'+((isCredito&&!isFixed)?'block':'none')+';"><label>Parcelado?</label><select class="installment-toggle-select"><option value="nao"'+(!isInstallment?' selected':'')+'>Não</option><option value="sim"'+(isInstallment?' selected':'')+'>Sim</option></select></div>'
-      + '<div class="row2 installment-fields" style="display:'+((isCredito&&isInstallment&&!isFixed)?'flex':'none')+';">'
-        + '<div class="field"><label>Nº de parcelas</label><input type="number" inputmode="numeric" min="1" step="1" class="installments-total-input" value="'+installmentsTotal+'"></div>'
-        + '<div class="field"><label>Parcelas pagas</label><input type="number" inputmode="numeric" min="0" step="1" class="installments-paid-input" value="'+installmentsPaid+'"></div>'
-      + '</div>'
+      + parcelaCamposHTML(editingExpense, isCredito && isInstallment && !isFixed)
       + '</div>'
       + '<div class="form-col acc-purple">'
       + '<div class="form-col-title">Comprovante</div>'
@@ -4618,7 +4815,12 @@
         + '</div>';
     }
     return '<div class="field" style="margin-top:22px;"><label>Backup dos seus dados</label>'
-      + '<div class="note" style="margin:-2px 0 8px;">O app guarda tudo dentro deste navegador. Se você limpar os dados do navegador ou trocar de aparelho, some. Baixe uma cópia de vez em quando.</div>'
+      // Com conta no servidor esse aviso estava mentindo: dizia que tudo vive
+      // só neste navegador, quando na verdade os dados já estão salvos e
+      // sincronizados. Cada modo agora fala a verdade do seu modo.
+      + '<div class="note" style="margin:-2px 0 8px;">' + (modoNuvem()
+          ? 'Seus lançamentos ficam salvos na sua conta e aparecem em qualquer aparelho onde você entrar. O backup abaixo é uma cópia extra, sua, pra guardar onde quiser.'
+          : 'O app guarda tudo dentro deste navegador. Se você limpar os dados do navegador ou trocar de aparelho, some. Baixe uma cópia de vez em quando.') + '</div>'
       + barra
       + '<button type="button" id="export-btn" class="secondary-btn">💾 Baixar tudo (com as fotos)</button>'
       + '<button type="button" id="export-lite-btn" class="secondary-btn" style="margin-top:8px;">📄 Baixar só os lançamentos (arquivo leve)</button>'
@@ -4750,6 +4952,114 @@
 
   /* ---------- Janela dos próximos meses ---------- */
 
+  /* ---------- Janela das categorias ---------- */
+
+  function openCatsModal(){
+    renderCatsModal();
+    catsModalEl.classList.remove('hidden');
+  }
+  function closeCatsModal(){
+    catsModalEl.classList.add('hidden');
+    // Se as metas estavam abertas atrás, elas podem ter acabado de mudar de
+    // nome — redesenha em vez de deixar o nome velho na tela.
+    if (metasModalEl && !metasModalEl.classList.contains('hidden') && metasDraft) renderMetasModal();
+  }
+
+  function renderCatsModal(){
+    var lista = catsDaCasa();
+    var linhas = lista.map(function(c){
+      var usos = usosDaCategoria(c);
+      return '<div class="cat-linha">'
+        + '<span class="cat-linha-nome">' + catChipHTML(c, 24)
+          + '<span>' + escapeHTML(c)
+            + '<span class="cat-linha-uso">' + (usos ? usos + (usos === 1 ? ' lançamento' : ' lançamentos') : 'sem lançamentos') + '</span></span></span>'
+        + '<button type="button" class="meta-cfg-acao" data-action="renomear-cat" data-cat="'+escapeHTML(c)+'" title="Renomear">✏️</button>'
+        + '<button type="button" class="meta-cfg-acao" data-action="apagar-cat" data-cat="'+escapeHTML(c)+'" title="Apagar">🗑️</button>'
+        + '</div>';
+    }).join('');
+
+    catsPanelEl.innerHTML = ''
+      + '<h2>🏷️ Categorias da casa</h2>'
+      + '<div class="note" style="margin:6px 0 14px;">Renomear troca o nome em todos os lançamentos antigos de uma vez. Apagar uma categoria que já tem gasto não perde nada: os lançamentos são movidos pra outra categoria que você escolhe.</div>'
+      + '<div class="field"><label>Criar categoria</label>'
+        + '<div class="cat-add-linha">'
+          + '<input type="text" id="cat-nova" placeholder="Ex: iFood, Cachorro, Guardar" autocomplete="off">'
+          + '<button type="button" class="secondary-btn" id="btn-criar-cat">Criar</button>'
+        + '</div></div>'
+      + '<div class="field"><label>' + lista.length + (lista.length === 1 ? ' categoria' : ' categorias') + '</label>'
+        + linhas + '</div>'
+      + '<div class="settings-actions" style="margin-top:14px;">'
+        + '<button type="button" class="secondary-btn" data-action="fechar-categorias">Fechar</button>'
+      + '</div>';
+  }
+
+  async function salvarCategorias(novoSettings, tambemGastos){
+    var okG = tambemGastos ? await saveExpenses(state.expenses) : true;
+    var okS = await saveSettings(novoSettings);
+    if (!okG || !okS){ alert('Não consegui salvar. Tente de novo.'); return false; }
+    state.settings = novoSettings;
+    invalidateCustomColors();
+    return true;
+  }
+
+  async function criarCategoria(){
+    var el = catsPanelEl.querySelector('#cat-nova');
+    var nome = (el ? el.value : '').trim();
+    if (!nome) return;
+    if (catExiste(nome)){ alert('Já existe uma categoria com esse nome.'); return; }
+    var novo = Object.assign({}, state.settings, {
+      categories: normalizarCategorias(catsDaCasa().concat([nome]))
+    });
+    if (!await salvarCategorias(novo, false)) return;
+    if (el) el.value = '';
+    renderCatsModal();
+    render();
+  }
+
+  async function acaoRenomearCategoria(antiga){
+    var nova = prompt('Novo nome para a categoria "' + antiga + '":', antiga);
+    if (nova === null) return;
+    nova = nova.trim();
+    if (!nova || nova === antiga) return;
+
+    var usos = usosDaCategoria(antiga);
+    var aviso = usos
+      ? 'Isso vai renomear em ' + usos + ' lançamento' + (usos === 1 ? '' : 's') + ' já registrado' + (usos === 1 ? '' : 's') + '.'
+      : 'Nenhum lançamento usa essa categoria ainda.';
+    if (catExiste(nova)) aviso += '\n\nAtenção: já existe "' + nova + '". As duas viram uma só.';
+    if (!confirm(aviso + '\n\nRenomear?')) return;
+
+    if (!await salvarCategorias(trocarNomeCategoria(antiga, nova), usos > 0)) return;
+    renderCatsModal();
+    render();
+  }
+
+  async function acaoApagarCategoria(nome){
+    var lista = catsDaCasa();
+    if (lista.length <= 1){ alert('Precisa sobrar pelo menos uma categoria.'); return; }
+
+    var usos = usosDaCategoria(nome);
+    var destino = null;
+    if (usos > 0){
+      var opcoes = lista.filter(function(c){ return c !== nome; });
+      // "Outros" é o destino natural quando existe; senão, a primeira que sobrar.
+      var sugestao = opcoes.indexOf('Outros') !== -1 ? 'Outros' : opcoes[0];
+      destino = prompt(
+        nome + ' tem ' + usos + ' lançamento' + (usos === 1 ? '' : 's') + '.\n\n'
+        + 'Pra onde eles vão? Escreva o nome de uma destas:\n' + opcoes.join(', '),
+        sugestao);
+      if (destino === null) return;
+      destino = destino.trim();
+      if (opcoes.indexOf(destino) === -1){ alert('Categoria "' + destino + '" não existe. Nada foi mudado.'); return; }
+    } else {
+      if (!confirm('Apagar a categoria "' + nome + '"?')) return;
+    }
+
+    if (!await salvarCategorias(removerCategoria(nome, destino), usos > 0)) return;
+    renderCatsModal();
+    render();
+  }
+
   /* ---------- Janela das metas ---------- */
 
   var metasDraft = null;
@@ -4850,6 +5160,7 @@
         + '<div class="note" style="margin:-2px 0 6px;">Conta as contas do casal — mercado, gasolina, iFood.</div>'
         + bloco('categoria', metasDraft.categorias, g.categorias)
         + adicionar('meta-add-cat', 'Adicionar categoria…', faltandoCat, 'Criar uma categoria nova')
+        + '<button type="button" class="link-gerenciar" data-action="abrir-categorias">✏️ criar, renomear ou apagar categorias</button>'
       + '</div>'
 
       + '<div class="field" style="margin-top:18px;"><label>Metas por cartão</label>'
@@ -4952,6 +5263,13 @@
 
     metasDraft.extras[tipo] = metasDraft.extras[tipo].map(function(k){ return k === antigo ? novo : k; });
     var alvo = tipo === 'cartao' ? metasDraft.cartoes : metasDraft.categorias;
+    // Categoria também vive na lista da casa (a que aparece no formulário).
+    // Sem esta linha o nome mudaria nos gastos mas não no seletor.
+    if (tipo === 'categoria'){
+      state.settings = Object.assign({}, state.settings, {
+        categories: normalizarCategorias(catsDaCasa().map(function(c){ return c === antigo ? novo : c; }))
+      });
+    }
     if (alvo[antigo] !== undefined){
       // Se os dois nomes tinham meta, fica a maior — juntar somando daria um
       // teto que ninguém escolheu.
@@ -5178,7 +5496,8 @@
     var perguntaVisivel = !!caixa && caixa.style.display !== 'none';
     if (tog && !perguntaVisivel) tog.value = 'nao';
     var campos = form.querySelector('.installment-fields');
-    if (campos) campos.style.display = (perguntaVisivel && tog && tog.value === 'sim') ? 'flex' : 'none';
+    if (campos) campos.style.display = (perguntaVisivel && tog && tog.value === 'sim') ? 'block' : 'none';
+    atualizarPreviaParcela(form);
   }
 
   function captureAddFormDraft(){
@@ -5398,9 +5717,19 @@
     extra.installment = isInstallment;
     if (isInstallment){
       var totalInst = parseInt(form.querySelector('.installments-total-input').value, 10);
-      var paidInst = parseInt(form.querySelector('.installments-paid-input').value, 10);
-      if (!totalInst || totalInst < 1){ alert('Informe o número de parcelas.'); return; }
-      if (isNaN(paidInst) || paidInst < 0) paidInst = 0;
+      if (!totalInst || totalInst < 1){ alert('Informe em quantas vezes foi parcelado.'); return; }
+
+      // Sem ajuste manual aberto, o app conta sozinho quantas já venceram
+      // pela data da compra. É a conta que a pessoa fazia de cabeça antes.
+      var caixaAjuste = form.querySelector('.parcela-ajuste');
+      var usouManual = caixaAjuste && caixaAjuste.style.display !== 'none';
+      var paidInst;
+      if (usouManual){
+        paidInst = parseInt(form.querySelector('.installments-paid-input').value, 10);
+        if (isNaN(paidInst) || paidInst < 0) paidInst = 0;
+      } else {
+        paidInst = parcelasVencidas(date, totalInst);
+      }
       if (paidInst > totalInst) paidInst = totalInst;
       extra.installmentsTotal = totalInst;
       extra.installmentsPaid = paidInst;
@@ -6124,6 +6453,17 @@
       var cancelEdit = e.target.closest('[data-action="cancel-edit"]');
       if (cancelEdit){ state.editingId = null; state.pendingPhoto = null; state.removeExistingPhoto = false; render(); return; }
 
+      var ajusteParcela = e.target.closest('[data-action="ajustar-parcelas"]');
+      if (ajusteParcela){
+        var formAj = ajusteParcela.closest('form');
+        var caixaAj = formAj.querySelector('.parcela-ajuste');
+        var abrindo = caixaAj.style.display === 'none';
+        caixaAj.style.display = abrindo ? 'block' : 'none';
+        ajusteParcela.textContent = abrindo ? 'deixar o app contar sozinho' : 'ajustar quantas já foram pagas';
+        atualizarPreviaParcela(formAj);
+        return;
+      }
+
       var addItemBtn = e.target.closest('[data-action="add-item"]');
       if (addItemBtn){
         var formAI = addItemBtn.closest('form');
@@ -6178,6 +6518,7 @@
         return;
       }
 
+      if (e.target.closest('[data-action="abrir-categorias"]')){ openCatsModal(); return; }
       if (e.target.closest('[data-action="open-metas"]')){ openMetasModal(); return; }
       if (e.target.closest('[data-action="open-future"]')){ openFutureModal(); return; }
 
@@ -6215,6 +6556,14 @@
     });
 
     contentEl.addEventListener('input', function(e){
+      // Valor, data e nº de parcelas mudam a conta do parcelamento — a prévia
+      // tem que acompanhar enquanto a pessoa digita.
+      if (e.target.matches && (e.target.matches('.installments-total-input')
+          || e.target.matches('.installments-paid-input')
+          || e.target.matches('.value-input')
+          || e.target.matches('.date-input'))){
+        atualizarPreviaParcela(e.target.closest('form'));
+      }
       var itemRow = e.target.closest ? e.target.closest('.item-row') : null;
       if (!itemRow) return;
       // Mexeu na linha? Então você já conferiu — o aviso de conferência sai.
@@ -6229,6 +6578,7 @@
     });
 
     contentEl.addEventListener('change', function(e){
+      if (e.target.matches('.date-input')){ atualizarPreviaParcela(e.target.closest('form')); }
       if (e.target.matches('[data-action="resumo-month"]')){
         state.resumoMonth = e.target.value;
         render();
@@ -6419,6 +6769,19 @@
       if (e.target.closest('#open-reset-btn')){ closeSettingsModal(); openResetModal(); return; }
     });
 
+    catsModalEl.addEventListener('click', function(e){ if (e.target === catsModalEl) closeCatsModal(); });
+    catsPanelEl.addEventListener('click', function(e){
+      if (e.target.closest('[data-action="fechar-categorias"]')){ closeCatsModal(); return; }
+      if (e.target.closest('#btn-criar-cat')){ criarCategoria(); return; }
+      var ren = e.target.closest('[data-action="renomear-cat"]');
+      if (ren){ acaoRenomearCategoria(ren.getAttribute('data-cat')); return; }
+      var apg = e.target.closest('[data-action="apagar-cat"]');
+      if (apg){ acaoApagarCategoria(apg.getAttribute('data-cat')); return; }
+    });
+    catsPanelEl.addEventListener('keydown', function(e){
+      if (e.key === 'Enter' && e.target.matches('#cat-nova')){ e.preventDefault(); criarCategoria(); }
+    });
+
     metasModalEl.addEventListener('click', function(e){ if (e.target === metasModalEl) closeMetasModal(); });
     metasPanelEl.addEventListener('click', function(e){
       if (e.target.closest('[data-action="close-metas"]')){ closeMetasModal(); return; }
@@ -6430,6 +6793,11 @@
         if (el) el.value = '';
         metasPanelEl.querySelectorAll('.meta-cfg-input').forEach(function(i){ i.value = ''; });
         salvarMetas();
+        return;
+      }
+      if (e.target.closest('[data-action="abrir-categorias"]')){
+        guardarRascunhoMetas();   // não perde o que já foi digitado
+        openCatsModal();
         return;
       }
       var renomear = e.target.closest('[data-action="renomear-item"]');
@@ -6550,6 +6918,8 @@
     itemsPanelEl = document.getElementById('items-panel');
     resetModalEl = document.getElementById('reset-modal');
     resetPanelEl = document.getElementById('reset-panel');
+    catsModalEl = document.getElementById('cats-modal');
+    catsPanelEl = document.getElementById('cats-panel');
     metasModalEl = document.getElementById('metas-modal');
     metasPanelEl = document.getElementById('metas-panel');
     futureModalEl = document.getElementById('future-modal');
