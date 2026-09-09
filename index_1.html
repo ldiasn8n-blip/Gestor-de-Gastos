@@ -515,6 +515,40 @@
   .cat-click-hint{ color:var(--ink-soft);font-weight:400;margin-left:5px; }
 
   /* Reset (zerar dados) modal */
+  #future-modal{
+    position:fixed;inset:0;background:var(--backdrop);
+    display:flex;align-items:flex-end;justify-content:center;z-index:70;
+    opacity:1;visibility:visible;transition:opacity .18s ease, visibility .18s ease;
+  }
+  #future-modal.hidden{opacity:0;visibility:hidden;pointer-events:none;}
+  #future-modal.hidden #future-panel{ transform:translateY(24px); }
+  #future-panel{
+    background:var(--paper-raised);width:100%;max-width:480px;
+    border-radius:18px 18px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));
+    max-height:85vh;overflow-y:auto;box-shadow:var(--shadow-lg);
+    transform:translateY(0);transition:transform .2s ease;
+  }
+  #future-panel h2{font-size:17px;margin:0 0 6px;}
+  .future-row{
+    display:flex;align-items:center;gap:10px;padding:11px 2px;
+    border-bottom:1px solid var(--line);font-size:14px;cursor:pointer;
+  }
+  .future-row:last-of-type{ border-bottom:none; }
+  .future-row input{ width:18px;height:18px;accent-color:var(--neon2);flex-shrink:0; }
+  .future-row .mes{ flex:1;font-weight:600; }
+  .future-row .val{ font-weight:700;font-variant-numeric:tabular-nums; }
+  .future-total{
+    display:flex;justify-content:space-between;align-items:center;
+    margin-top:14px;padding-top:12px;border-top:1px solid var(--line);
+    font-size:15px;font-weight:700;
+  }
+  .future-total .v{ color:var(--neon2);text-shadow:0 0 14px rgba(79,224,255,0.5); }
+  .kpi-clickable{
+    display:block;width:100%;text-align:left;font-family:inherit;cursor:pointer;
+  }
+  .kpi-clickable:active{ transform:scale(0.99); }
+  .kpi-caret{ font-weight:700;opacity:.7; }
+
   #reset-modal{
     position:fixed;inset:0;background:var(--backdrop);
     display:flex;align-items:flex-end;justify-content:center;z-index:70;
@@ -719,6 +753,10 @@
   /* Reforço pros navegadores que ignoram o color-scheme nas opções. */
   select option{ background:var(--paper-raised); color:var(--ink); }
   select option:disabled{ color:var(--ink-soft); }
+  select option.mes-atual{ color:var(--neon2); font-weight:700; }
+  /* Quando o mês corrente é o que está selecionado, o próprio campo acende. */
+  .resumo-month.is-current{ border-color:rgba(79,224,255,0.5); box-shadow:0 0 16px -4px rgba(79,224,255,0.55); }
+  .resumo-month.is-current .resumo-month-select{ color:var(--neon2); }
   .resumo-scope{ font-size:12px; color:var(--ink-soft); }
 
   .kpi-row{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-bottom:16px; }
@@ -765,27 +803,47 @@
   .cat-bar-track{ display:block; height:6px; border-radius:3px; background:var(--hover-soft); overflow:hidden; }
   .cat-bar-fill{ display:block; height:100%; border-radius:3px; min-width:3px; }
 
-  /* Evolução mensal */
-  .trend-chart{ width:100%; height:132px; display:block; margin-top:2px; overflow:visible; }
-  .trend-axis{ stroke:var(--line); stroke-width:1; }
-  .trend-bar{ cursor:pointer; }
-  .trend-hit{ fill:transparent; }
-  .trend-bar .trend-mark{ fill:var(--neon2); opacity:.45; transition:opacity .12s ease; }
-  .trend-bar.is-selected .trend-mark{ opacity:1; filter:drop-shadow(0 0 6px rgba(79,224,255,0.85)); }
-  .trend-bar:hover .trend-mark{ opacity:.8; }
-  .trend-bar:focus{ outline:none; }
-  .trend-bar:focus-visible .trend-mark{ stroke:var(--ink); stroke-width:1.5; }
-  .trend-val{ filter:drop-shadow(0 0 8px rgba(79,224,255,0.5)); }
-  .trend-bar.is-future .trend-mark{ opacity:.22; }
-  .trend-bar.is-future.is-selected .trend-mark{ opacity:.85; }
-  .trend-bar.is-future:hover .trend-mark{ opacity:.45; }
-  .trend-bar.is-future .trend-month{ opacity:.7; }
-  /* O mês de hoje ganha um ponto embaixo do nome, pra continuar identificável
-     mesmo quando você está olhando outro mês. */
-  .trend-bar.is-current .trend-month{ fill:var(--ink); font-weight:700; }
-  .trend-legend{ font-size:11px; color:var(--ink-soft); margin-top:6px; line-height:1.4; }
-  .trend-month{ fill:var(--ink-soft); font-size:9.5px; text-anchor:middle; font-family:inherit; }
-  .trend-val{ fill:var(--ink); font-size:10px; font-weight:700; text-anchor:middle; font-family:inherit; }
+  /* Evolução mensal — barras em HTML/CSS.
+     A altura da área do gráfico é fixa e as barras dividem a largura entre si,
+     então a proporção não muda quando a caixa fica mais larga. */
+  .trend-chart{
+    display:flex; align-items:stretch; justify-content:center;
+    gap:10px; height:172px; margin-top:4px;
+    border-bottom:1px solid var(--line); padding-bottom:0;
+  }
+  .trend-bar{
+    flex:1 1 0; max-width:78px; min-width:0;
+    display:flex; flex-direction:column; align-items:center;
+    background:transparent; border:none; padding:0; margin:0;
+    font-family:inherit; cursor:pointer; color:inherit;
+    border-radius:8px 8px 0 0;
+  }
+  .trend-bar:hover{ background:var(--hover-soft); }
+  .trend-cap{
+    height:17px; font-size:11px; font-weight:700; color:var(--ink);
+    white-space:nowrap; line-height:17px;
+    text-shadow:0 0 10px rgba(79,224,255,0.45);
+  }
+  .trend-plot{ flex:1; width:100%; display:flex; align-items:flex-end; justify-content:center; padding:0 2px; }
+  .trend-mark{
+    width:100%; max-width:46px; border-radius:5px 5px 2px 2px;
+    background:var(--neon2); opacity:.42; transition:opacity .12s ease;
+  }
+  .trend-bar.is-selected .trend-mark{
+    opacity:1; box-shadow:0 0 12px -1px rgba(79,224,255,0.85);
+  }
+  .trend-bar:hover .trend-mark{ opacity:.72; }
+  .trend-bar.is-future .trend-mark{ opacity:.2; }
+  .trend-bar.is-future.is-selected .trend-mark{ opacity:.8; }
+  .trend-bar.is-future:hover .trend-mark{ opacity:.4; }
+  .trend-month{
+    height:22px; line-height:22px; font-size:10.5px; color:var(--ink-soft);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;
+  }
+  /* O mês de hoje fica sempre identificável, mesmo olhando outro mês. */
+  .trend-bar.is-current .trend-month{ color:var(--neon2); font-weight:700; }
+  .trend-bar.is-future .trend-month{ opacity:.72; }
+  .trend-legend{ font-size:11px; color:var(--ink-soft); margin-top:8px; line-height:1.45; }
 
   @media (min-width:640px){
     .months-grid{ grid-template-columns:repeat(4,1fr); }
@@ -795,8 +853,8 @@
 
   /* ---------- Tablet ---------- */
   @media (min-width:640px){
-    #settings-modal, #items-modal, #reset-modal{ align-items:center; }
-    #settings-panel, #items-panel, #reset-panel{ border-radius:16px; max-height:80vh; }
+    #settings-modal, #items-modal, #reset-modal, #future-modal{ align-items:center; }
+    #settings-panel, #items-panel, #reset-panel, #future-panel{ border-radius:16px; max-height:80vh; }
     .row2, .row2.installment-fields{ gap:14px; }
   }
 
@@ -883,7 +941,7 @@
     .resumo-col-a, .resumo-col-b{ flex:1 1 44%; }
     .resumo-col-c{ flex:1 1 100%; }
     .resumo-block{ padding:16px 18px 17px; }
-    .trend-chart{ height:150px; }
+    .trend-chart{ height:190px; }
 
     /* Formulário do casal em duas colunas: dados da conta à esquerda,
        itens da nota à direita (que é a parte que cresce sem parar). */
@@ -903,6 +961,14 @@
     form.add-form.two-col .form-col-items{ grid-area:items; min-width:0; }
     form.add-form.two-col .form-submit-area{ grid-area:submit; margin-top:6px; }
     form.add-form.two-col .items-section{ margin-top:0; }
+
+    /* Formulário pessoal: as três caixas se distribuem em duas colunas em vez
+       de virar uma torre de 900px de altura. */
+    form.add-form.cols-2{
+      display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+      gap:0 26px; align-items:start; max-width:900px;
+    }
+    form.add-form.cols-2 .form-submit-area{ grid-column:1 / -1; margin-top:6px; }
   }
 
   /* Tela bem larga: as categorias sobem e viram a terceira coluna. */
@@ -976,6 +1042,10 @@
   <div id="reset-panel"></div>
 </div>
 
+<div id="future-modal" class="hidden">
+  <div id="future-panel"></div>
+</div>
+
 <!--
   Tesseract.js faz a leitura automática (OCR) das notas fiscais direto no
   navegador da pessoa, sem precisar de servidor nem de chave de API.
@@ -1040,7 +1110,9 @@
     // Mês exibido no Resumo e nas listas de cada pessoa. null = ainda não
     // escolhido, então cai no mês atual.
     resumoMonth: null,
-    entriesMonth: {}
+    entriesMonth: {},
+    // Meses futuros marcados no indicador "Próximos meses". null = todos.
+    futureMonths: null
   };
 
   var storageAvailable = false;
@@ -1048,6 +1120,7 @@
   var contentEl, loadingEl, shellEl, tabbarEl, headerTitleEl, headerSubEl;
   var modalEl, modalBodyEl, settingsModalEl, settingsPanelEl, settingsBtn;
   var itemsModalEl, itemsPanelEl;
+  var futureModalEl, futurePanelEl;
   var resetModalEl, resetPanelEl;
 
   function ensureSubTabDefaults(){
@@ -1451,6 +1524,42 @@
     return new Date(date.getFullYear(), date.getMonth()+n, date.getDate());
   }
 
+  // Linha do tempo dos gastos pessoais de uma pessoa, no mesmo formato da do
+  // casal — assim o gráfico de barras serve pros dois sem mudar nada.
+  // Compra parcelada entra pelo valor da PARCELA no mês em que ela cai, não
+  // pelo valor cheio no mês da compra: é o que você realmente paga naquele mês.
+  function buildPersonalMonthsTimeline(memberId){
+    var lista = materializedAll(2).filter(function(e){
+      return e.person === memberId && e.type === 'pessoal';
+    });
+    var map = {};
+    function addTo(key, ano, mes, valor){
+      if (!map[key]) map[key] = {year:ano, month:mes, total:0, items:[]};
+      map[key].total += valor;
+      map[key].items.push(1);
+    }
+    lista.forEach(function(e){
+      var compra = new Date(e.date + 'T00:00:00');
+      if (isNaN(compra.getTime())) return;
+      var c = personalCalc(e);
+      if (!c.installment){
+        addTo(monthKeyFromDate(e.date), compra.getFullYear(), compra.getMonth(), e.value);
+        return;
+      }
+      for (var k = 1; k <= c.total; k++){
+        var venc = addMonthsToDate(compra, k - 1);
+        var chave = venc.getFullYear() + '-' + String(venc.getMonth()+1).padStart(2,'0');
+        addTo(chave, venc.getFullYear(), venc.getMonth(), c.parcelValue);
+      }
+    });
+    var atual = currentMonthKey();
+    return Object.keys(map).sort().map(function(k){
+      var m = map[k];
+      return { key:k, year:m.year, month:m.month, items:m.items, total:m.total,
+               isPast:k < atual, isCurrent:k === atual, isFuture:k > atual };
+    });
+  }
+
   function upcomingMonthsForMember(memberId){
     var list = state.expenses.filter(function(e){ return e.person===memberId && e.type==='pessoal'; });
     var map = {};
@@ -1728,6 +1837,8 @@
   function renderTabBar(){
     var html = '<button data-tab="resumo" class="tab-btn' + (state.currentTab==='resumo' ? ' active' : '') + '">'
       + '<span class="ic">📊</span><span>Resumo</span></button>';
+    html += '<button data-tab="fixas" class="tab-btn' + (state.currentTab==='fixas' ? ' active' : '') + '">'
+      + '<span class="ic">🔁</span><span>Contas Fixas</span></button>';
     html += '<button data-tab="meses" class="tab-btn' + (state.currentTab==='meses' ? ' active' : '') + '">'
       + '<span class="ic">📅</span><span>Meses</span></button>';
     state.settings.members.forEach(function(m){
@@ -1746,6 +1857,9 @@
     } else if (state.currentTab === 'meses'){
       headerTitleEl.textContent = 'Meses';
       headerSubEl.textContent = 'Contas do casal, mês a mês';
+    } else if (state.currentTab === 'fixas'){
+      headerTitleEl.textContent = 'Contas fixas';
+      headerSubEl.textContent = 'O que se repete todo mês';
     } else {
       var m = memberById(state.currentTab);
       headerTitleEl.textContent = m.name;
@@ -1933,7 +2047,7 @@
     var installmentsTotal = (editingExpense && editingExpense.installmentsTotal) ? editingExpense.installmentsTotal : 2;
     var installmentsPaid = (editingExpense && typeof editingExpense.installmentsPaid === 'number') ? editingExpense.installmentsPaid : 0;
     return ''
-      + '<form class="add-form" data-member="'+escapeHTML(memberId)+'">'
+      + '<form class="add-form cols-2" data-member="'+escapeHTML(memberId)+'">'
       + '<div class="form-col acc-blue">'
       + '<div class="form-col-title">O que você comprou</div>'
       + '<div class="field"><label>Categoria</label>' + cat.html + '</div>'
@@ -2032,7 +2146,10 @@
 
   function renderPersonalEntriesHTML(list){
     if (list.length === 0){
-      return '<div class="empty-state">Nenhum gasto pessoal registrado aqui ainda.</div>';
+      // O gráfico acima pode mostrar valor num mês em que nada foi comprado:
+      // é parcela de compra antiga caindo. Vale explicar em vez de dizer só
+      // "nada aqui" e deixar parecer que o gráfico está errado.
+      return '<div class="empty-state">Nada foi comprado neste mês. Se o gráfico acima mostra valor aqui, são parcelas de compras feitas antes — elas aparecem no mês da compra.</div>';
     }
     var groups = groupByCategory(list);
     return groups.map(function(g){
@@ -2049,16 +2166,36 @@
     }).join('');
   }
 
-  function renderPersonalSummaryHTML(memberId){
+  function renderPersonalSummaryHTML(memberId, mesSelecionado){
     var s = personalSummary(memberId);
-    return ''
-      + '<div class="section-title">Visão geral</div>'
-      + '<div class="hero-settlement stat-grid" style="padding:16px 18px;">'
-      + '<div class="personal-row"><span>🧾 Total comprado</span><span class="val">'+formatBRL(s.totalComprado)+'</span></div>'
-      + '<div class="personal-row"><span>✅ Total já pago</span><span class="val">'+formatBRL(s.totalPago)+'</span></div>'
-      + '<div class="personal-row"><span>⏳ Total a pagar</span><span class="val">'+formatBRL(s.totalAPagar)+'</span></div>'
-      + '<div class="personal-row"><span>📦 Parcelas restantes</span><span class="val">'+s.parcelasRestantes+'</span></div>'
+    var timeline = buildPersonalMonthsTimeline(memberId);
+
+    // O cartão do mês mostra o mesmo que a barra do gráfico: o que SAI naquele
+    // mês. Uma compra de R$1.000 em 3x pesa R$333,33 no mês, não R$1.000 —
+    // senão o número do cartão brigaria com a altura da barra logo abaixo.
+    var todoMes = !mesSelecionado || mesSelecionado === 'all';
+    var valorMes = timeline
+      .filter(function(g){ return todoMes || g.key === mesSelecionado; })
+      .reduce(function(acc,g){ return acc + g.total; }, 0);
+    var rotuloMes = todoMes
+      ? 'Somando todos os meses'
+      : 'Parcelas + compras de ' + monthLabelFromKey(mesSelecionado);
+
+    // Mesmo gráfico de barras das contas do casal, agora com os gastos
+    // pessoais desta pessoa. Tocar numa barra troca o mês da aba inteira.
+    var grafico = '<section class="resumo-block neon-box acc-purple" style="margin-bottom:16px;">'
+      + '<div class="section-title">📈 Seus gastos por mês</div>'
+      + monthlyTrendHTML(mesSelecionado, timeline, 'pick-personal-month')
+      + '</section>';
+
+    var cartoes = '<div class="kpi-row" style="margin-bottom:16px;">'
+      + kpiTileHTML('Sai neste mês', formatBRL(valorMes), rotuloMes, 'acc-purple')
+      + kpiTileHTML('Já pago', formatBRL(s.totalPago), 'Somando todos os meses', 'acc-green')
+      + kpiTileHTML('Falta pagar', formatBRL(s.totalAPagar), 'Parcelas em aberto', s.totalAPagar > 0.005 ? 'acc-pink' : 'acc-green')
+      + kpiTileHTML('Parcelas restantes', String(s.parcelasRestantes), 'Ainda por vencer', 'acc-amber')
       + '</div>';
+
+    return cartoes + grafico;
   }
 
   function renderUpcomingMonthsHTML(memberId){
@@ -2070,13 +2207,21 @@
     return '<div class="section-title">Próximos meses</div><div class="hero-settlement stat-grid" style="padding:16px 18px;">'+rows+'</div>';
   }
 
-  // Meses em que essa pessoa tem lançamentos desse tipo.
+  // Meses em que essa pessoa tem lançamentos desse tipo. Nos gastos pessoais
+  // também entram os meses em que só caem parcelas de compras antigas — são
+  // meses em que ela paga algo, e o gráfico os mostra, então o seletor precisa
+  // aceitá-los pra o clique na barra funcionar.
   function memberAvailableMonths(memberId, sub){
-    return expenseMonthSpan().filter(function(mk){
-      return materializedForMonth(mk).some(function(e){
-        return e.person === memberId && e.type === sub;
-      });
-    }).sort(function(a,b){ return b.localeCompare(a); });
+    var chaves = {};
+    expenseMonthSpan(2).forEach(function(mk){
+      if (materializedForMonth(mk).some(function(e){ return e.person === memberId && e.type === sub; })){
+        chaves[mk] = true;
+      }
+    });
+    if (sub === 'pessoal'){
+      buildPersonalMonthsTimeline(memberId).forEach(function(g){ chaves[g.key] = true; });
+    }
+    return Object.keys(chaves).sort(function(a,b){ return b.localeCompare(a); });
   }
   function entriesMonthKey(memberId, sub){
     var chave = memberId + ':' + sub;
@@ -2111,7 +2256,7 @@
       return ''
         + segmentedHTML
         + renderFormHTML(memberId, sub, editingExpense)
-        + renderPersonalSummaryHTML(memberId)
+        + renderPersonalSummaryHTML(memberId, mesLista)
         + barraMes
         + renderPersonalEntriesHTML(list)
         + renderUpcomingMonthsHTML(memberId);
@@ -2158,27 +2303,66 @@
 
   // Barra de seleção de mês, usada no Resumo e nas listas de cada pessoa.
   function monthBarHTML(action, selecionado, meses, sufixo){
+    var atual = currentMonthKey();
+    // O mês corrente vai aceso na lista e com um marcador de texto junto: cor
+    // sozinha não basta, tem navegador que ignora estilo em <option>.
     var opts = '<option value="all"'+(selecionado==='all'?' selected':'')+'>Todos os meses</option>'
       + meses.map(function(k){
-          return '<option value="'+k+'"'+(selecionado===k?' selected':'')+'>'+monthLabelFromKey(k)+'</option>';
+          var ehAtual = k === atual;
+          return '<option value="'+k+'"'+(selecionado===k?' selected':'')+(ehAtual?' class="mes-atual"':'')+'>'
+            + monthLabelFromKey(k) + (ehAtual ? '  ●  mês atual' : '') + '</option>';
         }).join('');
     var texto = selecionado === 'all'
       ? 'Somando tudo desde o começo'
       : (selecionado === currentMonthKey() ? 'Mês atual' : 'Mostrando ' + monthLabelFromKey(selecionado));
     return '<div class="resumo-toolbar">'
-      + '<label class="resumo-month"><span class="resumo-month-icon">🗓️</span>'
+      + '<label class="resumo-month'+(selecionado === atual ? ' is-current' : '')+'"><span class="resumo-month-icon">🗓️</span>'
       + '<select class="resumo-month-select" data-action="'+action+'"'+(sufixo?' data-scope="'+escapeHTML(sufixo)+'"':'')+'>'+opts+'</select></label>'
       + '<span class="resumo-scope">'+escapeHTML(texto)+'</span>'
       + '</div>';
   }
 
-  // Soma das parcelas do casal que ainda vão cair nos próximos meses.
-  function futureCommitment(){
-    var now = new Date();
-    var currentKey = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  // Meses que ainda vão chegar e já têm conta marcada (parcela ou conta fixa).
+  function futureMonthsList(){
+    var atual = currentMonthKey();
     return buildCasalMonthsTimeline()
-      .filter(function(g){ return g.key > currentKey; })
-      .reduce(function(s,g){ return s + g.total; }, 0);
+      .filter(function(g){ return g.key > atual; })
+      .map(function(g){ return {key:g.key, total:g.total}; });
+  }
+
+  // Quais meses futuros entram na conta. state.futureMonths = null é o padrão:
+  // só o PRÓXIMO mês. Somar tudo que vem pela frente de cara assusta e não
+  // ajuda — o que interessa no dia a dia é o mês que vem. Os outros a pessoa
+  // adiciona na janela quando quiser olhar mais longe.
+  function futureSelectedKeys(){
+    var todos = futureMonthsList().map(function(m){ return m.key; });
+    if (state.futureMonths){
+      return state.futureMonths.filter(function(k){ return todos.indexOf(k) !== -1; });
+    }
+    return todos.length ? [todos[0]] : [];
+  }
+
+  function futureCommitment(){
+    var sel = futureSelectedKeys();
+    return futureMonthsList()
+      .filter(function(m){ return sel.indexOf(m.key) !== -1; })
+      .reduce(function(s,m){ return s + m.total; }, 0);
+  }
+
+  function futureTileHTML(valor){
+    var todos = futureMonthsList();
+    var sel = futureSelectedKeys();
+    var dica;
+    if (!todos.length) dica = 'Nada marcado pra frente';
+    else if (sel.length === 0) dica = 'Nenhum mês marcado · toque pra escolher';
+    else if (sel.length === 1) dica = escapeHTML(monthLabelFromKey(sel[0])) + ' · toque pra somar outros';
+    else if (sel.length === todos.length) dica = 'Todos os ' + todos.length + ' meses · toque pra mudar';
+    else dica = sel.length + ' de ' + todos.length + ' meses · toque pra mudar';
+    return '<button type="button" class="kpi-tile neon-box acc-amber kpi-clickable" data-action="open-future">'
+      + '<div class="kpi-label">Próximos meses</div>'
+      + '<div class="kpi-value">'+formatBRL(valor)+'</div>'
+      + '<div class="kpi-hint">'+dica+' <span class="kpi-caret">›</span></div>'
+      + '</button>';
   }
 
   function kpiTileHTML(label, value, hint, accent){
@@ -2209,66 +2393,53 @@
     }).join('') + '</div>';
   }
 
-  // Evolução: 6 meses terminando no mês atual (ou no último com dados).
-  // As barras são clicáveis: tocar numa delas filtra o Resumo inteiro naquele
-  // mês, sem precisar ir no seletor lá em cima.
-  function monthlyTrendHTML(mesSelecionado){
-    var timeline = buildCasalMonthsTimeline();
+  // Gráfico de barras por mês. É usado em dois lugares — nas contas do casal
+  // (Resumo) e nos gastos pessoais de cada pessoa — então recebe a linha do
+  // tempo pronta e a ação de clique, em vez de buscar os dados sozinho.
+  // Tocar numa barra filtra a tela naquele mês.
+  function monthlyTrendHTML(mesSelecionado, timeline, acaoClique){
+    timeline = timeline || buildCasalMonthsTimeline();
+    acaoClique = acaoClique || 'pick-month';
     if (!timeline.length) return '<div class="empty-state">Sem histórico ainda — ele aparece aqui depois do primeiro lançamento.</div>';
 
-    var now = new Date();
-    var currentKey = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+    var atual = currentMonthKey();
     var curIdx = -1;
-    for (var i = 0; i < timeline.length; i++){ if (timeline[i].key <= currentKey) curIdx = i; }
+    for (var i = 0; i < timeline.length; i++){ if (timeline[i].key <= atual) curIdx = i; }
     if (curIdx < 0) curIdx = 0;
-    // Mostramos até 2 meses à frente: as parcelas que já estão compradas mas
-    // ainda vão cair fazem parte do quadro. Antes o gráfico cortava no mês
-    // atual e um mês futuro com lançamento simplesmente não aparecia.
+    // Até 2 meses à frente: as parcelas e contas fixas já contratadas fazem
+    // parte do quadro mesmo antes de a data chegar.
     var endIdx = Math.min(timeline.length - 1, curIdx + 2);
     var slice = timeline.slice(Math.max(0, endIdx - 5), endIdx + 1);
-    var temFuturo = slice.some(function(g){ return g.key > currentKey; });
+    var temFuturo = slice.some(function(g){ return g.key > atual; });
 
     var max = slice.reduce(function(m,g){ return Math.max(m, g.total); }, 0) || 1;
-    var W = 320, H = 132, padB = 22, padT = 16;
-    // Com poucos meses as barras não se espalham pela largura toda: ficariam
-    // isoladas nos cantos. O grupo é centralizado com um passo máximo fixo.
-    var slot = Math.min(W / slice.length, 62);
-    var offsetX = (W - slot * slice.length) / 2;
-    var barW = Math.min(34, slot - 10);
     var maxIdx = slice.reduce(function(bi,g,ix){ return g.total > slice[bi].total ? ix : bi; }, 0);
 
-    var bars = slice.map(function(g, ix){
-      var h = Math.max(2, (g.total / max) * (H - padB - padT));
-      var x = offsetX + ix * slot + (slot - barW) / 2;
-      var y = H - padB - h;
-      var isCurrent = g.key === currentKey;
-      var isFuture = g.key > currentKey;
-      // Aceso = o mês que o Resumo está mostrando agora. Quando o filtro está
-      // em "todos os meses", o mês atual fica aceso como referência.
-      var isSelected = (mesSelecionado && mesSelecionado !== 'all')
-        ? (g.key === mesSelecionado)
-        : isCurrent;
-      // Só o maior mês e o mês atual recebem valor escrito — número em cima de
-      // toda barra vira ruído e o gráfico deixa de ser lido de relance.
-      var label = (ix === maxIdx || isSelected)
-        ? '<text class="trend-val" x="'+(x + barW/2).toFixed(1)+'" y="'+(y - 5).toFixed(1)+'">'+formatCompactBRL(g.total)+'</text>'
-        : '';
-      // A área de toque cobre a fatia inteira (não só a barra), pra acertar
-      // fácil no celular mesmo num mês de valor baixo, cuja barra é curtinha.
-      return '<g class="trend-bar'+(isSelected ? ' is-selected' : '')+(isCurrent ? ' is-current' : '')+(isFuture ? ' is-future' : '')+'"'
-        + ' data-action="pick-month" data-month="'+g.key+'" role="button" tabindex="0">'
-        + '<title>'+escapeHTML(monthLabelFromKey(g.key))+' — '+formatBRL(g.total)+(isFuture ? ' (previsto)' : '')+'. Toque pra ver só este mês.</title>'
-        + '<rect class="trend-hit" x="'+(offsetX + ix*slot).toFixed(1)+'" y="0" width="'+slot.toFixed(1)+'" height="'+H+'"></rect>'
-        + '<rect class="trend-mark" x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+barW.toFixed(1)+'" height="'+h.toFixed(1)+'" rx="4"></rect>'
-        + label
-        + '<text class="trend-month" x="'+(x + barW/2).toFixed(1)+'" y="'+(H - 6)+'">'+escapeHTML(shortMonthFromKey(g.key))+'</text>'
-        + '</g>';
+    var barras = slice.map(function(g, ix){
+      var isCurrent = g.key === atual;
+      var isFuture = g.key > atual;
+      // Aceso = o mês que a tela está mostrando. Com o filtro em "todos os
+      // meses", o mês atual fica aceso como referência.
+      var isSelected = (mesSelecionado && mesSelecionado !== 'all') ? (g.key === mesSelecionado) : isCurrent;
+      // Altura mínima de 3% pra um mês de valor baixo não sumir e virar uma
+      // barra invisível que ninguém consegue clicar.
+      var alt = Math.max(3, g.total / max * 100);
+      // Só o maior mês e o mês selecionado ganham valor escrito — número em
+      // cima de toda barra vira ruído e o gráfico deixa de ser lido de relance.
+      var rotulo = (ix === maxIdx || isSelected) ? formatCompactBRL(g.total) : '';
+      var classes = 'trend-bar' + (isSelected ? ' is-selected' : '') + (isCurrent ? ' is-current' : '') + (isFuture ? ' is-future' : '');
+      return '<button type="button" class="'+classes+'" data-action="'+acaoClique+'" data-month="'+g.key+'"'
+        + ' title="'+escapeHTML(monthLabelFromKey(g.key))+' — '+formatBRL(g.total)+(isFuture ? ' (previsto)' : '')+'. Toque pra ver só este mês.">'
+        + '<span class="trend-cap">'+escapeHTML(rotulo)+'</span>'
+        + '<span class="trend-plot"><span class="trend-mark" style="height:'+alt.toFixed(1)+'%;"></span></span>'
+        + '<span class="trend-month">'+escapeHTML(shortMonthFromKey(g.key))+'</span>'
+        + '</button>';
     }).join('');
 
-    return '<svg class="trend-chart" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" role="img" aria-label="Gastos do casal por mês">'
-      + '<line class="trend-axis" x1="0" y1="'+(H - padB)+'" x2="'+W+'" y2="'+(H - padB)+'"></line>'
-      + bars
-      + '</svg>'
+    // Barras em HTML, não em SVG: um SVG esticado até a largura da caixa
+    // engorda as barras e deforma o texto. Com flexbox a proporção fica igual
+    // no celular e num monitor largo.
+    return '<div class="trend-chart">' + barras + '</div>'
       + '<div class="trend-legend">Toque numa barra pra ver só aquele mês.'
         + (temFuturo ? ' Barra mais fraca = mês que ainda não chegou (parcelas e contas fixas já comprometidas).' : '')
       + '</div>';
@@ -2314,25 +2485,33 @@
     var casalList = expensesFor(month).filter(function(e){ return e.type==='casal'; });
     var byCat = groupByCategory(casalList);
 
-    var totalPessoal = 0, totalAPagar = 0;
-    var personalHTML = state.settings.members.map(function(m){
-      var s = personalSummary(m.id, month);
-      totalPessoal += s.totalComprado;
-      totalAPagar += s.totalAPagar;
-      var extra = s.totalAPagar > 0.005 ? (' <span style="color:var(--alert);font-weight:600;">(falta '+formatBRL(s.totalAPagar)+')</span>') : '';
-      return '<div class="personal-row"><span><span class="member-badge" style="background:'+m.color+';">'+escapeHTML((m.name||'?').charAt(0).toUpperCase())+'</span> '+escapeHTML(m.name)+'</span><span class="val">'+formatBRL(s.totalComprado)+extra+'</span></div>';
-    }).join('');
+    // Quanto do mês já está preso em conta fixa — o número que diz o quanto da
+    // renda de vocês está comprometido antes mesmo do mês começar.
+    var totalFixo = casalList.reduce(function(s,e){ return s + (e.fixed ? e.value : 0); }, 0);
+
+    // Média mensal das contas do casal, considerando só meses já fechados ou
+    // em andamento (mês futuro ainda incompleto puxaria a média pra baixo).
+    var mesesFechados = expenseMonthSpan().filter(function(mk){ return mk <= currentMonthKey(); });
+    var somaGeral = 0;
+    mesesFechados.forEach(function(mk){
+      materializedForMonth(mk).forEach(function(e){
+        if (e.type === 'casal') somaGeral += casalCalc(e).paidValue;
+      });
+    });
+    var media = mesesFechados.length ? (somaGeral / mesesFechados.length) : 0;
 
     var futuro = futureCommitment();
     var toolbarHTML = monthBarHTML('resumo-month', month, months);
 
-    // Cada indicador tem cor fixa, sempre a mesma — a cor vira um atalho de
-    // leitura: rosa é sempre "o que falta", verde é sempre "já é seu".
+    // Os quatro indicadores são todos sobre as contas do casal — gasto pessoal
+    // saiu daqui e vive na aba de cada pessoa, que é de quem ele é.
+    // Cada um tem cor fixa, sempre a mesma, pra virar atalho de leitura.
+    var pctFixo = res.totalCasal > 0 ? Math.round(totalFixo / res.totalCasal * 100) : 0;
     var kpiHTML = '<div class="kpi-row">'
       + kpiTileHTML('Contas do casal', formatBRL(res.totalCasal), byCat.length + (byCat.length === 1 ? ' categoria' : ' categorias'), 'acc-cyan')
-      + kpiTileHTML('Gastos pessoais', formatBRL(totalPessoal), 'Fora da divisão', 'acc-purple')
-      + kpiTileHTML('Falta pagar', formatBRL(totalAPagar), 'Parcelas pessoais em aberto', totalAPagar > 0.005 ? 'acc-pink' : 'acc-green')
-      + kpiTileHTML('Próximos meses', formatBRL(futuro), 'Parcelas e contas fixas já comprometidas', 'acc-amber')
+      + kpiTileHTML('Contas fixas', formatBRL(totalFixo), pctFixo + '% do mês já é fixo', 'acc-green')
+      + kpiTileHTML('Média por mês', formatBRL(media), mesesFechados.length + (mesesFechados.length === 1 ? ' mês de histórico' : ' meses de histórico'), 'acc-purple')
+      + futureTileHTML(futuro)
       + '</div>';
 
     return ''
@@ -2349,8 +2528,6 @@
         + '</div>'
         + '<div class="resumo-col resumo-col-b">'
           + '<section class="resumo-block neon-box acc-cyan rb-trend"><div class="section-title">📈 Contas do casal por mês</div>' + monthlyTrendHTML(month) + '</section>'
-          + '<section class="resumo-block neon-box acc-purple rb-pessoais"><div class="section-title">👤 Gastos pessoais</div>' + personalHTML
-            + '<div class="note">Os gastos pessoais não entram na divisão — só as contas do casal são somadas e divididas conforme a porcentagem de cada um.</div></section>'
         + '</div>'
         + '<div class="resumo-col resumo-col-c">'
           + '<section class="resumo-block neon-box acc-green rb-cats"><div class="section-title">🧾 Contas do casal por categoria</div>' + categoryBarsHTML(byCat) + '</section>'
@@ -2432,6 +2609,110 @@
       + '<div class="note">Compras parceladas aparecem aqui em cada mês até a última parcela. Esse valor é só organizacional — o acerto da casa (aba Resumo) conta apenas as parcelas já marcadas como pagas.</div>';
   }
 
+  /* ---------- Aba Contas fixas ----------
+     Junta num lugar só tudo que se repete todo mês: as contas da casa e os
+     fixos pessoais de cada um. É a resposta pra "quanto da nossa renda já
+     está comprometido antes do mês começar". */
+
+  // Formulário curto pra cadastrar uma conta da casa direto nesta aba: só o
+  // essencial de um gasto fixo (o quê, quanto, quem paga e desde quando).
+  function fixaFormHTML(){
+    var cat = categorySelectHTML(null);
+    var opcoesPessoa = state.settings.members.map(function(m){
+      return '<option value="'+escapeHTML(m.id)+'">'+escapeHTML(m.name)+'</option>';
+    }).join('');
+    return ''
+      + '<form class="add-form" id="fixa-form">'
+      + '<div class="form-col acc-cyan">'
+        + '<div class="form-col-title">Nova conta fixa da casa</div>'
+        + '<div class="field"><label>Categoria</label>' + cat.html + '</div>'
+        + '<div class="field custom-cat-field" style="display:none;"><label>Nome da categoria</label><input type="text" class="custom-category-input" placeholder="Ex: Condomínio, Streaming..."></div>'
+        + '<div class="field"><label>Descrição</label><input type="text" class="description-input" placeholder="Ex: Aluguel, Internet, Seguro do carro"></div>'
+        + '<div class="row2">'
+          + '<div class="field"><label>Valor por mês (R$)</label><input type="number" inputmode="decimal" class="value-input" step="0.01" min="0" placeholder="0,00"></div>'
+          + '<div class="field"><label>Quem paga</label><select class="fixa-person-select">'+opcoesPessoa+'</select></div>'
+        + '</div>'
+        + '<div class="field"><label>A partir de quando</label><input type="date" class="date-input" value="'+todayISO()+'">'
+          + '<div class="items-hint" style="margin:6px 0 0;">A conta passa a aparecer deste mês em diante. Se ela já vem sendo paga há um tempo, coloque a data do primeiro mês.</div></div>'
+      + '</div>'
+      + '<div class="form-submit-area"><button type="submit" class="submit-btn" style="background:var(--neon2);color:#06222c;">Adicionar conta fixa</button></div>'
+      + '</form>';
+  }
+
+  function renderFixasTab(){
+    var fixos = state.expenses.filter(function(e){ return e.fixed; });
+    if (!fixos.length){
+      return fixaFormHTML()
+        + '<div class="empty-state">Nenhuma conta fixa ainda. Cadastre a primeira aí em cima — aluguel, internet, seguro, condomínio.<br><br>Ela passa a aparecer sozinha em todos os meses, e você nunca mais digita a mesma conta duas vezes.</div>';
+    }
+
+    var daCasa = fixos.filter(function(e){ return e.type === 'casal'; });
+    var totalCasa = daCasa.reduce(function(s,e){ return s + e.value; }, 0);
+
+    // Quanto cada pessoa banca das contas fixas da casa.
+    var porPessoa = state.settings.members.map(function(m){
+      var v = daCasa.filter(function(e){ return e.person === m.id; })
+                    .reduce(function(s,e){ return s + e.value; }, 0);
+      return {nome:m.name, cor:m.color, valor:v};
+    }).filter(function(p){ return p.valor > 0; });
+
+    var totalPessoais = fixos.filter(function(e){ return e.type === 'pessoal'; })
+                             .reduce(function(s,e){ return s + e.value; }, 0);
+
+    var cartoes = '<div class="kpi-row">'
+      + kpiTileHTML('Fixas da casa', formatBRL(totalCasa), daCasa.length + (daCasa.length === 1 ? ' conta por mês' : ' contas por mês'), 'acc-cyan')
+      + kpiTileHTML('Fixas pessoais', formatBRL(totalPessoais), 'Fora da divisão', 'acc-purple')
+      + kpiTileHTML('Total por mês', formatBRL(totalCasa + totalPessoais), 'Sai todo mês, sem falta', 'acc-amber')
+      + kpiTileHTML('Por ano', formatBRL((totalCasa + totalPessoais) * 12), 'Se nada mudar', 'acc-green')
+      + '</div>';
+
+    var quemPaga = porPessoa.length
+      ? '<section class="resumo-block neon-box acc-blue" style="margin-bottom:16px;">'
+        + '<div class="section-title">👥 Quem banca as fixas da casa</div>'
+        + porPessoa.map(function(p){
+            var pct = totalCasa > 0 ? Math.round(p.valor / totalCasa * 100) : 0;
+            return '<div class="cat-bar-row" style="cursor:default;">'
+              + '<span class="cat-bar-head"><span class="cat-bar-name"><span class="cat-bar-label" style="color:'+p.cor+';">'+escapeHTML(p.nome)+'</span></span>'
+              + '<span class="cat-bar-val">'+formatBRL(p.valor)+'<span class="cat-bar-share">'+pct+'%</span></span></span>'
+              + '<span class="cat-bar-track"><span class="cat-bar-fill" style="width:'+pct+'%;background:'+p.cor+';box-shadow:0 0 10px '+hexToRgba(p.cor,0.75)+';"></span></span>'
+              + '</div>';
+          }).join('')
+        + '</section>'
+      : '';
+
+    function listaFixos(itens, titulo, accent){
+      if (!itens.length) return '';
+      var total = itens.reduce(function(s,e){ return s + e.value; }, 0);
+      var linhas = itens.slice().sort(function(a,b){ return b.value - a.value; }).map(function(e){
+        var dono = memberById(e.person);
+        return '<div class="entry">'
+          + '<div class="thumb-placeholder" style="background:'+hexToRgba(catColor(e.category),0.15)+';color:'+catColor(e.category)+';">'+catIcon(e.category)+'</div>'
+          + '<div class="info"><div class="desc">'+escapeHTML(e.description)+'</div>'
+            + '<div class="date">'+escapeHTML(e.category)+' · paga por '+escapeHTML(dono ? dono.name : '?')
+            + ' · desde '+escapeHTML(monthLabelFromKey(monthKeyFromDate(e.date)))+'</div></div>'
+          + '<div class="value">'+formatBRL(e.value)+'</div>'
+          + '<button class="edit" data-action="edit-fixed" data-id="'+e.id+'" data-person="'+escapeHTML(e.person)+'" data-type="'+e.type+'">✏️</button>'
+          + '<button class="del" data-action="delete-expense" data-id="'+e.id+'">🗑️</button>'
+          + '</div>';
+      }).join('');
+      return '<section class="resumo-block neon-box '+accent+'" style="margin-bottom:16px;">'
+        + '<div class="section-title">'+titulo+' <span style="margin-left:auto;font-weight:700;color:var(--ink);">'+formatBRL(total)+'</span></div>'
+        + linhas + '</section>';
+    }
+
+    var pessoaisHTML = state.settings.members.map(function(m){
+      var meus = fixos.filter(function(e){ return e.type === 'pessoal' && e.person === m.id; });
+      return listaFixos(meus, '👤 Fixas de ' + escapeHTML(m.name), 'acc-purple');
+    }).join('');
+
+    return cartoes
+      + '<div class="meses-hint" style="margin:14px 0 12px;">Estas contas aparecem sozinhas em todos os meses. Editar aqui muda o valor em todos eles; excluir tira de todos, inclusive dos meses que já passaram.</div>'
+      + fixaFormHTML()
+      + quemPaga
+      + listaFixos(daCasa, '🏠 Fixas da casa', 'acc-cyan')
+      + pessoaisHTML;
+  }
+
   function renderMesesTab(){
     var years = buildCasalYearsTimeline();
     if (!years.length){
@@ -2464,6 +2745,7 @@
     contentEl.classList.toggle('wide', state.currentTab === 'resumo');
     if (state.currentTab === 'resumo') contentEl.innerHTML = renderResumo();
     else if (state.currentTab === 'meses') contentEl.innerHTML = renderMesesTab();
+    else if (state.currentTab === 'fixas') contentEl.innerHTML = renderFixasTab();
     else contentEl.innerHTML = renderMemberTab(state.currentTab);
     // Se o formulário renderizado já tem itens (ex: editando uma conta com
     // itens salvos), mostra o total dos itens desde já, não só depois de mexer.
@@ -2700,6 +2982,56 @@
     markDemoHandled();
     state.expenses = reais;
     closeSettingsModal();
+    render();
+  }
+
+  /* ---------- Janela dos próximos meses ---------- */
+
+  function openFutureModal(){
+    renderFutureModal();
+    futureModalEl.classList.remove('hidden');
+  }
+  function closeFutureModal(){ futureModalEl.classList.add('hidden'); }
+
+  function renderFutureModal(){
+    var meses = futureMonthsList();
+    var sel = futureSelectedKeys();
+    function marcado(k){ return sel.indexOf(k) !== -1; }
+
+    if (!meses.length){
+      futurePanelEl.innerHTML = '<h2>📅 Próximos meses</h2>'
+        + '<div class="note" style="margin:6px 0 16px;">Nenhuma conta marcada pra frente ainda. Assim que vocês lançarem uma parcela ou uma conta fixa, os meses aparecem aqui.</div>'
+        + '<div class="settings-actions"><button type="button" class="secondary-btn" data-action="close-future">Fechar</button></div>';
+      return;
+    }
+
+    var linhas = meses.map(function(m){
+      return '<label class="future-row">'
+        + '<input type="checkbox" class="future-check" value="'+m.key+'"'+(marcado(m.key)?' checked':'')+'>'
+        + '<span class="mes">'+escapeHTML(monthLabelFromKey(m.key))+'</span>'
+        + '<span class="val">'+formatBRL(m.total)+'</span>'
+        + '</label>';
+    }).join('');
+
+    futurePanelEl.innerHTML = ''
+      + '<h2>📅 Próximos meses</h2>'
+      + '<div class="note" style="margin:6px 0 12px;">O indicador mostra só o mês que vem. Marque aqui os outros meses que você quer somar junto — desmarcar não apaga nada, só tira o mês da conta.</div>'
+      + '<div class="future-actions" style="display:flex;gap:8px;margin-bottom:8px;">'
+        + '<button type="button" class="secondary-btn" data-action="future-all" style="flex:1;">Marcar todos</button>'
+        + '<button type="button" class="secondary-btn" data-action="future-none" style="flex:1;">Só o mês que vem</button>'
+      + '</div>'
+      + linhas
+      + '<div class="future-total"><span>Total selecionado</span><span class="v">'+formatBRL(futureCommitment())+'</span></div>'
+      + '<div class="settings-actions"><button type="button" class="secondary-btn" data-action="close-future">Fechar</button></div>';
+  }
+
+  // Guarda a escolha e atualiza o total sem fechar a janela, pra você poder ir
+  // marcando e vendo o número mudar.
+  function applyFutureSelection(){
+    var marcados = [];
+    futurePanelEl.querySelectorAll('.future-check:checked').forEach(function(cb){ marcados.push(cb.value); });
+    state.futureMonths = marcados;   // escolha explícita, mesmo que seja igual ao padrão
+    renderFutureModal();
     render();
   }
 
@@ -3055,6 +3387,43 @@
     if (!saved){ state.expenses.pop(); alert('Não foi possível salvar o gasto. Verifique se o navegador permite armazenamento local e tente novamente.'); return; }
     if (photo) await saveFullReceipt(id, photo.full);
     state.pendingPhoto = null;
+    render();
+  }
+
+  // Cadastro rápido de conta fixa da casa, feito na própria aba Contas Fixas.
+  async function handleFixaSubmit(form){
+    var catSel = form.querySelector('.category-select');
+    var categoria = catSel ? catSel.value : '';
+    if (categoria === '__custom__'){
+      categoria = (form.querySelector('.custom-category-input').value || '').trim();
+      if (!categoria){ alert('Digite o nome da categoria.'); return; }
+    }
+    if (!categoria){ alert('Escolha a categoria.'); return; }
+
+    var descricao = (form.querySelector('.description-input').value || '').trim();
+    if (!descricao){ alert('Escreva a descrição da conta (ex: Aluguel).'); return; }
+
+    var valor = parseFloat(form.querySelector('.value-input').value);
+    if (!valor || valor <= 0){ alert('Informe o valor da conta.'); return; }
+
+    var data = form.querySelector('.date-input').value;
+    if (!data){ alert('Informe a partir de quando essa conta vale.'); return; }
+
+    var pessoa = form.querySelector('.fixa-person-select').value;
+
+    var nova = {
+      id: generateId(), person: pessoa, type: 'casal',
+      category: categoria, description: descricao, value: valor, date: data,
+      thumb: null, items: null, fixed: true,
+      installment: false, installmentsTotal: null, installmentsPaid: null
+    };
+    state.expenses.push(nova);
+    var ok = await saveExpenses(state.expenses);
+    if (!ok){
+      state.expenses.pop();
+      alert('Não foi possível salvar a conta fixa. Tente de novo.');
+      return;
+    }
     render();
   }
 
@@ -3664,6 +4033,17 @@
       var editBtn = e.target.closest('[data-action="edit-expense"]');
       if (editBtn){ handleEditStart(editBtn.getAttribute('data-id')); return; }
 
+      // Editar uma conta fixa a partir da aba Fixas: leva você pra aba da
+      // pessoa que paga, já com o formulário aberto no lançamento certo.
+      var editFixo = e.target.closest('[data-action="edit-fixed"]');
+      if (editFixo){
+        var dono = editFixo.getAttribute('data-person');
+        state.currentTab = dono;
+        state.subTab[dono] = editFixo.getAttribute('data-type');
+        handleEditStart(editFixo.getAttribute('data-id'));
+        return;
+      }
+
       var view = e.target.closest('[data-action="view-receipt"]');
       if (view){ handleViewReceipt(view.getAttribute('data-id')); return; }
 
@@ -3704,6 +4084,16 @@
         render();
         return;
       }
+      var barraPessoal = e.target.closest('[data-action="pick-personal-month"]');
+      if (barraPessoal){
+        var chavePessoal = state.currentTab + ':pessoal';
+        var mp = barraPessoal.getAttribute('data-month');
+        state.entriesMonth[chavePessoal] = (state.entriesMonth[chavePessoal] === mp) ? 'all' : mp;
+        render();
+        return;
+      }
+
+      if (e.target.closest('[data-action="open-future"]')){ openFutureModal(); return; }
 
       var openItemsBtn = e.target.closest('[data-action="open-items"]');
       if (openItemsBtn){
@@ -3817,6 +4207,7 @@
     });
 
     contentEl.addEventListener('submit', function(e){
+      if (e.target.matches('#fixa-form')){ e.preventDefault(); handleFixaSubmit(e.target); return; }
       if (e.target.matches('.add-form')){ e.preventDefault(); handleFormSubmit(e.target); }
     });
 
@@ -3901,6 +4292,22 @@
       if (e.target.closest('#open-reset-btn')){ closeSettingsModal(); openResetModal(); return; }
     });
 
+    futureModalEl.addEventListener('click', function(e){ if (e.target === futureModalEl) closeFutureModal(); });
+    futurePanelEl.addEventListener('click', function(e){
+      if (e.target.closest('[data-action="close-future"]')){ closeFutureModal(); return; }
+      if (e.target.closest('[data-action="future-all"]')){
+        state.futureMonths = futureMonthsList().map(function(m){ return m.key; });
+        renderFutureModal(); render(); return;
+      }
+      if (e.target.closest('[data-action="future-none"]')){
+        state.futureMonths = null;   // null = o padrão, só o mês que vem
+        renderFutureModal(); render(); return;
+      }
+    });
+    futurePanelEl.addEventListener('change', function(e){
+      if (e.target.matches('.future-check')) applyFutureSelection();
+    });
+
     resetModalEl.addEventListener('click', function(e){ if (e.target === resetModalEl) closeResetModal(); });
     resetPanelEl.addEventListener('click', function(e){
       if (e.target.closest('#cancel-reset-btn')){ closeResetModal(); return; }
@@ -3943,6 +4350,8 @@
     itemsPanelEl = document.getElementById('items-panel');
     resetModalEl = document.getElementById('reset-modal');
     resetPanelEl = document.getElementById('reset-panel');
+    futureModalEl = document.getElementById('future-modal');
+    futurePanelEl = document.getElementById('future-panel');
 
     storageAvailable = await waitForStorage(3000);
 
