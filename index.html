@@ -609,6 +609,34 @@
   #sync-bar.hidden{ display:none; }
   @media (max-width:859px){ #sync-bar{ bottom:64px; } }
 
+  .lic-lista{ margin-top:12px; display:flex; flex-direction:column; gap:9px; }
+  .lic-row{
+    border:1px solid var(--line); border-radius:10px; padding:11px 12px;
+    background:var(--input-bg);
+  }
+  .lic-livre{ border-color:rgba(57,255,136,0.4); }
+  .lic-usado{ border-color:rgba(79,224,255,0.35); }
+  .lic-desligado{ border-color:rgba(255,77,109,0.45); opacity:.75; }
+  .lic-topo{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .lic-codigo{ font-weight:800; letter-spacing:.08em; font-size:14px; color:var(--ink); }
+  .lic-tag{ font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; }
+  .lic-livre .lic-tag{ color:var(--positive); }
+  .lic-usado .lic-tag{ color:var(--neon2); }
+  .lic-desligado .lic-tag{ color:var(--alert); }
+  .lic-obs{ font-size:12.5px; color:var(--ink); margin-top:5px; }
+  .lic-meta{ font-size:11.5px; color:var(--ink-soft); margin-top:3px; }
+  .lic-acoes{ display:flex; gap:8px; margin-top:9px; flex-wrap:wrap; }
+  .lic-btn{ width:auto; flex:1; min-width:130px; padding:8px 10px; font-size:12.5px; }
+  .lic-novo-caixa{
+    margin-top:10px; padding:12px; border-radius:10px;
+    border:1px solid rgba(57,255,136,0.45); background:var(--input-bg);
+    box-shadow:0 0 18px -8px rgba(57,255,136,0.6);
+  }
+  .lic-link{
+    font-size:12px; color:var(--positive); word-break:break-all; line-height:1.5;
+    font-weight:600;
+  }
+
   .convite-caixa{
     display:flex; align-items:center; gap:10px;
     background:var(--input-bg); border:1px solid rgba(79,224,255,0.35);
@@ -1378,8 +1406,52 @@
   var sincronizando = false;
   // Retrato do que o servidor tem, usado pra calcular o que mudou.
   var espelhoServidor = {};
+  var souAdmin = false;
+  // Convite que veio no link (?convite=GC-XXXX-XXXX). Guardamos no aparelho
+  // porque entre abrir o link e terminar o cadastro a pessoa pode confirmar
+  // e-mail, trocar de aba, fechar o navegador — e o código não pode sumir.
+  var conviteDoLink = null;
 
   function modoNuvem(){ return !!(supa && casaId); }
+
+  function lerConviteDaURL(){
+    try {
+      var p = new URLSearchParams(location.search);
+      var c = (p.get('convite') || p.get('c') || '').trim();
+      if (c){
+        localStorage.setItem('gastos_casa_convite', c.toUpperCase());
+        // Tira da barra de endereço pra a pessoa não compartilhar o link já usado.
+        history.replaceState(null, '', location.pathname);
+      }
+    } catch(e){}
+    try { return localStorage.getItem('gastos_casa_convite') || null; } catch(e){ return null; }
+  }
+  function limparConvite(){ try { localStorage.removeItem('gastos_casa_convite'); } catch(e){} }
+
+  async function conferirSeAdmin(){
+    try {
+      var r = await supa.rpc('sou_admin');
+      souAdmin = !r.error && r.data === true;
+    } catch(e){ souAdmin = false; }
+  }
+
+  async function resgatarLicenca(codigo, nome){
+    var r = await supa.rpc('resgatar_licenca', { p_codigo: codigo, p_nome: nome || 'Gastos da Casa' });
+    if (r.error) throw r.error;
+    return r.data;
+  }
+
+  async function gerarLicenca(observacao, expiraEm){
+    var r = await supa.rpc('gerar_licenca', { p_observacao: observacao || null, p_expira_em: expiraEm || null });
+    if (r.error) throw r.error;
+    return r.data;
+  }
+
+  async function listarLicencas(){
+    var r = await supa.from('licencas').select('*').order('criada_em', { ascending:false });
+    if (r.error) throw r.error;
+    return r.data || [];
+  }
 
   function iniciarSupabase(){
     try {
@@ -1729,15 +1801,23 @@
       : '';
 
     if (authModo === 'casa'){
+      var temConvite = !!conviteDoLink;
       authCardEl.innerHTML = ''
-        + '<h1>Quase lá</h1>'
-        + '<div class="sub">Você pode começar uma casa nova ou entrar na casa de alguém que já usa o app — os dois ficam com os mesmos lançamentos.</div>'
+        + '<h1>' + (temConvite ? 'Ativar seu acesso' : 'Falta o convite') + '</h1>'
+        + '<div class="sub">' + (temConvite
+            ? 'Encontramos seu convite. Dê um nome pra casa e comece a usar.'
+            : 'O acesso é por convite. Se você comprou, use o link que recebeu — ele já vem com o código. Se alguém da sua casa já usa o app, peça o código de convite dela.') + '</div>'
         + aviso
+        + '<div class="field"><label>Código do convite</label><input type="text" id="lic-codigo" placeholder="GC-XXXX-XXXX" autocapitalize="characters" value="' + escapeHTML(conviteDoLink || '') + '"></div>'
         + '<div class="field"><label>Nome da casa</label><input type="text" id="casa-nome" placeholder="Ex: Nossa Casa" value="Gastos da Casa"></div>'
-        + '<button type="button" class="submit-btn" id="btn-criar-casa" style="background:var(--neon2);color:#06222c;">Criar minha casa</button>'
+        + '<button type="button" class="submit-btn" id="btn-resgatar" style="background:var(--neon2);color:#06222c;">Ativar minha casa</button>'
         + '<div class="auth-ou">ou</div>'
-        + '<div class="field"><label>Código de convite</label><input type="text" id="casa-codigo" placeholder="Ex: A1B2C3" autocapitalize="characters"></div>'
-        + '<button type="button" class="secondary-btn" id="btn-entrar-casa">Entrar com o código</button>'
+        + '<div class="sub" style="margin-bottom:10px;">Alguém da sua casa já usa o app? Entre na casa dela — vocês passam a ver os mesmos lançamentos.</div>'
+        + '<div class="field"><label>Código da casa</label><input type="text" id="casa-codigo" placeholder="Ex: A1B2C3" autocapitalize="characters"></div>'
+        + '<button type="button" class="secondary-btn" id="btn-entrar-casa">Entrar nessa casa</button>'
+        + (souAdmin
+            ? '<button type="button" class="secondary-btn" id="btn-criar-casa" style="margin-top:8px;">Criar casa (admin)</button>'
+            : '')
         + '<div class="auth-troca"><button type="button" class="auth-link" id="btn-sair">Sair da conta</button></div>';
       return;
     }
@@ -1765,6 +1845,13 @@
     if (m.indexOf('invalid email') !== -1 || m.indexOf('unable to validate email') !== -1) return 'Esse e-mail não parece válido.';
     if (m.indexOf('email not confirmed') !== -1) return 'Confirme o e-mail que enviamos e tente de novo.';
     if (m.indexOf('failed to fetch') !== -1 || m.indexOf('network') !== -1) return 'Sem conexão com o servidor. Verifique a internet.';
+    if (m.indexOf('licenca_invalida') !== -1) return 'Esse convite não existe. Confira o código ou o link que você recebeu.';
+    if (m.indexOf('licenca_ja_usada') !== -1) return 'Esse convite já foi usado. Cada link vale por um cadastro.';
+    if (m.indexOf('licenca_desativada') !== -1) return 'Esse acesso está desativado. Fale com quem te vendeu o app.';
+    if (m.indexOf('licenca_expirada') !== -1) return 'Esse convite expirou.';
+    if (m.indexOf('convite_invalido') !== -1) return 'Código de casa inválido. Confira as letras.';
+    if (m.indexOf('casa_lotada') !== -1) return 'Essa casa já está com o número máximo de pessoas.';
+    if (m.indexOf('precisa_de_convite') !== -1) return 'O acesso é por convite. Use o link que você recebeu.';
     if (m.indexOf('código de convite') !== -1 || m.indexOf('convite inv') !== -1) return 'Código de convite inválido. Confira as letras.';
     return msg || 'Algo deu errado. Tente de novo.';
   }
@@ -1790,6 +1877,7 @@
         return;
       }
       sessaoUsuario = r.data.user;
+      await conferirSeAdmin();
       await depoisDeEntrar();
     } catch(e){
       renderAuth(traduzirErroAuth(e.message));
@@ -1804,7 +1892,22 @@
       mostrarAuth('casa', traduzirErroAuth(e.message));
       return;
     }
-    if (!casaId){ mostrarAuth('casa'); return; }
+    if (!casaId){
+      // Veio por um link de convite: ativa sozinho, sem pedir nada.
+      if (conviteDoLink){
+        try {
+          casaId = await resgatarLicenca(conviteDoLink, 'Gastos da Casa');
+          limparConvite();
+          await carregarTudoDaNuvem();
+          return;
+        } catch(e){
+          mostrarAuth('casa', traduzirErroAuth(e.message));
+          return;
+        }
+      }
+      mostrarAuth('casa');
+      return;
+    }
     await carregarTudoDaNuvem();
   }
 
@@ -1820,6 +1923,21 @@
     loadingEl.style.display = 'none';
     atualizarAvisoSync();
     render();
+  }
+
+  async function acaoResgatar(){
+    var codigo = (document.getElementById('lic-codigo').value || '').trim();
+    var nome = (document.getElementById('casa-nome').value || '').trim();
+    if (!codigo){ renderAuth('Digite o código do convite, ou abra o link que você recebeu.'); return; }
+    var b = document.getElementById('btn-resgatar');
+    b.disabled = true; b.textContent = 'Ativando...';
+    try {
+      casaId = await resgatarLicenca(codigo, nome);
+      limparConvite();
+      await carregarTudoDaNuvem();
+    } catch(e){
+      renderAuth(traduzirErroAuth(e.message));
+    }
   }
 
   async function acaoCriarCasa(){
@@ -3438,6 +3556,7 @@
     state.settingsDraft = JSON.parse(JSON.stringify(state.settings));
     renderSettingsModal();
     settingsModalEl.classList.remove('hidden');
+    if (souAdmin) renderListaLicencas();
   }
   function closeSettingsModal(){
     settingsModalEl.classList.add('hidden');
@@ -3475,6 +3594,7 @@
       + '<div class="field" style="margin-top:18px;"><label>Cartões cadastrados (gastos pessoais)</label>' + cardRows + '</div>'
       + '<button type="button" id="add-card-btn" class="secondary-btn">+ Adicionar cartão</button>'
       + contaSectionHTML()
+      + licencasSectionHTML()
       + backupSectionHTML()
       + '<div class="field" style="margin-top:22px;"><label>Dados de exemplo</label>'
         + '<div class="note" style="margin:-2px 0 8px;">Preenche agosto, setembro e outubro de 2026 pra você ver como fica com o app cheio. Fica marcado como exemplo — dá pra tirar depois sem mexer no que é seu.</div>'
@@ -3482,7 +3602,7 @@
         + '<button type="button" id="remove-demo-btn" class="secondary-btn" style="margin-top:8px;">Remover os dados de exemplo</button>'
       + '</div>'
       + '<div class="field" style="margin-top:22px;"><label style="color:var(--alert);">Zona de risco</label><button type="button" id="open-reset-btn" class="secondary-btn" style="border-color:var(--alert);color:var(--alert);">🗑️ Zerar dados</button></div>'
-      + '<div class="settings-actions"><button type="button" id="cancel-settings-btn" class="secondary-btn">Cancelar</button><button type="button" id="save-settings-btn" class="submit-btn" style="background:var(--ink);">Salvar</button></div>';
+      + '<div class="settings-actions"><button type="button" id="cancel-settings-btn" class="secondary-btn">Cancelar</button><button type="button" id="save-settings-btn" class="submit-btn" style="background:var(--neon2);color:#06222c;">Salvar</button></div>';
   }
 
   /* ---------- Dados de exemplo (pra testar a visualização) ----------
@@ -3662,6 +3782,91 @@
     state.expenses = reais;
     closeSettingsModal();
     render();
+  }
+
+  /* ---------- Painel de vendas (só o administrador vê) ---------- */
+
+  function licencasSectionHTML(){
+    if (!modoNuvem() || !souAdmin) return '';
+    return '<div class="field" style="margin-top:22px;"><label>🎟️ Links de acesso (vendas)</label>'
+      + '<div class="note" style="margin:-2px 0 10px;">Cada link vale por <strong>um cadastro</strong>. Depois de usado, ele não serve mais pra ninguém. Desligar um acesso corta os dados daquela casa na hora.</div>'
+      + '<div class="field"><label>Pra quem é? (só você vê)</label><input type="text" id="lic-obs" placeholder="Ex: João e Marina — vendido 09/09, R$ 1.200"></div>'
+      + '<button type="button" id="btn-gerar-licenca" class="secondary-btn">+ Gerar link novo</button>'
+      + '<div id="lic-novo"></div>'
+      + '<div id="lic-lista" class="lic-lista"><div class="note">Carregando...</div></div>'
+      + '</div>';
+  }
+
+  function baseDoSite(){
+    return location.origin + location.pathname;
+  }
+
+  async function renderListaLicencas(){
+    var alvo = settingsPanelEl.querySelector('#lic-lista');
+    if (!alvo) return;
+    try {
+      var lista = await listarLicencas();
+      if (!lista.length){
+        alvo.innerHTML = '<div class="note">Nenhum link gerado ainda.</div>';
+        return;
+      }
+      alvo.innerHTML = lista.map(function(l){
+        var usada = !!l.usada_por;
+        var estado = !l.ativa ? 'desligado' : (usada ? 'usado' : 'livre');
+        var rotulo = !l.ativa ? 'Desligado' : (usada ? 'Em uso' : 'Disponível');
+        var quando = l.usada_em ? formatDateBR(String(l.usada_em).slice(0,10)) : '';
+        return '<div class="lic-row lic-' + estado + '">'
+          + '<div class="lic-topo">'
+            + '<span class="lic-codigo">' + escapeHTML(l.codigo) + '</span>'
+            + '<span class="lic-tag">' + rotulo + '</span>'
+          + '</div>'
+          + (l.observacao ? '<div class="lic-obs">' + escapeHTML(l.observacao) + '</div>' : '')
+          + '<div class="lic-meta">' + (usada ? ('Ativado em ' + quando) : 'Ainda não usado') + '</div>'
+          + '<div class="lic-acoes">'
+            + (usada ? '' : '<button type="button" class="secondary-btn lic-btn" data-action="copiar-link" data-codigo="' + escapeHTML(l.codigo) + '">Copiar link</button>')
+            + '<button type="button" class="secondary-btn lic-btn" data-action="alternar-licenca" data-codigo="' + escapeHTML(l.codigo) + '" data-ativa="' + (l.ativa ? '1' : '0') + '">'
+              + (l.ativa ? 'Desligar acesso' : 'Religar acesso') + '</button>'
+          + '</div>'
+          + '</div>';
+      }).join('');
+    } catch(e){
+      alvo.innerHTML = '<div class="note" style="color:var(--alert);">Não consegui carregar os links: ' + escapeHTML(e.message || '') + '</div>';
+    }
+  }
+
+  async function acaoGerarLicenca(){
+    var b = settingsPanelEl.querySelector('#btn-gerar-licenca');
+    var obs = settingsPanelEl.querySelector('#lic-obs');
+    b.disabled = true; b.textContent = 'Gerando...';
+    try {
+      var codigo = await gerarLicenca(obs ? obs.value : null, null);
+      var link = baseDoSite() + '?convite=' + codigo;
+      var caixa = settingsPanelEl.querySelector('#lic-novo');
+      caixa.innerHTML = '<div class="lic-novo-caixa">'
+        + '<div class="note" style="margin:0 0 6px;">Link pronto — mande pra pessoa:</div>'
+        + '<div class="lic-link">' + escapeHTML(link) + '</div>'
+        + '<button type="button" class="secondary-btn" data-action="copiar-link" data-codigo="' + escapeHTML(codigo) + '" style="margin-top:8px;">Copiar link</button>'
+        + '</div>';
+      if (obs) obs.value = '';
+      await renderListaLicencas();
+    } catch(e){
+      alert('Não foi possível gerar o link: ' + (e.message || ''));
+    }
+    b.disabled = false; b.textContent = '+ Gerar link novo';
+  }
+
+  async function alternarLicenca(codigo, estavaAtiva){
+    var texto = estavaAtiva
+      ? 'Desligar este acesso? A casa que usa este link para de ver os dados na hora. Nada é apagado — religando, volta tudo.'
+      : 'Religar este acesso?';
+    if (!confirm(texto)) return;
+    try {
+      var r = await supa.from('licencas').update({ ativa: !estavaAtiva }).eq('codigo', codigo);
+      if (r.error) throw r.error;
+      await renderListaLicencas();
+    } catch(e){
+      alert('Não deu certo: ' + (e.message || ''));
+    }
   }
 
   // Conta, casa e convite. Só aparece quando o app está ligado ao servidor.
@@ -5056,6 +5261,7 @@
         renderAuth();
         return;
       }
+      if (e.target.closest('#btn-resgatar')){ acaoResgatar(); return; }
       if (e.target.closest('#btn-criar-casa')){ acaoCriarCasa(); return; }
       if (e.target.closest('#btn-entrar-casa')){ acaoEntrarCasa(); return; }
       if (e.target.closest('#btn-sair')){ sairDaConta(); return; }
@@ -5153,6 +5359,23 @@
       }
       if (e.target.closest('#save-settings-btn')){ saveSettingsAndClose(); return; }
       if (e.target.closest('#cancel-settings-btn')){ closeSettingsModal(); return; }
+      if (e.target.closest('#btn-gerar-licenca')){ acaoGerarLicenca(); return; }
+      var copiarLink = e.target.closest('[data-action="copiar-link"]');
+      if (copiarLink){
+        var link = baseDoSite() + '?convite=' + copiarLink.getAttribute('data-codigo');
+        try {
+          navigator.clipboard.writeText(link);
+          var antes = copiarLink.textContent;
+          copiarLink.textContent = 'Copiado';
+          setTimeout(function(){ if (copiarLink.isConnected) copiarLink.textContent = antes; }, 1800);
+        } catch(err){ prompt('Copie o link:', link); }
+        return;
+      }
+      var alternar = e.target.closest('[data-action="alternar-licenca"]');
+      if (alternar){
+        alternarLicenca(alternar.getAttribute('data-codigo'), alternar.getAttribute('data-ativa') === '1');
+        return;
+      }
       if (e.target.closest('#btn-sair-conta')){ sairDaConta(); return; }
       if (e.target.closest('#copiar-convite')){
         var btn = e.target.closest('#copiar-convite');
@@ -5244,6 +5467,7 @@
 
     storageAvailable = await waitForStorage(3000);
 
+    conviteDoLink = lerConviteDaURL();
     supa = iniciarSupabase();
     wireEvents();
 
@@ -5258,6 +5482,7 @@
         return;
       }
       sessaoUsuario = ses.user;
+      await conferirSeAdmin();
       await depoisDeEntrar();
       return;
     }
