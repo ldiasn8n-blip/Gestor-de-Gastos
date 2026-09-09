@@ -191,6 +191,8 @@
   form.add-form select:focus,
   form.add-form input:focus,
   #settings-panel input:focus,
+  #metas-panel input:focus,
+  #metas-panel select:focus,
   .item-row input:focus,
   .items-filter-row select:focus{
     outline:none;
@@ -384,11 +386,18 @@
     transform:translateY(0);transition:transform .2s ease;
   }
   #settings-panel h2{font-size:17px;margin:0 0 14px;}
-  #settings-panel .field{margin-bottom:14px;}
-  #settings-panel label{display:block;font-size:12px;color:var(--ink-soft);margin-bottom:6px;}
-  #settings-panel input[type="text"]{
+  #settings-panel .field, #metas-panel .field{margin-bottom:14px;}
+  #settings-panel label, #metas-panel label{display:block;font-size:12px;color:var(--ink-soft);margin-bottom:6px;}
+  #settings-panel input[type="text"],
+  #metas-panel input[type="text"],
+  #metas-panel input[type="number"],
+  #metas-panel select{
     width:100%;padding:10px 10px;border:1px solid var(--line);border-radius:8px;font-size:16px;font-family:inherit;
+    background:var(--input-bg);color:var(--ink);
   }
+  /* O campo de cada categoria fica na mesma linha do nome, então ele não
+     pode esticar pra largura toda como os outros. */
+  #metas-panel input.meta-cfg-input{ width:120px; padding:8px 9px; font-size:15px; }
   .settings-member-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
   .settings-member-row .member-name-input{
     flex:1;padding:8px 9px;border:1px solid var(--line);border-radius:8px;font-size:14px;font-family:inherit;
@@ -528,20 +537,65 @@
   .cat-click-hint{ color:var(--ink-soft);font-weight:400;margin-left:5px; }
 
   /* Reset (zerar dados) modal */
-  #future-modal{
+  /* Metas */
+  .meta-btn{
+    margin-left:auto; display:inline-flex; align-items:center; gap:6px;
+    background:transparent; border:1px solid var(--line); color:var(--ink-soft);
+    border-radius:999px; padding:6px 12px; font-family:inherit;
+    font-size:12.5px; font-weight:600; cursor:pointer;
+  }
+  .meta-btn:hover{ border-color:var(--positive); color:var(--ink); }
+  .meta-btn.is-on{
+    border-color:rgba(57,255,136,0.5); color:var(--positive);
+    box-shadow:0 0 14px -4px rgba(57,255,136,0.6);
+  }
+  .meta-btn-icone{ font-size:14px; }
+  .meta-editar{
+    margin-left:auto; background:transparent; border:none; cursor:pointer;
+    font-family:inherit; font-size:11.5px; font-weight:700; color:var(--ink-soft);
+    text-decoration:underline; padding:0;
+  }
+  .meta-editar:hover{ color:var(--positive); }
+  .meta-row{ padding:9px 2px 11px; border-bottom:1px solid var(--line); }
+  .meta-row:last-child{ border-bottom:none; padding-bottom:2px; }
+  .meta-topo{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:7px; }
+  .meta-nome{ display:flex; align-items:center; gap:8px; font-size:13.5px; font-weight:600; min-width:0; }
+  .meta-nome-txt{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .meta-val{ font-size:13.5px; font-weight:700; white-space:nowrap; font-variant-numeric:tabular-nums; }
+  .meta-de{ color:var(--ink-soft); font-weight:600; font-size:11.5px; }
+  .meta-track{ height:7px; border-radius:4px; background:var(--hover-soft); overflow:hidden; }
+  .meta-fill{ height:100%; border-radius:4px; min-width:3px; transition:width .2s ease; }
+  .meta-pe{ display:flex; justify-content:space-between; gap:10px; margin-top:6px; font-size:11px; color:var(--ink-soft); }
+  .meta-tag{ font-weight:800; text-transform:uppercase; letter-spacing:.04em; }
+
+  #metas-modal, #future-modal{
     position:fixed;inset:0;background:var(--backdrop);
     display:flex;align-items:flex-end;justify-content:center;z-index:70;
     opacity:1;visibility:visible;transition:opacity .18s ease, visibility .18s ease;
   }
-  #future-modal.hidden{opacity:0;visibility:hidden;pointer-events:none;}
+  #metas-modal.hidden, #future-modal.hidden{opacity:0;visibility:hidden;pointer-events:none;}
   #future-modal.hidden #future-panel{ transform:translateY(24px); }
-  #future-panel{
+  #metas-modal.hidden #metas-panel{ transform:translateY(24px); }
+  #metas-panel, #future-panel{
     background:var(--paper-raised);width:100%;max-width:480px;
     border-radius:18px 18px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));
     max-height:85vh;overflow-y:auto;box-shadow:var(--shadow-lg);
     transform:translateY(0);transition:transform .2s ease;
   }
-  #future-panel h2{font-size:17px;margin:0 0 6px;}
+  #metas-panel h2, #future-panel h2{font-size:17px;margin:0 0 6px;}
+  .meta-linha-cfg{
+    display:flex; align-items:center; gap:10px;
+    padding:9px 0; border-bottom:1px solid var(--line);
+  }
+  .meta-linha-cfg:last-of-type{ border-bottom:none; }
+  .meta-cfg-nome{ flex:1; min-width:0; display:flex; align-items:center; gap:8px; font-size:13.5px; font-weight:600; }
+  .meta-cfg-nome span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .meta-cfg-gasto{ font-size:11px; color:var(--ink-soft); display:block; font-weight:500; }
+  .meta-cfg-input{ width:120px; flex:0 0 auto; }
+  .meta-cfg-tirar{
+    background:transparent; border:none; cursor:pointer; font-size:15px;
+    color:var(--ink-soft); padding:4px 2px; flex:0 0 auto;
+  }
   .future-row{
     display:flex;align-items:center;gap:10px;padding:11px 2px;
     border-bottom:1px solid var(--line);font-size:14px;cursor:pointer;
@@ -630,12 +684,16 @@
   .lic-livre{ border-color:rgba(57,255,136,0.4); }
   .lic-usado{ border-color:rgba(79,224,255,0.35); }
   .lic-desligado{ border-color:rgba(255,77,109,0.45); opacity:.75; }
+  .lic-vencido{ border-color:rgba(255,194,79,0.5); }
   .lic-topo{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
   .lic-codigo{ -webkit-user-select:text; user-select:text; font-weight:800; letter-spacing:.08em; font-size:14px; color:var(--ink); }
   .lic-tag{ font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; }
   .lic-livre .lic-tag{ color:var(--positive); }
   .lic-usado .lic-tag{ color:var(--neon2); }
   .lic-desligado .lic-tag{ color:var(--alert); }
+  .lic-vencido .lic-tag{ color:#FFC24F; }
+  .lic-plano{ font-size:11.5px; font-weight:700; color:var(--ink-soft); margin-top:4px; }
+  .lic-btn-renovar{ border-color:rgba(57,255,136,0.45); color:var(--positive); }
   .lic-obs{ font-size:12.5px; color:var(--ink); margin-top:5px; }
   .lic-meta{ font-size:11.5px; color:var(--ink-soft); margin-top:3px; }
   .lic-acoes{ display:flex; gap:8px; margin-top:9px; flex-wrap:wrap; }
@@ -1013,8 +1071,8 @@
 
   /* ---------- Tablet ---------- */
   @media (min-width:640px){
-    #settings-modal, #items-modal, #reset-modal, #future-modal{ align-items:center; }
-    #settings-panel, #items-panel, #reset-panel, #future-panel{ border-radius:16px; max-height:80vh; }
+    #settings-modal, #items-modal, #reset-modal, #future-modal, #metas-modal{ align-items:center; }
+    #settings-panel, #items-panel, #reset-panel, #future-panel, #metas-panel{ border-radius:16px; max-height:80vh; }
     .row2, .row2.installment-fields{ gap:14px; }
   }
 
@@ -1213,6 +1271,10 @@
   <div id="future-panel"></div>
 </div>
 
+<div id="metas-modal" class="hidden">
+  <div id="metas-panel"></div>
+</div>
+
 <!--
   Tesseract.js faz a leitura automática (OCR) das notas fiscais direto no
   navegador da pessoa, sem precisar de servidor nem de chave de API.
@@ -1255,8 +1317,30 @@
         {id:'homem', name:'Homem', percentage:50, color:PALETTE[0]},
         {id:'mulher', name:'Mulher', percentage:50, color:PALETTE[1]}
       ],
-      cards: DEFAULT_CARDS.slice()
+      cards: DEFAULT_CARDS.slice(),
+      // Metas do mês. geral = teto das contas do casal; categorias = teto por
+      // categoria. Vazio = a pessoa nunca configurou, e aí nada de meta
+      // aparece na tela.
+      goals: {geral:null, categorias:{}}
     };
+  }
+
+  // O que vem do banco pode ser {} ou faltar campos — normaliza sempre.
+  function normalizarMetas(m){
+    var g = (m && typeof m === 'object') ? m : {};
+    var geral = Number(g.geral);
+    var cats = {};
+    var origem = (g.categorias && typeof g.categorias === 'object') ? g.categorias : {};
+    Object.keys(origem).forEach(function(k){
+      var v = Number(origem[k]);
+      if (v > 0) cats[k] = v;
+    });
+    return {geral: (geral > 0 ? geral : null), categorias: cats};
+  }
+
+  function metasAtivas(){
+    var m = normalizarMetas(state.settings && state.settings.goals);
+    return !!m.geral || Object.keys(m.categorias).length > 0;
   }
 
   var MONTH_NAMES_PT = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
@@ -1291,6 +1375,7 @@
   var modalEl, modalBodyEl, settingsModalEl, settingsPanelEl, settingsBtn;
   var itemsModalEl, itemsPanelEl;
   var futureModalEl, futurePanelEl;
+  var metasModalEl, metasPanelEl;
   var resetModalEl, resetPanelEl;
 
   function ensureSubTabDefaults(){
@@ -1492,10 +1577,40 @@
     return r.data;
   }
 
-  async function gerarLicenca(observacao, expiraEm){
-    var r = await supa.rpc('gerar_licenca', { p_observacao: observacao || null, p_expira_em: expiraEm || null });
+  async function gerarLicenca(observacao, plano, dias){
+    var r = await supa.rpc('gerar_licenca', {
+      p_observacao: observacao || null,
+      p_plano: plano || 'vitalicio',
+      p_dias: dias || null
+    });
     if (r.error) throw r.error;
     return r.data;
+  }
+
+  async function renovarLicenca(codigo, dias){
+    var r = await supa.rpc('renovar_licenca', { p_codigo: codigo, p_dias: dias || null });
+    if (r.error) throw r.error;
+    return r.data;
+  }
+
+  // Cada plano num lugar só, pra tela e banco falarem a mesma língua.
+  var PLANOS = {
+    vitalicio: {nome:'Acesso vitalício', curto:'Vitalício', icone:'♾️', dias:null,
+                explica:'Paga uma vez e usa pra sempre. O link não vence.'},
+    teste:     {nome:'Teste de 7 dias',  curto:'Teste 7 dias', icone:'🕗', dias:7,
+                explica:'Vale 7 dias a partir do dia em que a pessoa se cadastrar. Depois disso o acesso fecha sozinho.'},
+    mensal:    {nome:'Mensalidade',      curto:'Mensal', icone:'🔁', dias:30,
+                explica:'Vale 30 dias por vez. Quando a pessoa pagar o mês seguinte, você clica em "Renovar +30 dias".'}
+  };
+  function planoInfo(id){ return PLANOS[id] || PLANOS.vitalicio; }
+
+  // Dias que faltam pro vencimento (negativo = já venceu).
+  function diasAteData(iso){
+    if (!iso) return null;
+    var hoje = new Date(); hoje.setHours(0,0,0,0);
+    var partes = String(iso).slice(0,10).split('-');
+    var alvo = new Date(Number(partes[0]), Number(partes[1])-1, Number(partes[2]));
+    return Math.round((alvo - hoje) / 86400000);
   }
 
   async function listarLicencas(){
@@ -1695,7 +1810,7 @@
   async function loadSettings(){
     if (modoNuvem()){
       try {
-        var rc = await supa.from('casas').select('nome, cartoes, codigo_convite').eq('id', casaId).single();
+        var rc = await supa.from('casas').select('nome, cartoes, codigo_convite, metas').eq('id', casaId).single();
         var rm = await supa.from('membros').select('*').eq('casa_id', casaId).order('ordem');
         if (rc.error) throw rc.error;
         if (rm.error) throw rm.error;
@@ -1703,6 +1818,7 @@
         var s = {
           householdName: rc.data.nome || 'Gastos da Casa',
           cards: Array.isArray(rc.data.cartoes) && rc.data.cartoes.length ? rc.data.cartoes : DEFAULT_CARDS.slice(),
+          goals: normalizarMetas(rc.data.metas),
           members: (rm.data || []).map(function(m){
             return { id:m.id, name:m.nome, color:m.cor, percentage:Number(m.percentual)||0 };
           })
@@ -1715,6 +1831,7 @@
     var cache = lerCache('gastos_casa_settings', null);
     var loaded = (cache && Array.isArray(cache.members)) ? cache : defaultSettings();
     if (!Array.isArray(loaded.cards) || !loaded.cards.length) loaded.cards = DEFAULT_CARDS.slice();
+    loaded.goals = normalizarMetas(loaded.goals);
     return loaded;
   }
 
@@ -1723,7 +1840,7 @@
     if (!modoNuvem()) return storageAvailable;
     try {
       var r1 = await supa.from('casas')
-        .update({ nome: s.householdName || 'Gastos da Casa', cartoes: s.cards || [] })
+        .update({ nome: s.householdName || 'Gastos da Casa', cartoes: s.cards || [], metas: normalizarMetas(s.goals) })
         .eq('id', casaId);
       if (r1.error) throw r1.error;
 
@@ -1798,6 +1915,18 @@
 
   /* ---------- Entrar, criar casa, sair ---------- */
 
+  // Situação do acesso desta pessoa (plano, vencimento). Sem isso, um teste
+  // que venceu abriria o app VAZIO — o cliente acharia que perdeu os dados,
+  // quando na verdade só precisa renovar.
+  var acessoInfo = null;
+  async function conferirAcesso(){
+    try {
+      var r = await supa.rpc('meu_acesso');
+      acessoInfo = (!r.error && r.data) ? r.data : null;
+    } catch(e){ acessoInfo = null; }
+    return acessoInfo;
+  }
+
   async function descobrirCasa(){
     var r = await supa.from('casa_usuarios').select('casa_id').limit(1);
     if (r.error) throw r.error;
@@ -1850,6 +1979,25 @@
     var aviso = mensagem
       ? '<div class="' + (tipo === 'ok' ? 'auth-ok' : 'auth-erro') + '">' + escapeHTML(mensagem) + '</div>'
       : '';
+
+    if (authModo === 'bloqueado'){
+      var venceu = acessoInfo && acessoInfo.expira_em ? formatDateBR(String(acessoInfo.expira_em).slice(0,10)) : null;
+      var eraTeste = acessoInfo && acessoInfo.plano === 'teste';
+      var desligado = acessoInfo && acessoInfo.ativa === false;
+      authCardEl.innerHTML = ''
+        + '<h1>' + (desligado ? 'Acesso desativado' : (eraTeste ? 'Seu teste terminou' : 'Seu acesso venceu')) + '</h1>'
+        + '<div class="sub">'
+          + (desligado
+              ? 'Este acesso foi desligado por quem vendeu o app. Fale com essa pessoa pra religar.'
+              : (eraTeste
+                  ? 'O teste de 7 dias acabou' + (venceu ? ' em ' + escapeHTML(venceu) : '') + '. Pra continuar, fale com quem te passou o link.'
+                  : 'A mensalidade venceu' + (venceu ? ' em ' + escapeHTML(venceu) : '') + '. Assim que o pagamento for confirmado, o acesso volta na hora.'))
+        + '</div>'
+        + '<div class="auth-ok" style="margin-top:4px;">Seus lançamentos <strong>não foram apagados</strong>. Eles voltam exatamente como estavam assim que o acesso for religado.</div>'
+        + '<button type="button" class="secondary-btn" id="btn-tentar-de-novo" style="margin-top:14px;">Já paguei — verificar de novo</button>'
+        + '<div class="auth-troca"><button type="button" class="auth-link" id="btn-sair">Sair da conta</button></div>';
+      return;
+    }
 
     if (authModo === 'casa'){
       var temConvite = !!conviteDoLink;
@@ -1959,6 +2107,13 @@
       mostrarAuth('casa');
       return;
     }
+
+    await conferirAcesso();
+    if (acessoInfo && (acessoInfo.vencido || acessoInfo.ativa === false)){
+      mostrarAuth('bloqueado');
+      return;
+    }
+
     await carregarTudoDaNuvem();
   }
 
@@ -3187,7 +3342,7 @@
   }
 
   // Barra de seleção de mês, usada no Resumo e nas listas de cada pessoa.
-  function monthBarHTML(action, selecionado, meses, sufixo){
+  function monthBarHTML(action, selecionado, meses, sufixo, comMetas){
     var atual = currentMonthKey();
     // O mês corrente vai aceso na lista e com um marcador de texto junto: cor
     // sozinha não basta, tem navegador que ignora estilo em <option>.
@@ -3204,7 +3359,82 @@
       + '<label class="resumo-month'+(selecionado === atual ? ' is-current' : '')+'"><span class="resumo-month-icon">🗓️</span>'
       + '<select class="resumo-month-select" data-action="'+action+'"'+(sufixo?' data-scope="'+escapeHTML(sufixo)+'"':'')+'>'+opts+'</select></label>'
       + '<span class="resumo-scope">'+escapeHTML(texto)+'</span>'
+      + (comMetas ? metaBotaoHTML() : '')
       + '</div>';
+  }
+
+  // O botão fica sempre ali; a meta só aparece na tela depois que a pessoa
+  // configura alguma. Quem não quiser meta nenhuma não vê meta nenhuma.
+  function metaBotaoHTML(){
+    var ligado = metasAtivas();
+    return '<button type="button" class="meta-btn'+(ligado?' is-on':'')+'" data-action="open-metas"'
+      + ' title="'+(ligado ? 'Ver e mudar as metas do mês' : 'Definir metas de gasto')+'">'
+      + '<span class="meta-btn-icone">🎯</span>'
+      + '<span class="meta-btn-texto">' + (ligado ? 'Metas' : 'Definir metas') + '</span>'
+      + '</button>';
+  }
+
+  /* ---------- Metas ---------- */
+
+  // Quanto foi gasto contra o teto, no mês que está na tela.
+  function metasDoMes(monthKey){
+    var m = normalizarMetas(state.settings.goals);
+    var lista = expensesFor(monthKey).filter(function(e){ return e.type === 'casal'; });
+    var total = lista.reduce(function(soma,e){ return soma + e.value; }, 0);
+    var porCat = {};
+    lista.forEach(function(e){ porCat[e.category] = (porCat[e.category] || 0) + e.value; });
+
+    var linhas = [];
+    if (m.geral) linhas.push({key:'__geral__', nome:'Total do mês', meta:m.geral, gasto:total, geral:true});
+    Object.keys(m.categorias).forEach(function(c){
+      linhas.push({key:c, nome:c, meta:m.categorias[c], gasto:porCat[c] || 0});
+    });
+    // A meta mais perto de estourar sobe: é a que precisa de decisão.
+    linhas.sort(function(a,b){
+      if (a.geral) return -1;
+      if (b.geral) return 1;
+      return (b.gasto/b.meta) - (a.gasto/a.meta);
+    });
+    return linhas;
+  }
+
+  function metaEstado(gasto, meta){
+    var pct = meta > 0 ? (gasto / meta * 100) : 0;
+    if (pct > 100) return {classe:'estourou', cor:'#FF4D6D', rotulo:'Passou'};
+    if (pct >= 80)  return {classe:'perto', cor:'#FFC24F', rotulo:'No limite'};
+    return {classe:'ok', cor:'#39FF88', rotulo:'Dentro'};
+  }
+
+  function metasBlockHTML(monthKey){
+    if (!metasAtivas()) return '';
+    // Meta é sempre de um mês. Com "todos os meses" na tela, comparar com um
+    // teto mensal daria um número sem sentido, então o bloco some.
+    if (!monthKey || monthKey === 'all') return '';
+
+    var linhas = metasDoMes(monthKey).map(function(l){
+      var e = metaEstado(l.gasto, l.meta);
+      var pct = l.meta > 0 ? (l.gasto / l.meta * 100) : 0;
+      var sobra = l.meta - l.gasto;
+      var largura = Math.min(100, pct);
+      var texto = sobra >= 0
+        ? 'Ainda cabe ' + formatBRL(sobra)
+        : 'Passou ' + formatBRL(Math.abs(sobra));
+      return '<div class="meta-row meta-' + e.classe + '">'
+        + '<div class="meta-topo">'
+          + '<span class="meta-nome">' + (l.geral ? '🎯' : catChipHTML(l.nome, 20)) + '<span class="meta-nome-txt">' + escapeHTML(l.nome) + '</span></span>'
+          + '<span class="meta-val">' + formatBRL(l.gasto) + '<span class="meta-de"> de ' + formatBRL(l.meta) + '</span></span>'
+        + '</div>'
+        + '<div class="meta-track"><div class="meta-fill" style="width:' + largura.toFixed(1) + '%;background:' + e.cor + ';box-shadow:0 0 10px ' + hexToRgba(e.cor,0.7) + ';"></div></div>'
+        + '<div class="meta-pe"><span class="meta-tag" style="color:' + e.cor + ';">' + e.rotulo + '</span>'
+          + '<span>' + escapeHTML(texto) + ' · ' + Math.round(pct) + '% da meta</span></div>'
+        + '</div>';
+    }).join('');
+
+    return '<section class="resumo-block neon-box acc-green rb-metas" style="margin-bottom:16px;">'
+      + '<div class="section-title">🎯 Metas de ' + escapeHTML(monthLabelFromKey(monthKey))
+        + '<button type="button" class="meta-editar" data-action="open-metas">ajustar</button></div>'
+      + linhas
+      + '</section>';
   }
 
   // Meses que ainda vão chegar e já têm conta marcada (parcela ou conta fixa).
@@ -3512,7 +3742,7 @@
     var media = mesesFechados.length ? (somaGeral / mesesFechados.length) : 0;
 
     var futuro = futureCommitment();
-    var toolbarHTML = monthBarHTML('resumo-month', month, months);
+    var toolbarHTML = monthBarHTML('resumo-month', month, months, null, true);
 
     // Os quatro indicadores são todos sobre as contas do casal — gasto pessoal
     // saiu daqui e vive na aba de cada pessoa, que é de quem ele é.
@@ -3528,6 +3758,7 @@
     return ''
       + toolbarHTML
       + kpiHTML
+      + metasBlockHTML(month)
       // As colunas são divs de verdade (não áreas de grid) porque o grid
       // dimensiona a linha pelo bloco mais alto e abre buracos no meio quando
       // os blocos têm alturas diferentes — que é exatamente o caso aqui.
@@ -4010,6 +4241,13 @@
     if (!modoNuvem() || !souAdmin) return '';
     return '<div class="field" style="margin-top:22px;"><label>🎟️ Links de acesso (vendas)</label>'
       + '<div class="note" style="margin:-2px 0 10px;">Cada link vale por <strong>um cadastro</strong>. Depois de usado, ele não serve mais pra ninguém. Desligar um acesso corta os dados daquela casa na hora.</div>'
+      + '<div class="field"><label>Tipo de acesso</label>'
+        + '<select id="lic-plano">'
+          + Object.keys(PLANOS).map(function(k){
+              return '<option value="'+k+'">'+PLANOS[k].icone+' '+escapeHTML(PLANOS[k].nome)+'</option>';
+            }).join('')
+        + '</select>'
+        + '<div class="note" id="lic-plano-nota">' + escapeHTML(PLANOS.vitalicio.explica) + '</div></div>'
       + '<div class="field"><label>Pra quem é? (só você vê)</label><input type="text" id="lic-obs" placeholder="Ex: João e Marina — vendido 09/09, R$ 1.200"></div>'
       + '<button type="button" id="btn-gerar-licenca" class="secondary-btn">+ Gerar link novo</button>'
       + '<div id="lic-novo"></div>'
@@ -4032,18 +4270,43 @@
       }
       alvo.innerHTML = lista.map(function(l){
         var usada = !!l.usada_por;
-        var estado = !l.ativa ? 'desligado' : (usada ? 'usado' : 'livre');
-        var rotulo = !l.ativa ? 'Desligado' : (usada ? 'Em uso' : 'Disponível');
+        var plano = planoInfo(l.plano);
+        var dias = diasAteData(l.expira_em);
+        var vencida = (dias !== null && dias < 0);
+
+        // Um link vencido não é a mesma coisa que um link desligado por você:
+        // um a pessoa resolve pagando, o outro foi decisão sua.
+        var estado = !l.ativa ? 'desligado' : (vencida ? 'vencido' : (usada ? 'usado' : 'livre'));
+        var rotulo = !l.ativa ? 'Desligado' : (vencida ? 'Vencido' : (usada ? 'Em uso' : 'Disponível'));
         var quando = l.usada_em ? formatDateBR(String(l.usada_em).slice(0,10)) : '';
+
+        var prazo;
+        if (!usada){
+          prazo = l.plano === 'vitalicio'
+            ? 'Ainda não usado · não vence'
+            : 'Ainda não usado · ' + (l.dias_validade || plano.dias) + ' dias começam quando a pessoa se cadastrar';
+        } else if (l.plano === 'vitalicio'){
+          prazo = 'Ativado em ' + quando + ' · não vence';
+        } else if (vencida){
+          prazo = 'Venceu em ' + formatDateBR(String(l.expira_em).slice(0,10)) + ' (há ' + Math.abs(dias) + (Math.abs(dias) === 1 ? ' dia' : ' dias') + ')';
+        } else {
+          prazo = 'Vence em ' + formatDateBR(String(l.expira_em).slice(0,10))
+            + ' · ' + (dias === 0 ? 'vence hoje' : 'faltam ' + dias + (dias === 1 ? ' dia' : ' dias'));
+        }
+
+        var podeRenovar = usada && l.plano !== 'vitalicio';
+
         return '<div class="lic-row lic-' + estado + '">'
           + '<div class="lic-topo">'
             + '<span class="lic-codigo">' + escapeHTML(l.codigo) + '</span>'
             + '<span class="lic-tag">' + rotulo + '</span>'
           + '</div>'
+          + '<div class="lic-plano">' + plano.icone + ' ' + escapeHTML(plano.curto) + '</div>'
           + (l.observacao ? '<div class="lic-obs">' + escapeHTML(l.observacao) + '</div>' : '')
-          + '<div class="lic-meta">' + (usada ? ('Ativado em ' + quando) : 'Ainda não usado') + '</div>'
+          + '<div class="lic-meta">' + escapeHTML(prazo) + '</div>'
           + '<div class="lic-acoes">'
             + (usada ? '' : '<button type="button" class="secondary-btn lic-btn" data-action="copiar-link" data-codigo="' + escapeHTML(l.codigo) + '">Copiar link</button>')
+            + (podeRenovar ? '<button type="button" class="secondary-btn lic-btn lic-btn-renovar" data-action="renovar-licenca" data-codigo="' + escapeHTML(l.codigo) + '" data-dias="' + (l.dias_validade || 30) + '">Renovar +' + (l.dias_validade || 30) + ' dias</button>' : '')
             + '<button type="button" class="secondary-btn lic-btn" data-action="alternar-licenca" data-codigo="' + escapeHTML(l.codigo) + '" data-ativa="' + (l.ativa ? '1' : '0') + '">'
               + (l.ativa ? 'Desligar acesso' : 'Religar acesso') + '</button>'
           + '</div>'
@@ -4057,13 +4320,16 @@
   async function acaoGerarLicenca(){
     var b = settingsPanelEl.querySelector('#btn-gerar-licenca');
     var obs = settingsPanelEl.querySelector('#lic-obs');
+    var selPlano = settingsPanelEl.querySelector('#lic-plano');
+    var plano = selPlano ? selPlano.value : 'vitalicio';
     b.disabled = true; b.textContent = 'Gerando...';
     try {
-      var codigo = await gerarLicenca(obs ? obs.value : null, null);
+      var codigo = await gerarLicenca(obs ? obs.value : null, plano, null);
       var link = baseDoSite() + '?convite=' + codigo;
+      var info = planoInfo(plano);
       var caixa = settingsPanelEl.querySelector('#lic-novo');
       caixa.innerHTML = '<div class="lic-novo-caixa">'
-        + '<div class="note" style="margin:0 0 6px;">Link pronto — mande pra pessoa:</div>'
+        + '<div class="note" style="margin:0 0 6px;">Link de <strong>' + escapeHTML(info.nome.toLowerCase()) + '</strong> pronto — mande pra pessoa:</div>'
         + '<div class="lic-link">' + escapeHTML(link) + '</div>'
         + '<button type="button" class="secondary-btn" data-action="copiar-link" data-codigo="' + escapeHTML(codigo) + '" style="margin-top:8px;">Copiar link</button>'
         + '</div>';
@@ -4073,6 +4339,17 @@
       alert('Não foi possível gerar o link: ' + (e.message || ''));
     }
     b.disabled = false; b.textContent = '+ Gerar link novo';
+  }
+
+  async function acaoRenovarLicenca(codigo, dias){
+    if (!confirm('Renovar este acesso por mais ' + dias + ' dias?\n\nOs dias entram em cima do vencimento atual — quem paga adiantado não perde nada.')) return;
+    try {
+      var nova = await renovarLicenca(codigo, Number(dias) || null);
+      await renderListaLicencas();
+      alert('Renovado. Novo vencimento: ' + formatDateBR(String(nova).slice(0,10)) + '.');
+    } catch(e){
+      alert('Não deu certo: ' + (e.message || ''));
+    }
   }
 
   async function alternarLicenca(codigo, estavaAtiva){
@@ -4253,6 +4530,99 @@
   }
 
   /* ---------- Janela dos próximos meses ---------- */
+
+  /* ---------- Janela das metas ---------- */
+
+  var metasDraft = null;
+
+  function openMetasModal(){
+    var m = normalizarMetas(state.settings.goals);
+    metasDraft = {geral: m.geral, categorias: Object.assign({}, m.categorias)};
+    renderMetasModal();
+    metasModalEl.classList.remove('hidden');
+  }
+  function closeMetasModal(){ metasModalEl.classList.add('hidden'); metasDraft = null; }
+
+  function renderMetasModal(){
+    var mes = (state.resumoMonth && state.resumoMonth !== 'all') ? state.resumoMonth : currentMonthKey();
+    var lista = expensesFor(mes).filter(function(e){ return e.type === 'casal'; });
+    var totalMes = lista.reduce(function(soma,e){ return soma + e.value; }, 0);
+    var porCat = {};
+    lista.forEach(function(e){ porCat[e.category] = (porCat[e.category] || 0) + e.value; });
+
+    // Linhas que aparecem: as que já têm meta, mais as categorias em que houve
+    // gasto neste mês. Não adianta oferecer meta de uma categoria que a casa
+    // nunca usa — vira uma lista de 15 itens que ninguém lê.
+    var chaves = Object.keys(metasDraft.categorias);
+    Object.keys(porCat).forEach(function(c){ if (chaves.indexOf(c) === -1) chaves.push(c); });
+    chaves.sort(function(a,b){ return (porCat[b] || 0) - (porCat[a] || 0); });
+
+    var linhasCat = chaves.map(function(c){
+      var valor = metasDraft.categorias[c];
+      return '<div class="meta-linha-cfg" data-categoria="'+escapeHTML(c)+'">'
+        + '<span class="meta-cfg-nome">' + catChipHTML(c, 22)
+          + '<span>' + escapeHTML(c)
+            + '<span class="meta-cfg-gasto">gastou ' + formatBRL(porCat[c] || 0) + ' neste mês</span></span></span>'
+        + '<input type="number" inputmode="decimal" min="0" step="0.01" class="meta-cfg-input meta-cat-input"'
+          + ' data-categoria="' + escapeHTML(c) + '" placeholder="sem meta" value="' + (valor ? valor : '') + '">'
+        + (valor ? '<button type="button" class="meta-cfg-tirar" data-action="tirar-meta" data-categoria="'+escapeHTML(c)+'" title="Tirar esta meta">✕</button>' : '<span style="width:19px;"></span>')
+        + '</div>';
+    }).join('');
+
+    // Categorias sem gasto neste mês, pra quem quiser criar uma meta antes de
+    // gastar (ex: "Lazer, no máximo 300").
+    var faltando = CATEGORIES.map(function(c){ return c.id; }).filter(function(c){ return chaves.indexOf(c) === -1; });
+    var addSelect = faltando.length
+      ? '<div class="field" style="margin-top:14px;"><label>Adicionar outra categoria</label>'
+        + '<select id="meta-add-cat"><option value="">Escolher uma categoria…</option>'
+        + faltando.map(function(c){ return '<option value="'+escapeHTML(c)+'">'+escapeHTML(c)+'</option>'; }).join('')
+        + '</select></div>'
+      : '';
+
+    metasPanelEl.innerHTML = ''
+      + '<h2>🎯 Metas de gasto</h2>'
+      + '<div class="note" style="margin:6px 0 14px;">Meta é um teto, não uma conta a pagar. Nada trava quando passa — o app só avisa. Deixe em branco a meta que você não quiser usar; sem nenhuma meta preenchida, nada de meta aparece na tela.</div>'
+      + '<div class="field"><label>Meta geral do mês (contas do casal)</label>'
+        + '<input type="number" inputmode="decimal" min="0" step="0.01" id="meta-geral" placeholder="Ex: 7000" value="' + (metasDraft.geral ? metasDraft.geral : '') + '">'
+        + '<div class="note">Neste mês vocês já estão em <strong>' + formatBRL(totalMes) + '</strong>.</div></div>'
+      + '<div class="field" style="margin-top:16px;"><label>Metas por categoria</label>'
+        + '<div class="note" style="margin:-2px 0 4px;">Um teto separado pra cada coisa — mercado, gasolina, iFood.</div>'
+        + (linhasCat || '<div class="note">Nenhum gasto lançado neste mês ainda.</div>')
+        + '</div>'
+      + addSelect
+      + '<div class="settings-actions" style="margin-top:18px;">'
+        + '<button type="button" class="submit-btn" id="btn-salvar-metas" style="background:var(--positive);color:#04220f;">Salvar metas</button>'
+        + '<button type="button" class="secondary-btn" data-action="close-metas">Cancelar</button>'
+      + '</div>'
+      + (metasAtivas() ? '<button type="button" class="secondary-btn" id="btn-limpar-metas" style="margin-top:8px;">Tirar todas as metas</button>' : '');
+  }
+
+  function lerMetasDoFormulario(){
+    var geralEl = metasPanelEl.querySelector('#meta-geral');
+    var geral = geralEl ? parseFloat(geralEl.value) : NaN;
+    var cats = {};
+    metasPanelEl.querySelectorAll('.meta-cat-input').forEach(function(el){
+      var v = parseFloat(el.value);
+      if (v > 0) cats[el.getAttribute('data-categoria')] = v;
+    });
+    return {geral: (geral > 0 ? geral : null), categorias: cats};
+  }
+
+  async function salvarMetas(){
+    var novas = lerMetasDoFormulario();
+    var b = metasPanelEl.querySelector('#btn-salvar-metas');
+    if (b){ b.disabled = true; b.textContent = 'Salvando...'; }
+    var copia = Object.assign({}, state.settings, {goals: novas});
+    var ok = await saveSettings(copia);
+    if (!ok){
+      if (b){ b.disabled = false; b.textContent = 'Salvar metas'; }
+      alert('Não foi possível salvar as metas. Tente de novo.');
+      return;
+    }
+    state.settings = copia;
+    closeMetasModal();
+    render();
+  }
 
   function openFutureModal(){
     renderFutureModal();
@@ -5404,6 +5774,7 @@
         return;
       }
 
+      if (e.target.closest('[data-action="open-metas"]')){ openMetasModal(); return; }
       if (e.target.closest('[data-action="open-future"]')){ openFutureModal(); return; }
 
       var openItemsBtn = e.target.closest('[data-action="open-items"]');
@@ -5493,6 +5864,7 @@
       if (e.target.closest('#btn-resgatar')){ acaoResgatar(); return; }
       if (e.target.closest('#btn-criar-casa')){ acaoCriarCasa(); return; }
       if (e.target.closest('#btn-entrar-casa')){ acaoEntrarCasa(); return; }
+      if (e.target.closest('#btn-tentar-de-novo')){ location.reload(); return; }
       if (e.target.closest('#btn-sair')){ sairDaConta(); return; }
     });
     authCardEl.addEventListener('keydown', function(e){
@@ -5600,6 +5972,11 @@
         } catch(err){ prompt('Copie o link:', link); }
         return;
       }
+      var renovar = e.target.closest('[data-action="renovar-licenca"]');
+      if (renovar){
+        acaoRenovarLicenca(renovar.getAttribute('data-codigo'), renovar.getAttribute('data-dias'));
+        return;
+      }
       var alternar = e.target.closest('[data-action="alternar-licenca"]');
       if (alternar){
         alternarLicenca(alternar.getAttribute('data-codigo'), alternar.getAttribute('data-ativa') === '1');
@@ -5622,6 +5999,45 @@
       if (e.target.closest('#open-reset-btn')){ closeSettingsModal(); openResetModal(); return; }
     });
 
+    metasModalEl.addEventListener('click', function(e){ if (e.target === metasModalEl) closeMetasModal(); });
+    metasPanelEl.addEventListener('click', function(e){
+      if (e.target.closest('[data-action="close-metas"]')){ closeMetasModal(); return; }
+      if (e.target.closest('#btn-salvar-metas')){ salvarMetas(); return; }
+      if (e.target.closest('#btn-limpar-metas')){
+        if (!confirm('Tirar todas as metas? A tela volta a não mostrar meta nenhuma.')) return;
+        metasDraft = {geral:null, categorias:{}};
+        var el = metasPanelEl.querySelector('#meta-geral');
+        if (el) el.value = '';
+        metasPanelEl.querySelectorAll('.meta-cat-input').forEach(function(i){ i.value = ''; });
+        salvarMetas();
+        return;
+      }
+      var tirar = e.target.closest('[data-action="tirar-meta"]');
+      if (tirar){
+        var cat = tirar.getAttribute('data-categoria');
+        delete metasDraft.categorias[cat];
+        // Guarda o que já estava digitado antes de redesenhar a lista.
+        var atuais = lerMetasDoFormulario();
+        delete atuais.categorias[cat];
+        metasDraft = atuais;
+        renderMetasModal();
+        return;
+      }
+    });
+    metasPanelEl.addEventListener('change', function(e){
+      if (e.target.matches('#meta-add-cat')){
+        var cat = e.target.value;
+        if (!cat) return;
+        metasDraft = lerMetasDoFormulario();
+        metasDraft.categorias[cat] = metasDraft.categorias[cat] || 0;
+        renderMetasModal();
+        // Já deixa o cursor no campo que a pessoa acabou de criar.
+        var novo = metasPanelEl.querySelector('.meta-cat-input[data-categoria="' + cat.replace(/"/g,'\\"') + '"]');
+        if (novo) novo.focus();
+        return;
+      }
+    });
+
     futureModalEl.addEventListener('click', function(e){ if (e.target === futureModalEl) closeFutureModal(); });
     futurePanelEl.addEventListener('click', function(e){
       if (e.target.closest('[data-action="close-future"]')){ closeFutureModal(); return; }
@@ -5639,6 +6055,11 @@
     });
 
     settingsPanelEl.addEventListener('change', function(e){
+      if (e.target.matches('#lic-plano')){
+        var nota = settingsPanelEl.querySelector('#lic-plano-nota');
+        if (nota) nota.textContent = planoInfo(e.target.value).explica;
+        return;
+      }
       if (e.target.matches('#import-input')){
         var arq = e.target.files && e.target.files[0];
         e.target.value = '';                 // permite escolher o mesmo arquivo de novo
@@ -5688,6 +6109,8 @@
     itemsPanelEl = document.getElementById('items-panel');
     resetModalEl = document.getElementById('reset-modal');
     resetPanelEl = document.getElementById('reset-panel');
+    metasModalEl = document.getElementById('metas-modal');
+    metasPanelEl = document.getElementById('metas-panel');
     futureModalEl = document.getElementById('future-modal');
     futurePanelEl = document.getElementById('future-panel');
     authScreenEl = document.getElementById('auth-screen');
