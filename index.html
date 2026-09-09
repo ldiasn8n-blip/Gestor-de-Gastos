@@ -543,6 +543,90 @@
     font-size:15px;font-weight:700;
   }
   .future-total .v{ color:var(--neon2);text-shadow:0 0 14px rgba(79,224,255,0.5); }
+  /* ---------- Entrar / criar conta ---------- */
+  #auth-screen{
+    position:fixed; inset:0; z-index:200; background:var(--paper);
+    display:flex; align-items:center; justify-content:center; padding:20px;
+    overflow-y:auto;
+  }
+  #auth-screen.hidden{ display:none; }
+  #auth-card{
+    width:100%; max-width:400px;
+    background:var(--paper-raised);
+    border:1px solid rgba(79,224,255,0.4);
+    border-radius:var(--radius); padding:26px 22px;
+    box-shadow:0 0 0 1px rgba(79,224,255,0.08), 0 0 40px -10px rgba(79,224,255,0.5), var(--shadow-lg);
+  }
+  #auth-card h1{ font-size:22px; margin:0 0 4px; }
+  #auth-card .sub{ font-size:13px; color:var(--ink-soft); margin-bottom:20px; line-height:1.5; }
+  #auth-card .field{ margin-bottom:12px; }
+  /* Os estilos de rótulo e campo do app são presos a form.add-form e ao
+     painel de configurações. A tela de entrada não é nenhum dos dois, então
+     precisa dos seus — senão o rótulo cola no campo, como colou. */
+  #auth-card label{
+    display:block; font-size:12px; color:var(--ink-soft); margin-bottom:5px;
+  }
+  #auth-card input[type="text"],
+  #auth-card input[type="email"],
+  #auth-card input[type="password"]{
+    width:100%; padding:11px 12px;
+    border:1px solid var(--line); border-radius:9px;
+    font-size:16px;                 /* 16px evita o zoom automático do iPhone */
+    background:var(--input-bg); color:var(--ink); font-family:inherit;
+  }
+  #auth-card input:focus{
+    outline:none; border-color:rgba(79,224,255,0.6);
+    box-shadow:0 0 0 3px rgba(79,224,255,0.14);
+  }
+  #auth-card .submit-btn,
+  #auth-card .secondary-btn{ width:100%; }
+  #auth-card .auth-erro{
+    font-size:12.5px; color:var(--alert); margin:-4px 0 12px; line-height:1.45;
+    min-height:0;
+  }
+  #auth-card .auth-ok{ font-size:12.5px; color:var(--positive); margin:-4px 0 12px; line-height:1.45; }
+  .auth-troca{
+    margin-top:16px; text-align:center; font-size:13px; color:var(--ink-soft);
+  }
+  .auth-link{
+    background:none; border:none; color:var(--neon2); font-weight:700;
+    font-family:inherit; font-size:13px; cursor:pointer; padding:2px 4px;
+    text-decoration:underline;
+  }
+  .auth-ou{
+    display:flex; align-items:center; gap:10px; margin:18px 0 14px;
+    color:var(--ink-soft); font-size:11.5px; text-transform:uppercase; letter-spacing:.06em;
+  }
+  .auth-ou::before, .auth-ou::after{ content:''; flex:1; height:1px; background:var(--line); }
+
+  /* Faixa de aviso quando tem coisa esperando internet */
+  #sync-bar{
+    position:fixed; left:0; right:0; bottom:0; z-index:150;
+    background:#3a2a08; color:#FFC24F; border-top:1px solid rgba(255,194,79,0.4);
+    font-size:12.5px; text-align:center; padding:9px 14px calc(9px + env(safe-area-inset-bottom));
+    line-height:1.4;
+  }
+  #sync-bar.hidden{ display:none; }
+  @media (max-width:859px){ #sync-bar{ bottom:64px; } }
+
+  .convite-caixa{
+    display:flex; align-items:center; gap:10px;
+    background:var(--input-bg); border:1px solid rgba(79,224,255,0.35);
+    border-radius:10px; padding:10px 10px 10px 14px;
+    box-shadow:0 0 16px -6px rgba(79,224,255,0.55);
+  }
+  .convite-codigo{
+    flex:1; font-size:20px; font-weight:800; letter-spacing:.18em;
+    color:var(--neon2); text-shadow:0 0 14px rgba(79,224,255,0.5);
+    font-variant-numeric:tabular-nums;
+  }
+
+  .storage-meter{ margin:2px 0 10px; }
+  .storage-top{ display:flex; justify-content:space-between; align-items:baseline; font-size:12px; color:var(--ink-soft); margin-bottom:5px; }
+  .storage-val{ font-weight:700; font-variant-numeric:tabular-nums; }
+  .storage-track{ height:6px; border-radius:3px; background:var(--hover-soft); overflow:hidden; }
+  .storage-fill{ height:100%; border-radius:3px; min-width:3px; }
+
   .kpi-clickable{
     display:block;width:100%;text-align:left;font-family:inherit;cursor:pointer;
   }
@@ -1042,6 +1126,12 @@
   <div id="reset-panel"></div>
 </div>
 
+<div id="auth-screen" class="hidden">
+  <div id="auth-card"></div>
+</div>
+
+<div id="sync-bar" class="hidden"></div>
+
 <div id="future-modal" class="hidden">
   <div id="future-panel"></div>
 </div>
@@ -1053,6 +1143,7 @@
   pro preenchimento manual — a leitura automática nunca trava o resto do site.
 -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.0.4/tesseract.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/dist/umd/supabase.min.js"></script>
 
 <script>
 (function(){
@@ -1251,60 +1342,634 @@
     });
   }
 
-  async function loadExpenses(){
-    if (!storageAvailable) return [];
+  /* ================================================================
+     SINCRONIZAÇÃO (Supabase)
+     Antes, cada aparelho guardava tudo no próprio navegador e os dois
+     celulares do casal nunca se viam. Agora existe uma "casa" no
+     servidor: quem entra com a mesma conta (ou com o código de
+     convite) enxerga os mesmos lançamentos, e a tela do outro
+     atualiza sozinha quando alguém lança algo.
+
+     Três decisões que valem explicação:
+
+     1) O localStorage não foi jogado fora — virou CACHE. O app abre
+        instantâneo com o que já tinha e continua funcionando sem
+        sinal, o que importa porque é dentro do mercado que você usa.
+
+     2) saveExpenses() continua recebendo a lista inteira (são 14
+        lugares chamando ela), mas por dentro ela agora manda só o que
+        MUDOU desde a última sincronização. Isso é o que impede o
+        celular de um apagar o lançamento do outro: se você adiciona o
+        mercado e ela adiciona a gasolina ao mesmo tempo, cada aparelho
+        envia só o seu, em vez de gravar a própria lista por cima.
+
+     3) Se o Supabase não estiver configurado ou fora do ar, tudo cai
+        pro modo local de antes. O app nunca fica inutilizável.
+     ================================================================ */
+
+  var SUPABASE_URL = 'https://dbkssuzzbybcqwglrrhd.supabase.co';
+  var SUPABASE_KEY = 'sb_publishable_OC4NEralAKaC0JyUltPRKg_hTJ1mHer';
+
+  var supa = null;            // cliente
+  var sessaoUsuario = null;   // usuário logado
+  var casaId = null;          // casa atual
+  var codigoConvite = null;
+  var canalTempoReal = null;
+  var sincronizando = false;
+  // Retrato do que o servidor tem, usado pra calcular o que mudou.
+  var espelhoServidor = {};
+
+  function modoNuvem(){ return !!(supa && casaId); }
+
+  function iniciarSupabase(){
     try {
-      var raw = localStorage.getItem('gastos_casa_expenses');
-      if (!raw) return [];
-      var parsed = JSON.parse(raw);
-      return Array.isArray(parsed) ? parsed : [];
+      if (!SUPABASE_URL || !SUPABASE_KEY) return null;
+      if (typeof window.supabase === 'undefined') return null;
+      return window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+        auth: { persistSession: true, autoRefreshToken: true }
+      });
+    } catch(e){ console.error('Supabase indisponível', e); return null; }
+  }
+
+  /* ---------- Conversão entre o formato do app e o do banco ---------- */
+
+  function gastoParaBanco(e){
+    return {
+      id: e.id,
+      casa_id: casaId,
+      person: e.person,
+      type: e.type,
+      category: e.category,
+      description: e.description || '',
+      value: Number(e.value) || 0,
+      date: e.date,
+      thumb: e.thumb || null,
+      items: e.items || null,
+      fixed: !!e.fixed,
+      installment: !!e.installment,
+      installments_total: e.installmentsTotal == null ? null : Number(e.installmentsTotal),
+      installments_paid: e.installmentsPaid == null ? null : Number(e.installmentsPaid),
+      payment_method: e.paymentMethod || null,
+      card: e.card || null,
+      demo: !!e.demo,
+      atualizado_em: new Date().toISOString()
+    };
+  }
+
+  function gastoDoBanco(r){
+    return {
+      id: r.id,
+      person: r.person,
+      type: r.type,
+      category: r.category,
+      description: r.description || '',
+      value: Number(r.value) || 0,
+      date: r.date,
+      thumb: r.thumb || null,
+      items: r.items || null,
+      fixed: !!r.fixed,
+      installment: !!r.installment,
+      installmentsTotal: r.installments_total,
+      installmentsPaid: r.installments_paid,
+      paymentMethod: r.payment_method || undefined,
+      card: r.card || undefined,
+      demo: !!r.demo
+    };
+  }
+
+  // Só os campos que o app realmente usa entram na comparação, senão
+  // um carimbo de data mudando sozinho faria tudo parecer "alterado".
+  function assinaturaGasto(e){
+    return JSON.stringify([e.person, e.type, e.category, e.description, Number(e.value)||0,
+      e.date, e.thumb || null, e.items || null, !!e.fixed, !!e.installment,
+      e.installmentsTotal == null ? null : Number(e.installmentsTotal),
+      e.installmentsPaid == null ? null : Number(e.installmentsPaid),
+      e.paymentMethod || null, e.card || null, !!e.demo]);
+  }
+
+  function refazerEspelho(lista){
+    espelhoServidor = {};
+    (lista || []).forEach(function(e){ espelhoServidor[e.id] = assinaturaGasto(e); });
+  }
+
+  /* ---------- Cache local (abre rápido e funciona sem sinal) ---------- */
+
+  function lerCache(chave, padrao){
+    if (!storageAvailable) return padrao;
+    try {
+      var raw = localStorage.getItem(chave);
+      if (!raw) return padrao;
+      var v = JSON.parse(raw);
+      return (v === null || v === undefined) ? padrao : v;
+    } catch(e){ return padrao; }
+  }
+
+  function gravarCache(chave, valor){
+    if (!storageAvailable) return false;
+    try { localStorage.setItem(chave, JSON.stringify(valor)); return true; }
+    catch(e){ console.error('gravarCache', chave, e); return false; }
+  }
+
+  /* ---------- Fila de envio (o que ficou pra trás sem internet) ---------- */
+
+  function lerFila(){ return lerCache('gastos_casa_fila', {upserts:{}, deletes:[]}); }
+  function gravarFila(f){ gravarCache('gastos_casa_fila', f); }
+  function temPendencia(){
+    var f = lerFila();
+    return Object.keys(f.upserts || {}).length > 0 || (f.deletes || []).length > 0;
+  }
+
+  function enfileirar(upserts, deletes){
+    var f = lerFila();
+    f.upserts = f.upserts || {}; f.deletes = f.deletes || [];
+    upserts.forEach(function(g){ f.upserts[g.id] = g; delete_do_array(f.deletes, g.id); });
+    deletes.forEach(function(id){ delete f.upserts[id]; if (f.deletes.indexOf(id) === -1) f.deletes.push(id); });
+    gravarFila(f);
+  }
+  function delete_do_array(arr, valor){
+    var i = arr.indexOf(valor);
+    if (i !== -1) arr.splice(i, 1);
+  }
+
+  async function enviarParaServidor(upserts, deletes){
+    if (!modoNuvem()) return false;
+    try {
+      if (upserts.length){
+        var r1 = await supa.from('gastos').upsert(upserts.map(gastoParaBanco));
+        if (r1.error) throw r1.error;
+      }
+      if (deletes.length){
+        var r2 = await supa.from('gastos').delete().in('id', deletes).eq('casa_id', casaId);
+        if (r2.error) throw r2.error;
+      }
+      return true;
     } catch(e){
-      console.error('loadExpenses', e);
-      return [];
+      console.error('enviarParaServidor', e);
+      return false;
     }
+  }
+
+  async function esvaziarFila(){
+    if (!modoNuvem() || !temPendencia()) return;
+    var f = lerFila();
+    var ups = Object.keys(f.upserts || {}).map(function(k){ return f.upserts[k]; });
+    var dels = (f.deletes || []).slice();
+    var ok = await enviarParaServidor(ups, dels);
+    if (ok){
+      gravarFila({upserts:{}, deletes:[]});
+      atualizarAvisoSync();
+    }
+  }
+
+  /* ---------- As quatro funções que o resto do app usa ---------- */
+
+  async function loadExpenses(){
+    if (modoNuvem()){
+      try {
+        var r = await supa.from('gastos').select('*').eq('casa_id', casaId);
+        if (r.error) throw r.error;
+        var lista = (r.data || []).map(gastoDoBanco);
+        refazerEspelho(lista);
+        gravarCache('gastos_casa_expenses', lista);
+        return lista;
+      } catch(e){
+        console.error('loadExpenses (nuvem)', e);
+        // Sem internet: abre com o que estava guardado.
+      }
+    }
+    var cache = lerCache('gastos_casa_expenses', []);
+    return Array.isArray(cache) ? cache : [];
   }
 
   async function saveExpenses(arr){
-    if (!storageAvailable) return false;
-    try {
-      localStorage.setItem('gastos_casa_expenses', JSON.stringify(arr));
-      return true;
-    } catch(e){
-      console.error('saveExpenses', e);
-      return false;
+    gravarCache('gastos_casa_expenses', arr);
+    if (!modoNuvem()) return storageAvailable;
+
+    // Compara com o retrato do servidor e separa só o que mudou.
+    var agora = {};
+    arr.forEach(function(e){ agora[e.id] = e; });
+
+    var upserts = [], deletes = [];
+    Object.keys(agora).forEach(function(id){
+      if (espelhoServidor[id] !== assinaturaGasto(agora[id])) upserts.push(agora[id]);
+    });
+    Object.keys(espelhoServidor).forEach(function(id){
+      if (!agora[id]) deletes.push(id);
+    });
+    if (!upserts.length && !deletes.length) return true;
+
+    var enviou = await enviarParaServidor(upserts, deletes);
+    if (!enviou){
+      enfileirar(upserts, deletes);
+      atualizarAvisoSync();
+      return true;   // guardado no aparelho; sobe quando a internet voltar
     }
+    refazerEspelho(arr);
+    atualizarAvisoSync();
+    return true;
   }
 
   async function loadSettings(){
-    if (!storageAvailable) return defaultSettings();
-    try {
-      var raw = localStorage.getItem('gastos_casa_settings');
-      if (!raw) return defaultSettings();
-      var parsed = JSON.parse(raw);
-      var loaded = parsed && Array.isArray(parsed.members) ? parsed : defaultSettings();
-      if (!Array.isArray(loaded.cards) || !loaded.cards.length) loaded.cards = DEFAULT_CARDS.slice();
-      return loaded;
-    } catch(e){
-      console.error('loadSettings', e);
-      return defaultSettings();
+    if (modoNuvem()){
+      try {
+        var rc = await supa.from('casas').select('nome, cartoes, codigo_convite').eq('id', casaId).single();
+        var rm = await supa.from('membros').select('*').eq('casa_id', casaId).order('ordem');
+        if (rc.error) throw rc.error;
+        if (rm.error) throw rm.error;
+        codigoConvite = rc.data.codigo_convite;
+        var s = {
+          householdName: rc.data.nome || 'Gastos da Casa',
+          cards: Array.isArray(rc.data.cartoes) && rc.data.cartoes.length ? rc.data.cartoes : DEFAULT_CARDS.slice(),
+          members: (rm.data || []).map(function(m){
+            return { id:m.id, name:m.nome, color:m.cor, percentage:Number(m.percentual)||0 };
+          })
+        };
+        if (!s.members.length) s.members = defaultSettings().members;
+        gravarCache('gastos_casa_settings', s);
+        return s;
+      } catch(e){ console.error('loadSettings (nuvem)', e); }
     }
+    var cache = lerCache('gastos_casa_settings', null);
+    var loaded = (cache && Array.isArray(cache.members)) ? cache : defaultSettings();
+    if (!Array.isArray(loaded.cards) || !loaded.cards.length) loaded.cards = DEFAULT_CARDS.slice();
+    return loaded;
   }
 
   async function saveSettings(s){
-    if (!storageAvailable) return false;
+    gravarCache('gastos_casa_settings', s);
+    if (!modoNuvem()) return storageAvailable;
     try {
-      localStorage.setItem('gastos_casa_settings', JSON.stringify(s));
+      var r1 = await supa.from('casas')
+        .update({ nome: s.householdName || 'Gastos da Casa', cartoes: s.cards || [] })
+        .eq('id', casaId);
+      if (r1.error) throw r1.error;
+
+      var linhas = (s.members || []).map(function(m, i){
+        return { casa_id:casaId, id:m.id, nome:m.name, cor:m.color, percentual:Number(m.percentage)||0, ordem:i };
+      });
+      if (linhas.length){
+        var r2 = await supa.from('membros').upsert(linhas);
+        if (r2.error) throw r2.error;
+      }
+      // Membro removido nas configurações sai do banco também.
+      var ids = (s.members || []).map(function(m){ return m.id; });
+      if (ids.length){
+        var r3 = await supa.from('membros').delete().eq('casa_id', casaId).not('id', 'in', '(' + ids.map(function(i){ return '"' + i + '"'; }).join(',') + ')');
+        if (r3.error) console.error('limpar membros', r3.error);
+      }
       return true;
     } catch(e){
-      console.error('saveSettings', e);
-      return false;
+      console.error('saveSettings (nuvem)', e);
+      return true;   // ficou no cache; a próxima sincronização resolve
     }
   }
 
+  /* ---------- Tempo real ---------- */
+
+  function ligarTempoReal(){
+    if (!modoNuvem()) return;
+    if (canalTempoReal){ try { supa.removeChannel(canalTempoReal); } catch(e){} }
+    canalTempoReal = supa.channel('casa-' + casaId)
+      .on('postgres_changes',
+        { event:'*', schema:'public', table:'gastos', filter:'casa_id=eq.' + casaId },
+        function(msg){ aplicarMudancaRemota(msg); })
+      .on('postgres_changes',
+        { event:'*', schema:'public', table:'membros', filter:'casa_id=eq.' + casaId },
+        function(){ recarregarConfigRemota(); })
+      .on('postgres_changes',
+        { event:'*', schema:'public', table:'casas', filter:'id=eq.' + casaId },
+        function(){ recarregarConfigRemota(); })
+      .subscribe();
+  }
+
+  // Chega uma mudança feita no OUTRO aparelho: encaixa na lista e
+  // redesenha, sem recarregar a página.
+  function aplicarMudancaRemota(msg){
+    try {
+      if (msg.eventType === 'DELETE'){
+        var idFora = msg.old && msg.old.id;
+        if (!idFora) return;
+        var iF = state.expenses.findIndex(function(e){ return e.id === idFora; });
+        if (iF === -1) return;
+        state.expenses.splice(iF, 1);
+        delete espelhoServidor[idFora];
+      } else {
+        var g = gastoDoBanco(msg.new);
+        var i = state.expenses.findIndex(function(e){ return e.id === g.id; });
+        // Se a assinatura é a mesma, a mudança foi nossa e voltou de eco.
+        if (i !== -1 && espelhoServidor[g.id] === assinaturaGasto(g)) return;
+        if (i === -1) state.expenses.push(g); else state.expenses[i] = g;
+        espelhoServidor[g.id] = assinaturaGasto(g);
+      }
+      gravarCache('gastos_casa_expenses', state.expenses);
+      if (!state.settingsDraft) render();
+    } catch(e){ console.error('aplicarMudancaRemota', e); }
+  }
+
+  async function recarregarConfigRemota(){
+    if (state.settingsDraft) return;   // não atropela quem está editando
+    state.settings = await loadSettings();
+    ensureSubTabDefaults();
+    render();
+  }
+
+  /* ---------- Entrar, criar casa, sair ---------- */
+
+  async function descobrirCasa(){
+    var r = await supa.from('casa_usuarios').select('casa_id').limit(1);
+    if (r.error) throw r.error;
+    return (r.data && r.data.length) ? r.data[0].casa_id : null;
+  }
+
+  async function criarCasa(nome){
+    var r = await supa.rpc('criar_minha_casa', { p_nome: nome || 'Gastos da Casa' });
+    if (r.error) throw r.error;
+    return r.data;
+  }
+
+  async function entrarComCodigo(codigo){
+    var r = await supa.rpc('entrar_na_casa', { p_codigo: codigo });
+    if (r.error) throw r.error;
+    return r.data;
+  }
+
+  async function sairDaConta(){
+    if (!supa) return;
+    if (temPendencia() && !confirm('Ainda tem lançamento esperando internet pra subir. Sair agora pode perder isso. Sair mesmo assim?')) return;
+    try { if (canalTempoReal) supa.removeChannel(canalTempoReal); } catch(e){}
+    await supa.auth.signOut();
+    try {
+      localStorage.removeItem('gastos_casa_expenses');
+      localStorage.removeItem('gastos_casa_settings');
+      localStorage.removeItem('gastos_casa_fila');
+    } catch(e){}
+    location.reload();
+  }
+
+  /* ---------- Telas de entrar / criar conta / escolher casa ---------- */
+
+  var authScreenEl, authCardEl, syncBarEl;
+  var authModo = 'entrar';    // entrar | cadastrar | casa
+
+  function mostrarAuth(modo, mensagem, tipo){
+    authModo = modo || authModo;
+    renderAuth(mensagem, tipo);
+    authScreenEl.classList.remove('hidden');
+    shellEl.classList.add('hidden');
+    loadingEl.style.display = 'none';
+  }
+  function esconderAuth(){
+    authScreenEl.classList.add('hidden');
+    shellEl.classList.remove('hidden');
+  }
+
+  function renderAuth(mensagem, tipo){
+    var aviso = mensagem
+      ? '<div class="' + (tipo === 'ok' ? 'auth-ok' : 'auth-erro') + '">' + escapeHTML(mensagem) + '</div>'
+      : '';
+
+    if (authModo === 'casa'){
+      authCardEl.innerHTML = ''
+        + '<h1>Quase lá</h1>'
+        + '<div class="sub">Você pode começar uma casa nova ou entrar na casa de alguém que já usa o app — os dois ficam com os mesmos lançamentos.</div>'
+        + aviso
+        + '<div class="field"><label>Nome da casa</label><input type="text" id="casa-nome" placeholder="Ex: Nossa Casa" value="Gastos da Casa"></div>'
+        + '<button type="button" class="submit-btn" id="btn-criar-casa" style="background:var(--neon2);color:#06222c;">Criar minha casa</button>'
+        + '<div class="auth-ou">ou</div>'
+        + '<div class="field"><label>Código de convite</label><input type="text" id="casa-codigo" placeholder="Ex: A1B2C3" autocapitalize="characters"></div>'
+        + '<button type="button" class="secondary-btn" id="btn-entrar-casa">Entrar com o código</button>'
+        + '<div class="auth-troca"><button type="button" class="auth-link" id="btn-sair">Sair da conta</button></div>';
+      return;
+    }
+
+    var cadastro = authModo === 'cadastrar';
+    authCardEl.innerHTML = ''
+      + '<h1>' + (cadastro ? 'Criar conta' : 'Entrar') + '</h1>'
+      + '<div class="sub">' + (cadastro
+          ? 'Com uma conta, seus lançamentos ficam salvos no servidor e aparecem em qualquer celular que você entrar.'
+          : 'Entre pra ver os gastos da sua casa neste aparelho.') + '</div>'
+      + aviso
+      + '<div class="field"><label>E-mail</label><input type="email" id="auth-email" autocomplete="email" placeholder="voce@email.com"></div>'
+      + '<div class="field"><label>Senha</label><input type="password" id="auth-senha" autocomplete="' + (cadastro ? 'new-password' : 'current-password') + '" placeholder="' + (cadastro ? 'Pelo menos 6 caracteres' : 'Sua senha') + '"></div>'
+      + '<button type="button" class="submit-btn" id="btn-auth" style="background:var(--neon2);color:#06222c;">' + (cadastro ? 'Criar conta' : 'Entrar') + '</button>'
+      + '<div class="auth-troca">' + (cadastro
+          ? 'Já tem conta? <button type="button" class="auth-link" id="btn-troca">Entrar</button>'
+          : 'Ainda não tem conta? <button type="button" class="auth-link" id="btn-troca">Criar agora</button>') + '</div>';
+  }
+
+  function traduzirErroAuth(msg){
+    var m = String(msg || '').toLowerCase();
+    if (m.indexOf('invalid login') !== -1) return 'E-mail ou senha errados.';
+    if (m.indexOf('already registered') !== -1 || m.indexOf('already been registered') !== -1) return 'Esse e-mail já tem conta. Tente entrar.';
+    if (m.indexOf('password should be') !== -1 || m.indexOf('at least 6') !== -1) return 'A senha precisa ter pelo menos 6 caracteres.';
+    if (m.indexOf('invalid email') !== -1 || m.indexOf('unable to validate email') !== -1) return 'Esse e-mail não parece válido.';
+    if (m.indexOf('email not confirmed') !== -1) return 'Confirme o e-mail que enviamos e tente de novo.';
+    if (m.indexOf('failed to fetch') !== -1 || m.indexOf('network') !== -1) return 'Sem conexão com o servidor. Verifique a internet.';
+    if (m.indexOf('código de convite') !== -1 || m.indexOf('convite inv') !== -1) return 'Código de convite inválido. Confira as letras.';
+    return msg || 'Algo deu errado. Tente de novo.';
+  }
+
+  async function tentarAuth(){
+    var email = (document.getElementById('auth-email').value || '').trim();
+    var senha = document.getElementById('auth-senha').value || '';
+    var botao = document.getElementById('btn-auth');
+    if (!email || !senha){ renderAuth('Preencha e-mail e senha.'); return; }
+
+    botao.disabled = true;
+    botao.textContent = authModo === 'cadastrar' ? 'Criando...' : 'Entrando...';
+    try {
+      var r = (authModo === 'cadastrar')
+        ? await supa.auth.signUp({ email: email, password: senha })
+        : await supa.auth.signInWithPassword({ email: email, password: senha });
+      if (r.error) throw r.error;
+
+      if (authModo === 'cadastrar' && !r.data.session){
+        // Projeto com confirmação de e-mail ligada.
+        authModo = 'entrar';
+        renderAuth('Conta criada. Confirme o link que chegou no seu e-mail e entre aqui.', 'ok');
+        return;
+      }
+      sessaoUsuario = r.data.user;
+      await depoisDeEntrar();
+    } catch(e){
+      renderAuth(traduzirErroAuth(e.message));
+    }
+  }
+
+  // Já logado: acha a casa da pessoa, ou pede pra criar/entrar numa.
+  async function depoisDeEntrar(){
+    try {
+      casaId = await descobrirCasa();
+    } catch(e){
+      mostrarAuth('casa', traduzirErroAuth(e.message));
+      return;
+    }
+    if (!casaId){ mostrarAuth('casa'); return; }
+    await carregarTudoDaNuvem();
+  }
+
+  async function carregarTudoDaNuvem(){
+    esconderAuth();
+    loadingEl.style.display = '';
+    state.settings = await loadSettings();
+    state.expenses = await loadExpenses();
+    ensureSubTabDefaults();
+    invalidateCustomColors();
+    ligarTempoReal();
+    esvaziarFila();
+    loadingEl.style.display = 'none';
+    atualizarAvisoSync();
+    render();
+  }
+
+  async function acaoCriarCasa(){
+    var nome = (document.getElementById('casa-nome').value || '').trim();
+    var b = document.getElementById('btn-criar-casa');
+    b.disabled = true; b.textContent = 'Criando...';
+    try {
+      casaId = await criarCasa(nome);
+      await carregarTudoDaNuvem();
+    } catch(e){
+      renderAuth(traduzirErroAuth(e.message));
+    }
+  }
+
+  async function acaoEntrarCasa(){
+    var codigo = (document.getElementById('casa-codigo').value || '').trim();
+    if (!codigo){ renderAuth('Digite o código que a outra pessoa te passou.'); return; }
+    var b = document.getElementById('btn-entrar-casa');
+    b.disabled = true; b.textContent = 'Entrando...';
+    try {
+      casaId = await entrarComCodigo(codigo);
+      await carregarTudoDaNuvem();
+    } catch(e){
+      renderAuth(traduzirErroAuth(e.message));
+    }
+  }
+
+  // Faixa amarela quando tem lançamento esperando internet.
+  function atualizarAvisoSync(){
+    if (!syncBarEl) return;
+    if (modoNuvem() && temPendencia()){
+      var f = lerFila();
+      var n = Object.keys(f.upserts || {}).length + (f.deletes || []).length;
+      syncBarEl.textContent = '⏳ ' + n + (n === 1 ? ' alteração salva aqui' : ' alterações salvas aqui') + ', esperando internet pra subir.';
+      syncBarEl.classList.remove('hidden');
+    } else {
+      syncBarEl.classList.add('hidden');
+    }
+  }
+
+  /* ---------- Comprovantes: IndexedDB ----------
+     As fotos ficavam no localStorage junto com o resto. O problema é que o
+     localStorage tem só ~5 MB no total, e uma foto de nota tirada de celular
+     pesa entre 300 e 500 KB — ou seja, entre 9 e 16 comprovantes e o espaço
+     acabava. Pior: quando enchia, a foto era descartada em silêncio.
+     O IndexedDB é feito pra isso e trabalha na casa das centenas de MB, então
+     as fotos passaram pra lá. Os gastos e as configurações continuam no
+     localStorage, que é leve e simples de ler.
+     Se o navegador não tiver IndexedDB (aba anônima antiga, configuração
+     restrita), tudo volta pro localStorage sozinho — só com o limite de antes. */
+
+  // Quanto do localStorage já foi usado. É estimativa: o navegador não expõe
+  // o número exato, então contamos os caracteres (2 bytes cada, UTF-16) das
+  // chaves e valores do app. Serve bem pra saber se está perto do limite.
+  function usoDoArmazenamento(){
+    var bytes = 0;
+    try {
+      for (var i = 0; i < localStorage.length; i++){
+        var k = localStorage.key(i);
+        if (!k || k.indexOf('gastos_casa') !== 0) continue;
+        bytes += (k.length + (localStorage.getItem(k) || '').length) * 2;
+      }
+    } catch(e){ return null; }
+    var limite = 5 * 1024 * 1024;
+    return { bytes:bytes, limite:limite, pct: Math.min(100, Math.round(bytes / limite * 100)) };
+  }
+
+  function formatarMB(bytes){
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + ' KB';
+    return (bytes / 1024 / 1024).toFixed(1) + ' MB';
+  }
+
+  // Antes, quando o espaço acabava, a foto simplesmente não era gravada e
+  // ninguém ficava sabendo. Agora o app fala.
+  function avisarSeFotoNaoCoube(salvou){
+    if (salvou) return;
+    alert('O gasto foi salvo, mas a FOTO do comprovante não coube: o armazenamento do navegador está cheio.\n\nVá em Configurações → Backup, baixe uma cópia dos seus dados e apague comprovantes antigos pra liberar espaço.');
+  }
+
+  var LOJA_FOTOS = 'fotos';
+  var receiptDbPromise = null;
+
+  function receiptDb(){
+    if (receiptDbPromise) return receiptDbPromise;
+    receiptDbPromise = new Promise(function(resolve){
+      try {
+        if (typeof indexedDB === 'undefined') return resolve(null);
+        var req = indexedDB.open('gastos_casa_comprovantes', 1);
+        req.onupgradeneeded = function(){
+          var db = req.result;
+          if (!db.objectStoreNames.contains(LOJA_FOTOS)) db.createObjectStore(LOJA_FOTOS);
+        };
+        req.onsuccess = function(){ resolve(req.result); };
+        req.onerror = function(){ resolve(null); };
+        req.onblocked = function(){ resolve(null); };
+      } catch(e){ resolve(null); }
+    });
+    return receiptDbPromise;
+  }
+
+  function idbOp(db, modo, fn){
+    return new Promise(function(resolve, reject){
+      try {
+        var tx = db.transaction(LOJA_FOTOS, modo);
+        var req = fn(tx.objectStore(LOJA_FOTOS));
+        req.onsuccess = function(){ resolve(req.result); };
+        req.onerror = function(){ reject(req.error); };
+      } catch(e){ reject(e); }
+    });
+  }
+
+  function chaveFotoAntiga(id){ return 'gastos_casa_receipt_full_' + id; }
+
+  // Traz pro IndexedDB as fotos que ficaram no localStorage de versões antigas.
+  // Roda uma vez na abertura e libera o espaço que elas ocupavam.
+  async function migrarFotosAntigas(){
+    var db = await receiptDb();
+    if (!db || !storageAvailable) return 0;
+    var chaves = [];
+    try {
+      for (var i = 0; i < localStorage.length; i++){
+        var k = localStorage.key(i);
+        if (k && k.indexOf('gastos_casa_receipt_full_') === 0) chaves.push(k);
+      }
+    } catch(e){ return 0; }
+    var movidas = 0;
+    for (var j = 0; j < chaves.length; j++){
+      try {
+        var valor = localStorage.getItem(chaves[j]);
+        if (!valor) continue;
+        var id = chaves[j].replace('gastos_casa_receipt_full_', '');
+        await idbOp(db, 'readwrite', function(loja){ return loja.put(valor, id); });
+        localStorage.removeItem(chaves[j]);
+        movidas++;
+      } catch(e){ /* deixa onde está e segue */ }
+    }
+    return movidas;
+  }
+
   async function saveFullReceipt(id, dataUrl){
+    var db = await receiptDb();
+    if (db){
+      try {
+        await idbOp(db, 'readwrite', function(loja){ return loja.put(dataUrl, id); });
+        return true;
+      } catch(e){ console.error('saveFullReceipt (IndexedDB)', e); }
+    }
     if (!storageAvailable) return false;
     try {
-      localStorage.setItem('gastos_casa_receipt_full_' + id, dataUrl);
+      localStorage.setItem(chaveFotoAntiga(id), dataUrl);
       return true;
     } catch(e){
       console.error('saveFullReceipt', e);
@@ -1313,9 +1978,16 @@
   }
 
   async function loadFullReceipt(id){
+    var db = await receiptDb();
+    if (db){
+      try {
+        var v = await idbOp(db, 'readonly', function(loja){ return loja.get(id); });
+        if (v) return v;
+      } catch(e){ /* tenta o localStorage abaixo */ }
+    }
     if (!storageAvailable) return null;
     try {
-      return localStorage.getItem('gastos_casa_receipt_full_' + id);
+      return localStorage.getItem(chaveFotoAntiga(id));
     } catch(e){
       console.error('loadFullReceipt', e);
       return null;
@@ -1323,9 +1995,14 @@
   }
 
   async function deleteFullReceipt(id){
+    var db = await receiptDb();
+    if (db){
+      try { await idbOp(db, 'readwrite', function(loja){ return loja.delete(id); }); }
+      catch(e){ console.error('deleteFullReceipt (IndexedDB)', e); }
+    }
     if (!storageAvailable) return;
     try {
-      localStorage.removeItem('gastos_casa_receipt_full_' + id);
+      localStorage.removeItem(chaveFotoAntiga(id));
     } catch(e){
       console.error('deleteFullReceipt', e);
     }
@@ -2797,6 +3474,8 @@
       + '<button type="button" id="add-member-btn" class="secondary-btn">+ Adicionar pessoa</button>'
       + '<div class="field" style="margin-top:18px;"><label>Cartões cadastrados (gastos pessoais)</label>' + cardRows + '</div>'
       + '<button type="button" id="add-card-btn" class="secondary-btn">+ Adicionar cartão</button>'
+      + contaSectionHTML()
+      + backupSectionHTML()
       + '<div class="field" style="margin-top:22px;"><label>Dados de exemplo</label>'
         + '<div class="note" style="margin:-2px 0 8px;">Preenche agosto, setembro e outubro de 2026 pra você ver como fica com o app cheio. Fica marcado como exemplo — dá pra tirar depois sem mexer no que é seu.</div>'
         + '<button type="button" id="load-demo-btn" class="secondary-btn">🧪 Carregar 3 meses de exemplo</button>'
@@ -2983,6 +3662,169 @@
     state.expenses = reais;
     closeSettingsModal();
     render();
+  }
+
+  // Conta, casa e convite. Só aparece quando o app está ligado ao servidor.
+  function contaSectionHTML(){
+    if (!modoNuvem()) return '';
+    var email = sessaoUsuario && sessaoUsuario.email ? sessaoUsuario.email : '';
+    var codigo = codigoConvite || '—';
+    return '<div class="field" style="margin-top:22px;"><label>Sua casa</label>'
+      + '<div class="note" style="margin:-2px 0 10px;">Passe este código pra outra pessoa da casa. Ela cria a conta dela e digita o código — a partir daí vocês dois veem e editam os mesmos lançamentos, em tempo real.</div>'
+      + '<div class="convite-caixa">'
+        + '<span class="convite-codigo">' + escapeHTML(codigo) + '</span>'
+        + '<button type="button" class="secondary-btn" id="copiar-convite" style="width:auto;padding:8px 14px;">Copiar</button>'
+      + '</div>'
+      + (email ? '<div class="note" style="margin-top:10px;">Conectado como <strong>' + escapeHTML(email) + '</strong></div>' : '')
+      + '<button type="button" id="btn-sair-conta" class="secondary-btn" style="margin-top:8px;">Sair desta conta</button>'
+      + '</div>';
+  }
+
+  // Bloco de backup e espaço usado, mostrado nas configurações.
+  function backupSectionHTML(){
+    var uso = usoDoArmazenamento();
+    var barra = '';
+    if (uso){
+      var tom = uso.pct >= 80 ? 'var(--alert)' : (uso.pct >= 55 ? '#d99b28' : 'var(--positive)');
+      var recado = uso.pct >= 80
+        ? 'Está quase cheio. Baixe a cópia e apague comprovantes antigos.'
+        : (uso.pct >= 55 ? 'Já passou da metade — vale baixar uma cópia.' : 'Espaço tranquilo.');
+      barra = '<div class="storage-meter">'
+        + '<div class="storage-top"><span>Espaço usado</span><span class="storage-val" style="color:'+tom+';">'
+          + formatarMB(uso.bytes) + ' de ~5 MB · ' + uso.pct + '%</span></div>'
+        + '<div class="storage-track"><div class="storage-fill" style="width:'+Math.max(2,uso.pct)+'%;background:'+tom+';box-shadow:0 0 10px '+tom+';"></div></div>'
+        + '<div class="note" style="margin-top:6px;">'+escapeHTML(recado)+' As fotos dos comprovantes ficam num espaço separado e bem maior, então não entram nessa conta.</div>'
+        + '</div>';
+    }
+    return '<div class="field" style="margin-top:22px;"><label>Backup dos seus dados</label>'
+      + '<div class="note" style="margin:-2px 0 8px;">O app guarda tudo dentro deste navegador. Se você limpar os dados do navegador ou trocar de aparelho, some. Baixe uma cópia de vez em quando.</div>'
+      + barra
+      + '<button type="button" id="export-btn" class="secondary-btn">💾 Baixar tudo (com as fotos)</button>'
+      + '<button type="button" id="export-lite-btn" class="secondary-btn" style="margin-top:8px;">📄 Baixar só os lançamentos (arquivo leve)</button>'
+      + '<label class="secondary-btn" style="display:block;text-align:center;margin-top:8px;cursor:pointer;">📂 Restaurar de um arquivo'
+        + '<input type="file" id="import-input" accept="application/json,.json" style="display:none;"></label>'
+      + '</div>';
+  }
+
+  /* ---------- Backup: exportar e importar ----------
+     Sem isso, limpar os dados do navegador (ou trocar de celular) apagava
+     tudo sem volta. O arquivo gerado leva os gastos, as configurações E os
+     comprovantes, então serve tanto de cópia de segurança quanto de mudança
+     de aparelho. */
+
+  var VERSAO_BACKUP = 1;
+
+  async function todosOsComprovantes(){
+    var fotos = {};
+    var db = await receiptDb();
+    if (db){
+      try {
+        var chaves = await idbOp(db, 'readonly', function(loja){ return loja.getAllKeys(); });
+        var valores = await idbOp(db, 'readonly', function(loja){ return loja.getAll(); });
+        (chaves || []).forEach(function(k, i){ if (valores[i]) fotos[k] = valores[i]; });
+      } catch(e){ /* segue com o que der */ }
+    }
+    try {
+      for (var i = 0; i < localStorage.length; i++){
+        var k = localStorage.key(i);
+        if (k && k.indexOf('gastos_casa_receipt_full_') === 0){
+          var id = k.replace('gastos_casa_receipt_full_', '');
+          if (!fotos[id]) fotos[id] = localStorage.getItem(k);
+        }
+      }
+    } catch(e){ /* ignora */ }
+    return fotos;
+  }
+
+  // comFotos=false gera um arquivo pequeno (só números e configurações), que
+  // é o que dá pra baixar toda semana sem pesar. O completo inclui as imagens
+  // dos comprovantes e passa fácil dos 30 MB.
+  async function exportarBackup(comFotos){
+    var botao = settingsPanelEl.querySelector(comFotos ? '#export-btn' : '#export-lite-btn');
+    var rotulo = botao ? botao.textContent : '';
+    if (botao){ botao.disabled = true; botao.textContent = 'Preparando o arquivo...'; }
+    try {
+      var dados = {
+        app: 'gastos-da-casa',
+        versaoBackup: VERSAO_BACKUP,
+        exportadoEm: new Date().toISOString(),
+        settings: state.settings,
+        expenses: state.expenses,
+        comprovantes: comFotos ? await todosOsComprovantes() : {},
+        semFotos: !comFotos
+      };
+      var texto = JSON.stringify(dados);
+      var blob = new Blob([texto], {type:'application/json'});
+      var url = URL.createObjectURL(blob);
+      var hoje = todayISO();
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'gastos-da-casa-' + hoje + (comFotos ? '' : '-sem-fotos') + '.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+      if (botao){
+        botao.textContent = '✅ Baixado (' + formatarMB(texto.length) + ')';
+        setTimeout(function(){ if (botao.isConnected){ botao.textContent = rotulo; botao.disabled = false; } }, 2600);
+      }
+    } catch(e){
+      console.error('exportarBackup', e);
+      alert('Não foi possível gerar o arquivo de backup.');
+      if (botao){ botao.textContent = rotulo; botao.disabled = false; }
+    }
+  }
+
+  async function importarBackup(arquivo){
+    if (!arquivo) return;
+    var texto;
+    try { texto = await arquivo.text(); }
+    catch(e){ alert('Não consegui ler esse arquivo.'); return; }
+
+    var dados;
+    try { dados = JSON.parse(texto); }
+    catch(e){ alert('Esse arquivo não parece ser um backup do app (não é um JSON válido).'); return; }
+
+    if (!dados || dados.app !== 'gastos-da-casa' || !Array.isArray(dados.expenses)){
+      alert('Esse arquivo não é um backup do Gastos da Casa.');
+      return;
+    }
+
+    var qtdFotos = dados.comprovantes ? Object.keys(dados.comprovantes).length : 0;
+    var quando = dados.exportadoEm ? formatDateBR(String(dados.exportadoEm).slice(0,10)) : 'data desconhecida';
+    var aviso = 'Restaurar este backup?\n\n'
+      + '• ' + dados.expenses.length + ' lançamentos\n'
+      + '• ' + (dados.semFotos ? 'sem fotos (cópia leve — os comprovantes atuais serão mantidos)' : qtdFotos + ' comprovantes') + '\n'
+      + '• salvo em ' + quando + '\n\n'
+      + 'TUDO que está no app agora será SUBSTITUÍDO por isso.';
+    if (!confirm(aviso)) return;
+
+    var ok = await saveExpenses(dados.expenses);
+    if (!ok){ alert('Não foi possível gravar os lançamentos. Nada foi alterado.'); return; }
+    state.expenses = dados.expenses;
+
+    if (dados.settings){
+      await saveSettings(dados.settings);
+      state.settings = dados.settings;
+    }
+
+    var falhas = 0;
+    if (dados.comprovantes){
+      var ids = Object.keys(dados.comprovantes);
+      for (var i = 0; i < ids.length; i++){
+        var gravou = await saveFullReceipt(ids[i], dados.comprovantes[ids[i]]);
+        if (!gravou) falhas++;
+      }
+    }
+
+    state.resumoMonth = null;
+    state.entriesMonth = {};
+    state.futureMonths = null;
+    closeSettingsModal();
+    render();
+    alert(falhas
+      ? ('Backup restaurado, mas ' + falhas + ' comprovante(s) não couberam no armazenamento.')
+      : 'Backup restaurado.');
   }
 
   /* ---------- Janela dos próximos meses ---------- */
@@ -3372,7 +4214,7 @@
       state.expenses[idx] = updated;
       var savedEdit = await saveExpenses(state.expenses);
       if (!savedEdit){ state.expenses[idx] = original; alert('Não foi possível salvar as alterações.'); return; }
-      if (state.pendingPhoto) await saveFullReceipt(state.editingId, state.pendingPhoto.full);
+      if (state.pendingPhoto) avisarSeFotoNaoCoube(await saveFullReceipt(state.editingId, state.pendingPhoto.full));
       else if (state.removeExistingPhoto) await deleteFullReceipt(state.editingId);
       state.editingId = null; state.pendingPhoto = null; state.removeExistingPhoto = false;
       render();
@@ -3385,7 +4227,7 @@
     state.expenses.push(newExpense);
     var saved = await saveExpenses(state.expenses);
     if (!saved){ state.expenses.pop(); alert('Não foi possível salvar o gasto. Verifique se o navegador permite armazenamento local e tente novamente.'); return; }
-    if (photo) await saveFullReceipt(id, photo.full);
+    if (photo) avisarSeFotoNaoCoube(await saveFullReceipt(id, photo.full));
     state.pendingPhoto = null;
     render();
   }
@@ -4206,6 +5048,30 @@
       if (e.target.matches('.photo-input')){ handlePhotoChange(e.target); return; }
     });
 
+    // --- tela de entrar / criar conta ---
+    authCardEl.addEventListener('click', function(e){
+      if (e.target.closest('#btn-auth')){ tentarAuth(); return; }
+      if (e.target.closest('#btn-troca')){
+        authModo = (authModo === 'cadastrar') ? 'entrar' : 'cadastrar';
+        renderAuth();
+        return;
+      }
+      if (e.target.closest('#btn-criar-casa')){ acaoCriarCasa(); return; }
+      if (e.target.closest('#btn-entrar-casa')){ acaoEntrarCasa(); return; }
+      if (e.target.closest('#btn-sair')){ sairDaConta(); return; }
+    });
+    authCardEl.addEventListener('keydown', function(e){
+      if (e.key === 'Enter' && e.target.matches('input')){
+        e.preventDefault();
+        var b = authCardEl.querySelector('#btn-auth') || authCardEl.querySelector('#btn-criar-casa');
+        if (b) b.click();
+      }
+    });
+
+    // Internet voltou: sobe o que ficou na fila.
+    window.addEventListener('online', function(){ esvaziarFila(); });
+    window.addEventListener('offline', function(){ atualizarAvisoSync(); });
+
     contentEl.addEventListener('submit', function(e){
       if (e.target.matches('#fixa-form')){ e.preventDefault(); handleFixaSubmit(e.target); return; }
       if (e.target.matches('.add-form')){ e.preventDefault(); handleFormSubmit(e.target); }
@@ -4287,6 +5153,18 @@
       }
       if (e.target.closest('#save-settings-btn')){ saveSettingsAndClose(); return; }
       if (e.target.closest('#cancel-settings-btn')){ closeSettingsModal(); return; }
+      if (e.target.closest('#btn-sair-conta')){ sairDaConta(); return; }
+      if (e.target.closest('#copiar-convite')){
+        var btn = e.target.closest('#copiar-convite');
+        try {
+          navigator.clipboard.writeText(codigoConvite || '');
+          btn.textContent = 'Copiado';
+          setTimeout(function(){ if (btn.isConnected) btn.textContent = 'Copiar'; }, 1800);
+        } catch(err){ alert('Código: ' + (codigoConvite || '')); }
+        return;
+      }
+      if (e.target.closest('#export-btn')){ exportarBackup(true); return; }
+      if (e.target.closest('#export-lite-btn')){ exportarBackup(false); return; }
       if (e.target.closest('#load-demo-btn')){ loadDemoData(); return; }
       if (e.target.closest('#remove-demo-btn')){ removeDemoData(); return; }
       if (e.target.closest('#open-reset-btn')){ closeSettingsModal(); openResetModal(); return; }
@@ -4306,6 +5184,14 @@
     });
     futurePanelEl.addEventListener('change', function(e){
       if (e.target.matches('.future-check')) applyFutureSelection();
+    });
+
+    settingsPanelEl.addEventListener('change', function(e){
+      if (e.target.matches('#import-input')){
+        var arq = e.target.files && e.target.files[0];
+        e.target.value = '';                 // permite escolher o mesmo arquivo de novo
+        importarBackup(arq);
+      }
     });
 
     resetModalEl.addEventListener('click', function(e){ if (e.target === resetModalEl) closeResetModal(); });
@@ -4352,9 +5238,31 @@
     resetPanelEl = document.getElementById('reset-panel');
     futureModalEl = document.getElementById('future-modal');
     futurePanelEl = document.getElementById('future-panel');
+    authScreenEl = document.getElementById('auth-screen');
+    authCardEl = document.getElementById('auth-card');
+    syncBarEl = document.getElementById('sync-bar');
 
     storageAvailable = await waitForStorage(3000);
 
+    supa = iniciarSupabase();
+    wireEvents();
+
+    if (supa){
+      // Com servidor configurado, nada aparece antes de saber quem é você.
+      var ses = null;
+      try { ses = (await supa.auth.getSession()).data.session; }
+      catch(e){ console.error('getSession', e); }
+
+      if (!ses){
+        mostrarAuth('entrar');
+        return;
+      }
+      sessaoUsuario = ses.user;
+      await depoisDeEntrar();
+      return;
+    }
+
+    // Sem Supabase configurado: modo local, exatamente como era antes.
     state.expenses = await loadExpenses();
     state.settings = await loadSettings();
     ensureSubTabDefaults();
@@ -4369,7 +5277,9 @@
       markDemoHandled();
     }
 
-    wireEvents();
+    // Fotos guardadas por versões antigas no localStorage sobem pro IndexedDB
+    // e liberam o espaço que ocupavam.
+    migrarFotosAntigas();
 
     loadingEl.style.display = 'none';
     shellEl.classList.remove('hidden');
