@@ -35,6 +35,19 @@
   html,body{margin:0;padding:0;}
   button,input,select{ transition:background-color .15s ease, border-color .15s ease, box-shadow .15s ease, transform .1s ease, color .15s ease, filter .15s ease; }
   button{ -webkit-tap-highlight-color:transparent; }
+  /* No celular, encostar num número fazia o navegador "marcar" o texto e
+     abrir aquela barra de pesquisar/copiar por cima da tela. Isto aqui é um
+     painel pra tocar, não um texto pra selecionar — então a seleção sai de
+     tudo, e volta só onde ela serve: campos de digitação e o código de
+     convite, que a pessoa às vezes copia na mão. */
+  body{
+    -webkit-user-select:none; -ms-user-select:none; user-select:none;
+    -webkit-touch-callout:none;
+  }
+  input, textarea, [contenteditable], .selecionavel{
+    -webkit-user-select:text; -ms-user-select:text; user-select:text;
+    -webkit-touch-callout:default;
+  }
   body{
     background:var(--paper);
     color:var(--ink);
@@ -618,7 +631,7 @@
   .lic-usado{ border-color:rgba(79,224,255,0.35); }
   .lic-desligado{ border-color:rgba(255,77,109,0.45); opacity:.75; }
   .lic-topo{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
-  .lic-codigo{ font-weight:800; letter-spacing:.08em; font-size:14px; color:var(--ink); }
+  .lic-codigo{ -webkit-user-select:text; user-select:text; font-weight:800; letter-spacing:.08em; font-size:14px; color:var(--ink); }
   .lic-tag{ font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; }
   .lic-livre .lic-tag{ color:var(--positive); }
   .lic-usado .lic-tag{ color:var(--neon2); }
@@ -895,8 +908,8 @@
   .resumo-col{ display:contents; }
   .resumo-block{ min-width:0; }
   .resumo-block .section-title{ margin-top:0; }
-  .rb-acerto{ order:1; } .rb-compare{ order:2; } .rb-trend{ order:3; }
-  .rb-cats{ order:4; } .rb-pessoais{ order:5; }
+  .rb-acerto{ order:1; } .rb-compare{ order:2; } .rb-cartoes{ order:3; }
+  .rb-trend{ order:4; } .rb-cats{ order:5; } .rb-pessoais{ order:6; }
 
   /* Categorias: barra por linha, com nome e valor escritos. O texto é que
      identifica a categoria — a cor só reforça (ver comentário em categoryBarsHTML). */
@@ -913,6 +926,31 @@
   .cat-bar-val{ font-size:13.5px; font-weight:700; white-space:nowrap; font-variant-numeric:tabular-nums; }
   .cat-bar-share{ font-size:11px; color:var(--ink-soft); font-weight:600; margin-left:6px; }
   .cat-bar-track{ display:block; height:6px; border-radius:3px; background:var(--hover-soft); overflow:hidden; }
+
+  /* Contas por cartão */
+  .card-list{ gap:6px; }
+  .card-dot{ width:11px; height:11px; border-radius:50%; flex:0 0 auto; }
+  .card-caret{ margin-left:8px; color:var(--ink-soft); font-weight:700; }
+  .card-row.is-open{ background:var(--hover-soft); }
+  .card-row.is-open .card-caret{ color:var(--neon2); }
+  .card-open{
+    margin:2px 0 10px; padding:11px 12px 12px;
+    border:1px solid var(--line); border-left:2px solid var(--neon2);
+    border-radius:10px; background:rgba(255,255,255,0.02);
+  }
+  .card-chips{ display:flex; flex-wrap:wrap; gap:7px; margin-bottom:11px; }
+  .card-chip{
+    border:1px solid var(--line); background:transparent; color:var(--ink-soft);
+    font-family:inherit; font-size:11.5px; font-weight:600; cursor:pointer;
+    padding:6px 10px; border-radius:999px; white-space:nowrap;
+  }
+  .card-chip b{ color:var(--ink); font-weight:800; margin-left:2px; }
+  .card-chip:hover{ border-color:var(--neon2); }
+  .card-chip.is-on{
+    border-color:var(--neon2); color:var(--neon2);
+    box-shadow:0 0 12px -2px rgba(79,224,255,0.55);
+  }
+  .card-chip.is-on b{ color:var(--neon2); }
   .cat-bar-fill{ display:block; height:100%; border-radius:3px; min-width:3px; }
 
   /* Evolução mensal — barras em HTML/CSS.
@@ -931,10 +969,20 @@
     border-radius:8px 8px 0 0;
   }
   .trend-bar:hover{ background:var(--hover-soft); }
+  /* O valor acompanha a barra: apagado no mês que não está aberto, aceso no
+     mês selecionado. Assim os números não competem entre si. */
   .trend-cap{
-    height:17px; font-size:11px; font-weight:700; color:var(--ink);
-    white-space:nowrap; line-height:17px;
-    text-shadow:0 0 10px rgba(79,224,255,0.45);
+    height:17px; font-size:10px; font-weight:700; color:var(--ink);
+    white-space:nowrap; line-height:17px; letter-spacing:-0.01em;
+    max-width:100%; overflow:hidden; text-overflow:ellipsis;
+    opacity:.42; transition:opacity .12s ease, color .12s ease;
+  }
+  .trend-bar.is-max .trend-cap{ opacity:.62; }
+  .trend-bar:hover .trend-cap{ opacity:.8; }
+  .trend-bar.is-future .trend-cap{ opacity:.28; }
+  .trend-bar.is-selected .trend-cap{
+    opacity:1; color:var(--neon2);
+    text-shadow:0 0 10px rgba(79,224,255,0.55);
   }
   .trend-plot{ flex:1; width:100%; display:flex; align-items:flex-end; justify-content:center; padding:0 2px; }
   .trend-mark{
@@ -1054,6 +1102,7 @@
     .resumo-col-c{ flex:1 1 100%; }
     .resumo-block{ padding:16px 18px 17px; }
     .trend-chart{ height:190px; }
+    .trend-cap{ font-size:11.5px; }
 
     /* Formulário do casal em duas colunas: dados da conta à esquerda,
        itens da nota à direita (que é a parte que cresce sem parar). */
@@ -1231,7 +1280,9 @@
     resumoMonth: null,
     entriesMonth: {},
     // Meses futuros marcados no indicador "Próximos meses". null = todos.
-    futureMonths: null
+    futureMonths: null,
+    // Cartão aberto no painel "Contas por cartão": {scope, card, filter}.
+    cardOpen: null
   };
 
   var storageAvailable = false;
@@ -2672,6 +2723,20 @@
     return {html: '<select class="category-select">'+opts+'</select>', customSelected: customSelected};
   }
 
+  // Um só lugar define as formas de pagamento, pros dois formulários dizerem
+  // a mesma coisa. "Pix, dinheiro ou boleto" é o que sobra: sai da conta, mas
+  // não pertence a cartão nenhum.
+  function paymentMethodSelectHTML(selected, incluirOutro){
+    var opcoes = [];
+    if (incluirOutro) opcoes.push(['outro', '💸 Pix, dinheiro ou boleto']);
+    opcoes.push(['credito', '💳 Crédito']);
+    opcoes.push(['debito', '💵 Débito']);
+    if (!incluirOutro) opcoes.push(['outro', '💸 Pix, dinheiro ou boleto']);
+    return '<select class="payment-method-select">' + opcoes.map(function(o){
+      return '<option value="'+o[0]+'"'+(o[0]===selected?' selected':'')+'>'+o[1]+'</option>';
+    }).join('') + '</select>';
+  }
+
   function cardSelectHTML(selected){
     var cards = state.settings.cards && state.settings.cards.length ? state.settings.cards : DEFAULT_CARDS;
     var isKnown = cards.indexOf(selected) !== -1;
@@ -2780,6 +2845,12 @@
   function renderCasalFormHTML(memberId, editingExpense){
     var cat = categorySelectHTML(editingExpense ? editingExpense.category : null);
     var member = memberById(memberId);
+    // Conta de casa costuma sair por pix/boleto, então esse é o padrão aqui —
+    // mas quem paga o mercado no cartão precisa poder dizer qual, senão o
+    // quadro "Contas por cartão" do Resumo fica cego pras contas da casa.
+    var paymentMethod = editingExpense ? (editingExpense.paymentMethod || 'outro') : 'outro';
+    var usaCartao = (paymentMethod === 'credito' || paymentMethod === 'debito');
+    var card = cardSelectHTML(editingExpense ? editingExpense.card : null);
     var existingItems = (editingExpense && Array.isArray(editingExpense.items)) ? editingExpense.items : [];
     var hasItems = existingItems.length > 0;
     var isInstallment = editingExpense ? !!editingExpense.installment : false;
@@ -2797,9 +2868,14 @@
         + '<div class="field"><label>Valor (R$)</label><input type="number" inputmode="decimal" class="value-input'+(hasItems?' computed-value':'')+'" step="0.01" min="0" placeholder="0,00" value="'+(editingExpense?editingExpense.value:'')+'"'+(hasItems?' readonly':'')+'></div>'
         + '<div class="field"><label>Data</label><input type="date" class="date-input" value="'+(editingExpense?editingExpense.date:todayISO())+'"></div>'
       + '</div>'
+      + '<div class="row2">'
+        + '<div class="field"><label>Como foi pago</label>' + paymentMethodSelectHTML(paymentMethod, true) + '</div>'
+        + '<div class="field card-field" style="display:'+(usaCartao?'block':'none')+';"><label>Cartão / conta</label>' + card.html + '</div>'
+      + '</div>'
+      + '<div class="field custom-card-field" style="display:'+((usaCartao&&card.customSelected)?'block':'none')+';"><label>Nome do cartão</label><input type="text" class="custom-card-input" placeholder="Ex: C6, PicPay..." value="'+(card.customSelected&&editingExpense?escapeHTML(editingExpense.card):'')+'"></div>'
       + '<div class="field"><label>É um gasto fixo?</label><select class="fixed-toggle-select"><option value="nao"'+(!isFixed?' selected':'')+'>Não, só deste mês</option><option value="sim"'+(isFixed?' selected':'')+'>Sim, repete todo mês</option></select>'
         + '<div class="items-hint" style="margin:6px 0 0;">Marcando como fixo, esse gasto aparece sozinho em todos os meses seguintes com o mesmo valor — você não precisa lançar de novo.</div></div>'
-      + '<div class="field not-fixed-field" style="display:'+(isFixed?'none':'block')+';"><label>Foi parcelado?</label><select class="installment-toggle-select"><option value="nao"'+(!isInstallment?' selected':'')+'>Não</option><option value="sim"'+(isInstallment?' selected':'')+'>Sim</option></select></div>'
+      + '<div class="field parcelavel-field" style="display:'+((isFixed||paymentMethod==='debito')?'none':'block')+';"><label>Foi parcelado?</label><select class="installment-toggle-select"><option value="nao"'+(!isInstallment?' selected':'')+'>Não</option><option value="sim"'+(isInstallment?' selected':'')+'>Sim</option></select></div>'
       + '<div class="row2 installment-fields" style="display:'+((isInstallment&&!isFixed)?'flex':'none')+';">'
         + '<div class="field"><label>Nº de parcelas</label><input type="number" inputmode="numeric" min="1" step="1" class="installments-total-input" value="'+installmentsTotal+'"></div>'
         + '<div class="field"><label>Parcelas pagas</label><input type="number" inputmode="numeric" min="0" step="1" class="installments-paid-input" value="'+installmentsPaid+'"></div>'
@@ -2836,6 +2912,7 @@
     var member = memberById(memberId);
     var paymentMethod = editingExpense ? (editingExpense.paymentMethod || 'credito') : 'credito';
     var isCredito = paymentMethod === 'credito';
+    var usaCartao = (paymentMethod === 'credito' || paymentMethod === 'debito');
     var isInstallment = editingExpense ? !!editingExpense.installment : false;
     var isFixed = editingExpense ? !!editingExpense.fixed : false;
     var card = cardSelectHTML(editingExpense ? editingExpense.card : null);
@@ -2857,10 +2934,10 @@
       + '</div>'
       + '<div class="form-col acc-amber">'
       + '<div class="form-col-title">Como foi pago</div>'
-      + '<div class="field"><label>Forma de pagamento</label><select class="payment-method-select"><option value="credito"'+(isCredito?' selected':'')+'>💳 Crédito</option><option value="debito"'+(!isCredito?' selected':'')+'>💵 Débito</option></select></div>'
-      + '<div class="field card-only-field" style="display:'+(isCredito?'block':'none')+';"><label>Cartão</label>' + card.html + '</div>'
-      + '<div class="field custom-card-field" style="display:'+(card.customSelected?'block':'none')+';"><label>Nome do cartão</label><input type="text" class="custom-card-input" placeholder="Ex: C6, PicPay..." value="'+(card.customSelected&&editingExpense?escapeHTML(editingExpense.card):'')+'"></div>'
-      + '<div class="field card-only-field not-fixed-field" style="display:'+((isCredito&&!isFixed)?'block':'none')+';"><label>Parcelado?</label><select class="installment-toggle-select"><option value="nao"'+(!isInstallment?' selected':'')+'>Não</option><option value="sim"'+(isInstallment?' selected':'')+'>Sim</option></select></div>'
+      + '<div class="field"><label>Forma de pagamento</label>' + paymentMethodSelectHTML(paymentMethod, false) + '</div>'
+      + '<div class="field card-field" style="display:'+(usaCartao?'block':'none')+';"><label>Cartão / conta</label>' + card.html + '</div>'
+      + '<div class="field custom-card-field" style="display:'+((usaCartao&&card.customSelected)?'block':'none')+';"><label>Nome do cartão</label><input type="text" class="custom-card-input" placeholder="Ex: C6, PicPay..." value="'+(card.customSelected&&editingExpense?escapeHTML(editingExpense.card):'')+'"></div>'
+      + '<div class="field credito-only-field" style="display:'+((isCredito&&!isFixed)?'block':'none')+';"><label>Parcelado?</label><select class="installment-toggle-select"><option value="nao"'+(!isInstallment?' selected':'')+'>Não</option><option value="sim"'+(isInstallment?' selected':'')+'>Sim</option></select></div>'
       + '<div class="row2 installment-fields" style="display:'+((isCredito&&isInstallment&&!isFixed)?'flex':'none')+';">'
         + '<div class="field"><label>Nº de parcelas</label><input type="number" inputmode="numeric" min="1" step="1" class="installments-total-input" value="'+installmentsTotal+'"></div>'
         + '<div class="field"><label>Parcelas pagas</label><input type="number" inputmode="numeric" min="0" step="1" class="installments-paid-input" value="'+installmentsPaid+'"></div>'
@@ -2924,10 +3001,13 @@
     var thumb = e.thumb
       ? '<img class="thumb" src="'+e.thumb+'" data-action="view-receipt" data-id="'+e.id+'">'
       : '<div class="thumb-placeholder" style="background:'+hexToRgba(catColor(e.category),0.15)+';color:'+catColor(e.category)+';">'+catIcon(e.category)+'</div>';
-    var cardLabel = (e.paymentMethod === 'credito' && e.card) ? (' — ' + escapeHTML(e.card)) : (e.paymentMethod === 'debito' ? ' — Débito' : '');
+    // Agora o débito também guarda o cartão, e existe a opção "pix/dinheiro":
+    // a etiqueta tem que dizer os três casos, senão um pix aparece como crédito.
+    var cardLabel = e.card ? (' — ' + escapeHTML(e.card)) : '';
     var detailLine = c.installment
       ? (c.total + 'x de ' + formatBRL(c.parcelValue) + ' · ✅ ' + c.paid + ' pagas · ⏳ ' + c.remaining + ' restantes' + (c.remainingValue>0.005 ? (' · Falta ' + formatBRL(c.remainingValue)) : ''))
-      : (e.paymentMethod === 'debito' ? 'Débito · pago' : 'Crédito à vista · pago')
+      : (e.paymentMethod === 'debito' ? 'Débito · pago'
+         : (e.paymentMethod === 'outro' ? 'Pix, dinheiro ou boleto · pago' : 'Crédito à vista · pago'))
         + (e.fixed ? ' · <span class="fixed-tag">🔁 fixo</span>' : '');
     return ''
       + '<div class="entry personal-entry">'
@@ -2990,7 +3070,17 @@
       + kpiTileHTML('Parcelas restantes', String(s.parcelasRestantes), 'Ainda por vencer', 'acc-amber')
       + '</div>';
 
-    return cartoes + grafico;
+    // O mesmo extrato por cartão da tela de Resumo, agora só com os gastos
+    // pessoais desta pessoa — que é onde o cartão pesa mais.
+    var listaPessoal = expensesFor(mesSelecionado).filter(function(e){
+      return e.person === memberId && e.type === 'pessoal';
+    });
+    var porCartao = '<section class="resumo-block neon-box acc-amber" style="margin-bottom:16px;">'
+      + '<div class="section-title">💳 Seus gastos por cartão</div>'
+      + cardsPanelHTML(listaPessoal, 'pessoal:' + memberId)
+      + '</section>';
+
+    return cartoes + grafico + porCartao;
   }
 
   function renderUpcomingMonthsHTML(memberId){
@@ -3170,22 +3260,136 @@
 
   // Barras horizontais ranqueadas: cada linha é clicável e abre os itens
   // daquela categoria, igual as linhas de antes faziam.
-  function categoryBarsHTML(groups){
-    if (!groups.length) return '<div class="empty-state">Sem contas do casal neste período.</div>';
+  function categoryBarsHTML(groups, opts){
+    opts = opts || {};
+    var clicavel = opts.clicavel !== false;
+    if (!groups.length) return '<div class="empty-state">' + (opts.vazio || 'Sem contas do casal neste período.') + '</div>';
     var max = groups.reduce(function(m,g){ return Math.max(m, g.total); }, 0) || 1;
     var totalAll = groups.reduce(function(s,g){ return s + g.total; }, 0) || 1;
     return '<div class="cat-bars">' + groups.map(function(g){
       var color = catColor(g.category);
       var pct = g.total / max * 100;
       var share = Math.round(g.total / totalAll * 100);
-      return '<button type="button" class="cat-bar-row" data-action="open-items" data-category="'+escapeHTML(g.category)+'" title="'+escapeHTML(g.category)+' — '+formatBRL(g.total)+' ('+share+'% das contas do casal)">'
+      var abre = clicavel
+        ? '<button type="button" class="cat-bar-row" data-action="open-items" data-category="'+escapeHTML(g.category)+'" title="'+escapeHTML(g.category)+' — '+formatBRL(g.total)+' ('+share+'% do período)">'
+        : '<div class="cat-bar-row" style="cursor:default;">';
+      return abre
         + '<span class="cat-bar-head">'
           + '<span class="cat-bar-name">'+catChipHTML(g.category, 22)+'<span class="cat-bar-label">'+escapeHTML(g.category)+'</span></span>'
           + '<span class="cat-bar-val">'+formatBRL(g.total)+'<span class="cat-bar-share">'+share+'%</span></span>'
         + '</span>'
         + '<span class="cat-bar-track"><span class="cat-bar-fill" style="width:'+pct.toFixed(2)+'%;background:'+color+';box-shadow:0 0 10px '+hexToRgba(color,0.75)+';"></span></span>'
-        + '</button>';
+        + (clicavel ? '</button>' : '</div>');
     }).join('') + '</div>';
+  }
+
+  /* ---------- Contas por cartão ----------
+     Um extrato dá o total do cartão e depois abre no que foi débito, crédito à
+     vista e parcelado. É esse recorte que este painel refaz: cada cartão vira
+     uma linha; tocar na linha abre as gavetas e as categorias daquele cartão.
+     O que não passou por cartão nenhum (pix, dinheiro, boleto) não some — vai
+     pra uma linha própria no fim, senão a soma do painel não bateria com o mês. */
+
+  var CARD_COLORS = ['#8B5CF6','#4FE0FF','#FF9F43','#35D6C4','#FF5D8F','#9BE564'];
+  var CARTAO_OUTRO = '__outro__';
+
+  function cardColorFor(nome){
+    if (nome === CARTAO_OUTRO) return '#7C8A97';
+    var lista = (state.settings.cards && state.settings.cards.length) ? state.settings.cards : DEFAULT_CARDS;
+    var i = lista.indexOf(nome);
+    if (i === -1) i = hashString(nome) % CARD_COLORS.length;
+    return CARD_COLORS[i % CARD_COLORS.length];
+  }
+
+  function cardLabelFor(nome){
+    return nome === CARTAO_OUTRO ? 'Pix, dinheiro ou boleto' : nome;
+  }
+
+  function usouCartao(e){
+    return (e.paymentMethod === 'credito' || e.paymentMethod === 'debito') && !!e.card;
+  }
+
+  // Em qual gaveta do cartão o gasto entra.
+  function cardBucket(e){
+    if (!usouCartao(e)) return e.installment ? 'parcelado' : 'avista';
+    if (e.installment) return 'parcelado';
+    return e.paymentMethod === 'debito' ? 'debito' : 'credito';
+  }
+
+  function groupByCard(list){
+    var map = {};
+    list.forEach(function(e){
+      var key = usouCartao(e) ? e.card : CARTAO_OUTRO;
+      if (!map[key]) map[key] = {card:key, items:[], total:0, buckets:{credito:0, debito:0, parcelado:0, avista:0}};
+      var g = map[key];
+      g.items.push(e);
+      g.total += e.value;
+      g.buckets[cardBucket(e)] += e.value;
+    });
+    var groups = Object.keys(map).map(function(k){ return map[k]; });
+    groups.sort(function(a,b){
+      if (a.card === CARTAO_OUTRO) return 1;
+      if (b.card === CARTAO_OUTRO) return -1;
+      return b.total - a.total;
+    });
+    return groups;
+  }
+
+  function cardOpenHTML(g){
+    var filtro = (state.cardOpen && state.cardOpen.filter) || 'tudo';
+    var defs = (g.card === CARTAO_OUTRO)
+      ? [['tudo','Tudo'], ['avista','À vista'], ['parcelado','Parcelado']]
+      : [['tudo','Tudo'], ['credito','Crédito'], ['debito','Débito'], ['parcelado','Parcelado']];
+    var chips = defs.map(function(d){
+      var valor = (d[0] === 'tudo') ? g.total : g.buckets[d[0]];
+      // Gaveta vazia não vira botão: um "Débito R$ 0,00" só ocupa espaço.
+      if (d[0] !== 'tudo' && !(valor > 0.005)) return '';
+      var ligado = (filtro === d[0]);
+      return '<button type="button" class="card-chip'+(ligado?' is-on':'')+'" data-action="card-filter" data-filter="'+d[0]+'">'
+        + escapeHTML(d[1]) + ' <b>' + formatBRL(valor) + '</b></button>';
+    }).join('');
+    var itens = (filtro === 'tudo') ? g.items : g.items.filter(function(e){ return cardBucket(e) === filtro; });
+    return '<div class="card-open">'
+      + '<div class="card-chips">' + chips + '</div>'
+      + categoryBarsHTML(groupByCategory(itens), {clicavel:false, vazio:'Nada nesta parte do cartão neste mês.'})
+      + '</div>';
+  }
+
+  function cardsPanelHTML(list, escopo){
+    var groups = groupByCard(list);
+    if (!groups.length){
+      return '<div class="empty-state">Nada lançado neste mês ainda.</div>';
+    }
+    var aberto = (state.cardOpen && state.cardOpen.scope === escopo) ? state.cardOpen.card : null;
+    if (aberto && !groups.some(function(g){ return g.card === aberto; })) aberto = null;
+
+    var max = groups.reduce(function(m,g){ return Math.max(m, g.total); }, 0) || 1;
+    var totalAll = groups.reduce(function(sum,g){ return sum + g.total; }, 0) || 1;
+
+    var linhas = groups.map(function(g){
+      var cor = cardColorFor(g.card);
+      var pct = g.total / max * 100;
+      var share = Math.round(g.total / totalAll * 100);
+      var estaAberto = (g.card === aberto);
+      var head = '<button type="button" class="cat-bar-row card-row'+(estaAberto?' is-open':'')+'"'
+        + ' data-action="toggle-card" data-scope="'+escapeHTML(escopo)+'" data-card="'+escapeHTML(g.card)+'"'
+        + ' title="'+escapeHTML(cardLabelFor(g.card))+' — '+formatBRL(g.total)+'. Toque pra abrir.">'
+        + '<span class="cat-bar-head">'
+          + '<span class="cat-bar-name"><span class="card-dot" style="background:'+cor+';box-shadow:0 0 9px '+hexToRgba(cor,0.8)+';"></span>'
+            + '<span class="cat-bar-label">'+escapeHTML(cardLabelFor(g.card))+'</span></span>'
+          + '<span class="cat-bar-val">'+formatBRL(g.total)+'<span class="cat-bar-share">'+share+'%</span>'
+            + '<span class="card-caret">'+(estaAberto ? '⌄' : '›')+'</span></span>'
+        + '</span>'
+        + '<span class="cat-bar-track"><span class="cat-bar-fill" style="width:'+pct.toFixed(2)+'%;background:'+cor+';box-shadow:0 0 10px '+hexToRgba(cor,0.75)+';"></span></span>'
+        + '</button>';
+      return estaAberto ? (head + cardOpenHTML(g)) : head;
+    }).join('');
+
+    var semCartao = groups.every(function(g){ return g.card === CARTAO_OUTRO; });
+    return '<div class="cat-bars card-list">' + linhas + '</div>'
+      + (semCartao
+          ? '<div class="trend-legend">Nenhuma conta deste mês foi marcada com cartão. Ao lançar, escolha <b>Crédito</b> ou <b>Débito</b> e diga qual cartão — aí cada um vira uma linha aqui.</div>'
+          : '<div class="trend-legend">Toque num cartão pra abrir o que foi débito, crédito à vista e parcelado nele.</div>');
   }
 
   // Gráfico de barras por mês. É usado em dois lugares — nas contas do casal
@@ -3219,10 +3423,12 @@
       // Altura mínima de 3% pra um mês de valor baixo não sumir e virar uma
       // barra invisível que ninguém consegue clicar.
       var alt = Math.max(3, g.total / max * 100);
-      // Só o maior mês e o mês selecionado ganham valor escrito — número em
-      // cima de toda barra vira ruído e o gráfico deixa de ser lido de relance.
-      var rotulo = (ix === maxIdx || isSelected) ? formatCompactBRL(g.total) : '';
-      var classes = 'trend-bar' + (isSelected ? ' is-selected' : '') + (isCurrent ? ' is-current' : '') + (isFuture ? ' is-future' : '');
+      // Todo mês mostra o valor. O do mês aberto vem aceso; os outros ficam
+      // apagados, do mesmo jeito que as barras — dá pra comparar os números de
+      // relance sem que eles briguem com a leitura do mês selecionado.
+      var rotulo = formatChartLabel(g.total);
+      var classes = 'trend-bar' + (isSelected ? ' is-selected' : '') + (isCurrent ? ' is-current' : '') + (isFuture ? ' is-future' : '')
+        + (ix === maxIdx ? ' is-max' : '');
       return '<button type="button" class="'+classes+'" data-action="'+acaoClique+'" data-month="'+g.key+'"'
         + ' title="'+escapeHTML(monthLabelFromKey(g.key))+' — '+formatBRL(g.total)+(isFuture ? ' (previsto)' : '')+'. Toque pra ver só este mês.">'
         + '<span class="trend-cap">'+escapeHTML(rotulo)+'</span>'
@@ -3235,7 +3441,7 @@
     // engorda as barras e deforma o texto. Com flexbox a proporção fica igual
     // no celular e num monitor largo.
     return '<div class="trend-chart">' + barras + '</div>'
-      + '<div class="trend-legend">Toque numa barra pra ver só aquele mês.'
+      + '<div class="trend-legend">Valores em reais. Toque numa barra pra ver só aquele mês.'
         + (temFuturo ? ' Barra mais fraca = mês que ainda não chegou (parcelas e contas fixas já comprometidas).' : '')
       + '</div>';
   }
@@ -3252,6 +3458,16 @@
     v = Number(v) || 0;
     if (v >= 1000) return 'R$ ' + (v/1000).toLocaleString('pt-BR', {maximumFractionDigits:1}) + ' mil';
     return formatBRL(v);
+  }
+
+  // Agora TODA barra do gráfico mostra o valor, e num celular seis barras
+  // dividem menos de 50px cada. Por isso o rótulo do gráfico é ainda mais
+  // curto que o formatCompactBRL: sem "R$" (a legenda embaixo já diz que é
+  // dinheiro) e sem centavos. "7,8 mil" cabe; "R$ 7.812,40" não caberia.
+  function formatChartLabel(v){
+    v = Number(v) || 0;
+    if (v >= 1000) return (v/1000).toLocaleString('pt-BR', {maximumFractionDigits:1}) + ' mil';
+    return Math.round(v).toLocaleString('pt-BR');
   }
 
   function renderResumo(){
@@ -3325,6 +3541,10 @@
           + '<section class="resumo-block neon-box acc-cyan rb-trend"><div class="section-title">📈 Contas do casal por mês</div>' + monthlyTrendHTML(month) + '</section>'
         + '</div>'
         + '<div class="resumo-col resumo-col-c">'
+          // Cartões e categorias são as duas leituras "largas" do mês, então
+          // ficam na faixa que ocupa a tela inteira — barra comprida é o que
+          // deixa comparar valor de relance.
+          + '<section class="resumo-block neon-box acc-amber rb-cartoes"><div class="section-title">💳 Contas por cartão</div>' + cardsPanelHTML(casalList, 'resumo') + '</section>'
           + '<section class="resumo-block neon-box acc-green rb-cats"><div class="section-title">🧾 Contas do casal por categoria</div>' + categoryBarsHTML(byCat) + '</section>'
         + '</div>'
       + '</div>';
@@ -3877,7 +4097,7 @@
     return '<div class="field" style="margin-top:22px;"><label>Sua casa</label>'
       + '<div class="note" style="margin:-2px 0 10px;">Passe este código pra outra pessoa da casa. Ela cria a conta dela e digita o código — a partir daí vocês dois veem e editam os mesmos lançamentos, em tempo real.</div>'
       + '<div class="convite-caixa">'
-        + '<span class="convite-codigo">' + escapeHTML(codigo) + '</span>'
+        + '<span class="convite-codigo selecionavel">' + escapeHTML(codigo) + '</span>'
         + '<button type="button" class="secondary-btn" id="copiar-convite" style="width:auto;padding:8px 14px;">Copiar</button>'
       + '</div>'
       + (email ? '<div class="note" style="margin-top:10px;">Conectado como <strong>' + escapeHTML(email) + '</strong></div>' : '')
@@ -4148,6 +4368,45 @@
     render();
   }
 
+  // Mostra e esconde os campos de pagamento conforme o que já foi escolhido.
+  // Ficava espalhado em três handlers que se contradiziam; agora é um lugar só,
+  // chamado sempre que qualquer um desses campos muda.
+  function atualizarCamposPagamento(form){
+    if (!form) return;
+    var pmEl = form.querySelector('.payment-method-select');
+    var metodo = pmEl ? pmEl.value : 'outro';
+    var usaCartao = (metodo === 'credito' || metodo === 'debito');
+    var fixEl = form.querySelector('.fixed-toggle-select');
+    var ehFixo = !!fixEl && fixEl.value === 'sim';
+
+    form.querySelectorAll('.card-field').forEach(function(el){
+      el.style.display = usaCartao ? 'block' : 'none';
+    });
+    var custom = form.querySelector('.custom-card-field');
+    if (custom){
+      var sel = form.querySelector('.card-select');
+      custom.style.display = (usaCartao && sel && sel.value === '__custom__') ? 'block' : 'none';
+    }
+
+    // Gasto fixo e parcelamento não convivem: um repete pra sempre com o mesmo
+    // valor, o outro divide um valor único em N vezes. E débito não parcela.
+    form.querySelectorAll('.credito-only-field').forEach(function(el){
+      el.style.display = (metodo === 'credito' && !ehFixo) ? 'block' : 'none';
+    });
+    form.querySelectorAll('.parcelavel-field').forEach(function(el){
+      el.style.display = (!ehFixo && metodo !== 'debito') ? 'block' : 'none';
+    });
+
+    // Se a pergunta "foi parcelado?" saiu da tela, ela volta pra "não" — senão
+    // um "sim" escondido seguiria valendo na hora de salvar.
+    var tog = form.querySelector('.installment-toggle-select');
+    var caixa = tog ? tog.closest('.field') : null;
+    var perguntaVisivel = !!caixa && caixa.style.display !== 'none';
+    if (tog && !perguntaVisivel) tog.value = 'nao';
+    var campos = form.querySelector('.installment-fields');
+    if (campos) campos.style.display = (perguntaVisivel && tog && tog.value === 'sim') ? 'flex' : 'none';
+  }
+
   function captureAddFormDraft(){
     var form = contentEl.querySelector('form.add-form');
     if (!form) return null;
@@ -4337,42 +4596,46 @@
     var extra = {};
     var fixedToggleEl = form.querySelector('.fixed-toggle-select');
     extra.fixed = !!fixedToggleEl && fixedToggleEl.value === 'sim';
-    if (type === 'pessoal'){
-      var paymentMethodEl = form.querySelector('.payment-method-select');
-      var paymentMethod = paymentMethodEl ? paymentMethodEl.value : 'credito';
-      extra.paymentMethod = paymentMethod;
-      if (paymentMethod === 'credito'){
-        var cardSelectEl = form.querySelector('.card-select');
-        var cardValue = cardSelectEl ? cardSelectEl.value : '';
-        if (cardValue === '__custom__'){
-          var customCard = form.querySelector('.custom-card-input').value.trim();
-          if (!customCard){ alert('Digite o nome do cartão.'); return; }
-          cardValue = customCard;
-        }
-        if (!cardValue){ alert('Selecione o cartão.'); return; }
-        extra.card = cardValue;
-        var instToggleEl = form.querySelector('.installment-toggle-select');
-        var isInstallment = !!instToggleEl && instToggleEl.value === 'sim' && !extra.fixed;
-        extra.installment = isInstallment;
-        if (isInstallment){
-          var totalInst = parseInt(form.querySelector('.installments-total-input').value, 10);
-          var paidInst = parseInt(form.querySelector('.installments-paid-input').value, 10);
-          if (!totalInst || totalInst < 1){ alert('Informe o número de parcelas.'); return; }
-          if (isNaN(paidInst) || paidInst < 0) paidInst = 0;
-          if (paidInst > totalInst) paidInst = totalInst;
-          extra.installmentsTotal = totalInst;
-          extra.installmentsPaid = paidInst;
-        } else {
-          extra.installmentsTotal = null;
-          extra.installmentsPaid = null;
-        }
-      } else {
-        extra.card = null;
-        extra.installment = false;
-        extra.installmentsTotal = null;
-        extra.installmentsPaid = null;
+    // Forma de pagamento agora vale pros dois formulários — é ela que alimenta
+    // o quadro "Contas por cartão" no Resumo.
+    var paymentMethodEl = form.querySelector('.payment-method-select');
+    var paymentMethod = paymentMethodEl ? paymentMethodEl.value : (type === 'casal' ? 'outro' : 'credito');
+    extra.paymentMethod = paymentMethod;
+    if (paymentMethod === 'credito' || paymentMethod === 'debito'){
+      var cardSelectEl = form.querySelector('.card-select');
+      var cardValue = cardSelectEl ? cardSelectEl.value : '';
+      if (cardValue === '__custom__'){
+        var customCard = form.querySelector('.custom-card-input').value.trim();
+        if (!customCard){ alert('Digite o nome do cartão.'); return; }
+        cardValue = customCard;
       }
-    } else if (type === 'casal'){
+      if (!cardValue){ alert('Selecione o cartão.'); return; }
+      extra.card = cardValue;
+    } else {
+      extra.card = null;
+    }
+
+    // Parcelamento: débito não parcela, e no formulário pessoal ele só existe
+    // no crédito (carnê e crediário da casa entram pelo formulário do casal).
+    var permiteParcela = !extra.fixed && paymentMethod !== 'debito'
+      && (type === 'casal' || paymentMethod === 'credito');
+    var instToggleEl = form.querySelector('.installment-toggle-select');
+    var isInstallment = !!instToggleEl && instToggleEl.value === 'sim' && permiteParcela;
+    extra.installment = isInstallment;
+    if (isInstallment){
+      var totalInst = parseInt(form.querySelector('.installments-total-input').value, 10);
+      var paidInst = parseInt(form.querySelector('.installments-paid-input').value, 10);
+      if (!totalInst || totalInst < 1){ alert('Informe o número de parcelas.'); return; }
+      if (isNaN(paidInst) || paidInst < 0) paidInst = 0;
+      if (paidInst > totalInst) paidInst = totalInst;
+      extra.installmentsTotal = totalInst;
+      extra.installmentsPaid = paidInst;
+    } else {
+      extra.installmentsTotal = null;
+      extra.installmentsPaid = null;
+    }
+
+    if (type === 'casal'){
       var itemRows = form.querySelectorAll('.item-row');
       var items = [];
       itemRows.forEach(function(row){
@@ -4390,22 +4653,6 @@
         });
       });
       extra.items = items.length ? items : null;
-
-      var instToggleC = form.querySelector('.installment-toggle-select');
-      var isInstallmentC = !!instToggleC && instToggleC.value === 'sim' && !extra.fixed;
-      extra.installment = isInstallmentC;
-      if (isInstallmentC){
-        var totalInstC = parseInt(form.querySelector('.installments-total-input').value, 10);
-        var paidInstC = parseInt(form.querySelector('.installments-paid-input').value, 10);
-        if (!totalInstC || totalInstC < 1){ alert('Informe o número de parcelas.'); return; }
-        if (isNaN(paidInstC) || paidInstC < 0) paidInstC = 0;
-        if (paidInstC > totalInstC) paidInstC = totalInstC;
-        extra.installmentsTotal = totalInstC;
-        extra.installmentsPaid = paidInstC;
-      } else {
-        extra.installmentsTotal = null;
-        extra.installmentsPaid = null;
-      }
     }
 
     if (state.editingId){
@@ -5140,6 +5387,23 @@
         return;
       }
 
+      var cartaoBtn = e.target.closest('[data-action="toggle-card"]');
+      if (cartaoBtn){
+        var escopoCartao = cartaoBtn.getAttribute('data-scope');
+        var nomeCartao = cartaoBtn.getAttribute('data-card');
+        var jaAberto = state.cardOpen && state.cardOpen.scope === escopoCartao && state.cardOpen.card === nomeCartao;
+        // Tocar de novo no cartão aberto fecha — o painel volta a ser só a lista.
+        state.cardOpen = jaAberto ? null : {scope:escopoCartao, card:nomeCartao, filter:'tudo'};
+        render();
+        return;
+      }
+      var chipCartao = e.target.closest('[data-action="card-filter"]');
+      if (chipCartao){
+        if (state.cardOpen) state.cardOpen.filter = chipCartao.getAttribute('data-filter');
+        render();
+        return;
+      }
+
       if (e.target.closest('[data-action="open-future"]')){ openFutureModal(); return; }
 
       var openItemsBtn = e.target.closest('[data-action="open-items"]');
@@ -5200,22 +5464,8 @@
         render();
         return;
       }
-      // Gasto fixo e parcelamento não convivem: um repete pra sempre com o
-      // mesmo valor, o outro divide um valor único em N vezes.
       if (e.target.matches('.fixed-toggle-select')){
-        var formFx = e.target.closest('form');
-        var ehFixo = e.target.value === 'sim';
-        formFx.querySelectorAll('.not-fixed-field').forEach(function(el){
-          var pagamentoCredito = !el.classList.contains('card-only-field')
-            || (formFx.querySelector('.payment-method-select') || {}).value === 'credito';
-          el.style.display = (ehFixo || !pagamentoCredito) ? 'none' : 'block';
-        });
-        if (ehFixo){
-          var tog = formFx.querySelector('.installment-toggle-select');
-          if (tog) tog.value = 'nao';
-          var campos = formFx.querySelector('.installment-fields');
-          if (campos) campos.style.display = 'none';
-        }
+        atualizarCamposPagamento(e.target.closest('form'));
         return;
       }
       if (e.target.matches('.category-select')){
@@ -5224,30 +5474,9 @@
         customField.style.display = (e.target.value === '__custom__') ? 'block' : 'none';
         return;
       }
-      if (e.target.matches('.card-select')){
-        var formCard = e.target.closest('form');
-        var customCardField = formCard.querySelector('.custom-card-field');
-        customCardField.style.display = (e.target.value === '__custom__') ? 'block' : 'none';
-        return;
-      }
-      if (e.target.matches('.payment-method-select')){
-        var formPm = e.target.closest('form');
-        var isCred = e.target.value === 'credito';
-        var cardOnlyFields = formPm.querySelectorAll('.card-only-field');
-        for (var i=0;i<cardOnlyFields.length;i++){ cardOnlyFields[i].style.display = isCred ? 'block' : 'none'; }
-        var instToggle = formPm.querySelector('.installment-toggle-select');
-        var instFields = formPm.querySelector('.installment-fields');
-        if (!isCred){
-          instFields.style.display = 'none';
-        } else if (instToggle && instToggle.value === 'sim'){
-          instFields.style.display = 'flex';
-        }
-        return;
-      }
-      if (e.target.matches('.installment-toggle-select')){
-        var formInst = e.target.closest('form');
-        var instFields2 = formInst.querySelector('.installment-fields');
-        instFields2.style.display = (e.target.value === 'sim') ? 'flex' : 'none';
+      if (e.target.matches('.card-select') || e.target.matches('.payment-method-select')
+          || e.target.matches('.installment-toggle-select')){
+        atualizarCamposPagamento(e.target.closest('form'));
         return;
       }
       if (e.target.matches('.photo-input')){ handlePhotoChange(e.target); return; }
