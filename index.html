@@ -92,6 +92,43 @@
   .gear-btn{
     border:none;background:none;font-size:19px;cursor:pointer;padding:4px 2px;color:var(--ink-soft);flex-shrink:0;
   }
+  .header-acoes{ display:flex; align-items:center; gap:4px; flex-shrink:0; }
+  /* O "?" é uma letra, não um emoji: precisa do próprio contorno pra parecer
+     um botão e não um texto solto ao lado da engrenagem. */
+  .ajuda-btn{
+    width:26px; height:26px; border-radius:50%;
+    border:1px solid var(--line); color:var(--ink-soft);
+    font-size:14px; font-weight:800; font-family:inherit;
+    display:grid; place-items:center; padding:0; line-height:1;
+  }
+  .ajuda-btn:hover{ border-color:var(--neon2); color:var(--neon2); }
+
+  #ajuda-modal{ z-index:85; }
+  .ajuda-passo{
+    display:flex; gap:12px; padding:13px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .ajuda-passo:last-of-type{ border-bottom:none; }
+  .ajuda-num{
+    flex:0 0 26px; height:26px; border-radius:50%;
+    background:var(--hover-soft); border:1px solid var(--line);
+    display:grid; place-items:center;
+    font-size:12px; font-weight:800; color:var(--neon2);
+    font-variant-numeric:tabular-nums;
+  }
+  .ajuda-txt h3{ margin:1px 0 4px; font-size:14.5px; font-weight:700; color:var(--ink); }
+  .ajuda-txt p{ margin:0; font-size:13.5px; color:var(--ink-soft); line-height:1.5; }
+  .ajuda-txt p + p{ margin-top:6px; }
+  .ajuda-txt b{ color:var(--ink); font-weight:600; }
+  .ajuda-secao{
+    font-size:11px; font-weight:800; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--ink-soft); margin:18px 0 2px;
+  }
+  .ajuda-secao:first-of-type{ margin-top:8px; }
+  .ajuda-duvida{ padding:11px 0; border-bottom:1px solid var(--line); }
+  .ajuda-duvida:last-of-type{ border-bottom:none; }
+  .ajuda-duvida h4{ margin:0 0 3px; font-size:13.5px; font-weight:700; color:var(--ink); }
+  .ajuda-duvida p{ margin:0; font-size:13px; color:var(--ink-soft); line-height:1.5; }
   main{
     flex:1;
     padding:16px 16px 96px;
@@ -646,22 +683,23 @@
   .cat-linha-uso{ display:block; font-size:11px; color:var(--ink-soft); font-weight:500; }
 
   #cats-modal{ z-index:80; }
-  #cats-modal, #metas-modal, #future-modal{
+  #ajuda-modal, #cats-modal, #metas-modal, #future-modal{
     position:fixed;inset:0;background:var(--backdrop);
     display:flex;align-items:flex-end;justify-content:center;z-index:70;
     opacity:1;visibility:visible;transition:opacity .18s ease, visibility .18s ease;
   }
-  #cats-modal.hidden, #metas-modal.hidden, #future-modal.hidden{opacity:0;visibility:hidden;pointer-events:none;}
+  #ajuda-modal.hidden, #cats-modal.hidden, #metas-modal.hidden, #future-modal.hidden{opacity:0;visibility:hidden;pointer-events:none;}
+  #ajuda-modal.hidden #ajuda-panel{ transform:translateY(24px); }
   #cats-modal.hidden #cats-panel{ transform:translateY(24px); }
   #future-modal.hidden #future-panel{ transform:translateY(24px); }
   #metas-modal.hidden #metas-panel{ transform:translateY(24px); }
-  #cats-panel, #metas-panel, #future-panel{
+  #ajuda-panel, #cats-panel, #metas-panel, #future-panel{
     background:var(--paper-raised);width:100%;max-width:480px;
     border-radius:18px 18px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));
     max-height:85vh;overflow-y:auto;box-shadow:var(--shadow-lg);
     transform:translateY(0);transition:transform .2s ease;
   }
-  #cats-panel h2, #metas-panel h2, #future-panel h2{font-size:17px;margin:0 0 6px;}
+  #ajuda-panel h2, #cats-panel h2, #metas-panel h2, #future-panel h2{font-size:17px;margin:0 0 6px;}
   #cats-panel .field{ margin-bottom:14px; }
   #cats-panel label{ display:block; font-size:12px; color:var(--ink-soft); margin-bottom:6px; }
   #cats-panel input[type="text"]{
@@ -1189,8 +1227,9 @@
 
   /* ---------- Tablet ---------- */
   @media (min-width:640px){
-    #settings-modal, #items-modal, #reset-modal, #future-modal, #metas-modal, #cats-modal{ align-items:center; }
-    #settings-panel, #items-panel, #reset-panel, #future-panel, #metas-panel, #cats-panel{ border-radius:16px; max-height:80vh; }
+    #settings-modal, #items-modal, #reset-modal, #future-modal, #metas-modal, #cats-modal, #ajuda-modal{ align-items:center; }
+    #settings-panel, #items-panel, #reset-panel, #future-panel, #metas-panel, #cats-panel, #ajuda-panel{ border-radius:16px; max-height:80vh; }
+    #ajuda-panel{ max-width:560px; }
     .row2, .row2.installment-fields{ gap:14px; }
   }
 
@@ -1354,7 +1393,10 @@
       <h1 id="header-title">Resumo</h1>
       <div class="sub" id="header-sub">Gastos da casa</div>
     </div>
-    <button id="settings-btn" class="gear-btn" aria-label="Configurações">⚙️</button>
+    <div class="header-acoes">
+      <button id="ajuda-btn" class="gear-btn ajuda-btn" aria-label="Como usar o app" title="Como usar">?</button>
+      <button id="settings-btn" class="gear-btn" aria-label="Configurações">⚙️</button>
+    </div>
   </header>
 
   <main id="content"></main>
@@ -1395,6 +1437,10 @@
 
 <div id="cats-modal" class="hidden">
   <div id="cats-panel"></div>
+</div>
+
+<div id="ajuda-modal" class="hidden">
+  <div id="ajuda-panel"></div>
 </div>
 
 <!--
@@ -1512,6 +1558,7 @@
   var futureModalEl, futurePanelEl;
   var metasModalEl, metasPanelEl;
   var catsModalEl, catsPanelEl;
+  var ajudaModalEl, ajudaPanelEl;
   var resetModalEl, resetPanelEl;
 
   function ensureSubTabDefaults(){
@@ -5064,6 +5111,85 @@
 
   /* ---------- Janela dos próximos meses ---------- */
 
+  /* ---------- Janela de ajuda ----------
+     O tutorial mora dentro do app de propósito: quem tem dúvida está com o
+     app aberto, e um link externo obrigaria a sair, achar a mensagem antiga e
+     voltar. Aqui o texto aponta pra botões que a pessoa está vendo na tela. */
+
+  var AJUDA_PASSOS = [
+    ['Convide a outra pessoa',
+     'Toque na <b>engrenagem</b> aqui em cima e procure <b>Sua casa</b>: tem um código de 6 letras. Mande pra outra pessoa — ela cria a conta dela, digita o código, e a partir daí vocês dois veem e editam os mesmos lançamentos, na hora.',
+     'Nessa mesma tela você troca os nomes (Homem e Mulher viram os nomes de vocês), muda a divisão se não for 50/50 e cadastra os cartões da casa.'],
+
+    ['Lance uma conta do casal',
+     'Abra a aba com o seu nome, deixe em <b>Contas do casal</b> e preencha categoria, descrição, valor e data.',
+     'Se pagou no cartão, diga se foi crédito ou débito e qual cartão. É isso que faz o app mostrar depois quanto passou em cada um.'],
+
+    ['Foto da nota fiscal',
+     'Em <b>Comprovante</b>, tire a foto do cupom. O app lê os itens e monta a lista com número, produto, unidades, peso e valor, soma tudo e compara com o total impresso na nota.',
+     'As linhas com faixa colorida são as que ele não leu com certeza — confira só elas. Foto reta, nota esticada e boa luz ajudam bastante.'],
+
+    ['Cadastre as contas fixas',
+     'Aluguel, internet, seguro, academia: na aba <b>Contas Fixas</b> você cadastra uma vez e elas passam a aparecer sozinhas em todos os meses.',
+     'Mudou o valor? Edite ali e muda em todos os meses de uma vez. Faça isso primeiro — depois sobra pouca coisa pra digitar todo mês.'],
+
+    ['Parcelou? Diga só em quantas vezes',
+     'Marque <b>Foi parcelado?</b> e informe o número de vezes. O valor da parcela e quantas já venceram o app calcula sozinho pela data da compra.',
+     'No acerto do mês entra só a parcela daquele mês. As próximas ficam marcadas na aba <b>Meses</b>.'],
+
+    ['Seus gastos pessoais',
+     'Na sua aba, toque em <b>Contas pessoais</b>: é o que é só seu e não divide com ninguém.',
+     'Os quatro números do topo dizem quanto sai neste mês, quanto já foi pago, quanto falta e quantas parcelas ainda vão vencer.'],
+
+    ['Leia o Resumo',
+     'O número grande em rosa é a resposta do mês: <b>quem paga a diferença, e quanto</b>. Ele já usa a divisão que vocês configuraram.',
+     'Descendo tem quanto cada um pôs, o gráfico por mês (toque numa barra pra ver só aquele mês), quanto foi em cada cartão e quanto foi em cada categoria.'],
+
+    ['Se quiser, metas',
+     'No botão <b>🎯 Metas</b> do Resumo você põe um teto pro mês inteiro, por categoria ou por cartão. Verde é tranquilo, amarelo é limite, vermelho passou.',
+     'Nada trava quando passa — o app só avisa. E quem não configurar meta nenhuma não vê meta nenhuma na tela.']
+  ];
+
+  var AJUDA_DUVIDAS = [
+    ['Errei um lançamento. E agora?',
+     'Em qualquer lista, o lápis edita e a lixeira apaga. Vale pra contas do casal, gastos pessoais e contas fixas.'],
+    ['Os dois precisam lançar?',
+     'Não. Qualquer um lança qualquer conta — o que importa é de quem é a aba onde foi lançada, porque é isso que o acerto usa pra saber quem pagou.'],
+    ['Quero outras categorias',
+     'Embaixo do seletor de categoria tem <b>criar, renomear ou apagar categorias</b>. Ali dá pra criar as suas, trocar o ícone e mudar a ordem em que aparecem.'],
+    ['Troquei de celular. Perdi tudo?',
+     'Não. Entre com o mesmo e-mail e senha no aparelho novo — está tudo lá, do jeito que estava.'],
+    ['Preciso de internet?',
+     'Pra ver, não. Pra o outro celular receber o que você lançou, sim: o app guarda e envia sozinho assim que a internet voltar.'],
+    ['Quero um atalho na tela de início',
+     'No menu do navegador, toque em <b>Adicionar à tela de início</b>. Vira um ícone igual a um aplicativo, sem precisar baixar nada.']
+  ];
+
+  function openAjudaModal(){
+    ajudaPanelEl.innerHTML = ''
+      + '<h2>❓ Como usar o app</h2>'
+      + '<div class="note" style="margin:6px 0 4px;">Leva uns 3 minutos. Não precisa ler tudo de uma vez — o app funciona sem configurar nada além do primeiro lançamento.</div>'
+      + '<div class="ajuda-secao">Passo a passo</div>'
+      + AJUDA_PASSOS.map(function(passo, i){
+          return '<div class="ajuda-passo">'
+            + '<span class="ajuda-num">' + (i+1) + '</span>'
+            + '<div class="ajuda-txt"><h3>' + escapeHTML(passo[0]) + '</h3>'
+              + '<p>' + passo[1] + '</p>'
+              + (passo[2] ? '<p>' + passo[2] + '</p>' : '')
+            + '</div></div>';
+        }).join('')
+      + '<div class="ajuda-secao">Dúvidas que sempre aparecem</div>'
+      + AJUDA_DUVIDAS.map(function(d){
+          return '<div class="ajuda-duvida"><h4>' + escapeHTML(d[0]) + '</h4><p>' + d[1] + '</p></div>';
+        }).join('')
+      + '<div class="settings-actions" style="margin-top:18px;">'
+        + '<button type="button" class="secondary-btn" data-action="fechar-ajuda">Entendi</button>'
+      + '</div>';
+    ajudaModalEl.classList.remove('hidden');
+    ajudaPanelEl.scrollTop = 0;
+  }
+  function closeAjudaModal(){ ajudaModalEl.classList.add('hidden'); }
+
   /* ---------- Janela das categorias ---------- */
 
   function openCatsModal(){
@@ -6938,6 +7064,12 @@
       if (e.target.closest('#open-reset-btn')){ closeSettingsModal(); openResetModal(); return; }
     });
 
+    document.getElementById('ajuda-btn').addEventListener('click', openAjudaModal);
+    ajudaModalEl.addEventListener('click', function(e){ if (e.target === ajudaModalEl) closeAjudaModal(); });
+    ajudaPanelEl.addEventListener('click', function(e){
+      if (e.target.closest('[data-action="fechar-ajuda"]')) closeAjudaModal();
+    });
+
     catsModalEl.addEventListener('click', function(e){ if (e.target === catsModalEl) closeCatsModal(); });
     catsPanelEl.addEventListener('click', function(e){
       if (e.target.closest('[data-action="fechar-categorias"]')){ closeCatsModal(); return; }
@@ -7096,6 +7228,8 @@
     itemsPanelEl = document.getElementById('items-panel');
     resetModalEl = document.getElementById('reset-modal');
     resetPanelEl = document.getElementById('reset-panel');
+    ajudaModalEl = document.getElementById('ajuda-modal');
+    ajudaPanelEl = document.getElementById('ajuda-panel');
     catsModalEl = document.getElementById('cats-modal');
     catsPanelEl = document.getElementById('cats-panel');
     metasModalEl = document.getElementById('metas-modal');
