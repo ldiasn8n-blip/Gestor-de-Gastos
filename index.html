@@ -397,7 +397,7 @@
   }
   /* O campo de cada categoria fica na mesma linha do nome, então ele não
      pode esticar pra largura toda como os outros. */
-  #metas-panel input.meta-cfg-input{ width:120px; padding:8px 9px; font-size:15px; }
+  #metas-panel input.meta-cfg-input{ width:104px; padding:8px 9px; font-size:15px; }
   .settings-member-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
   .settings-member-row .member-name-input{
     flex:1;padding:8px 9px;border:1px solid var(--line);border-radius:8px;font-size:14px;font-family:inherit;
@@ -589,12 +589,20 @@
   }
   .meta-linha-cfg:last-of-type{ border-bottom:none; }
   .meta-cfg-nome{ flex:1; min-width:0; display:flex; align-items:center; gap:8px; font-size:13.5px; font-weight:600; }
+  .meta-cfg-nome .card-dot{ width:14px; height:14px; }
   .meta-cfg-nome span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .meta-cfg-gasto{ font-size:11px; color:var(--ink-soft); display:block; font-weight:500; }
   .meta-cfg-input{ width:120px; flex:0 0 auto; }
-  .meta-cfg-tirar{
-    background:transparent; border:none; cursor:pointer; font-size:15px;
-    color:var(--ink-soft); padding:4px 2px; flex:0 0 auto;
+  .meta-cfg-acao{
+    background:transparent; border:none; cursor:pointer; font-size:14px;
+    color:var(--ink-soft); padding:5px 4px; flex:0 0 auto; border-radius:6px;
+    line-height:1;
+  }
+  .meta-cfg-acao:hover{ background:var(--hover); }
+  .meta-add-linha{ margin-top:10px; }
+  .meta-tipo{
+    display:block; font-size:10px; font-weight:600; letter-spacing:.05em;
+    text-transform:uppercase; color:var(--ink-soft);
   }
   .future-row{
     display:flex;align-items:center;gap:10px;padding:11px 2px;
@@ -694,6 +702,24 @@
   .lic-vencido .lic-tag{ color:#FFC24F; }
   .lic-plano{ font-size:11.5px; font-weight:700; color:var(--ink-soft); margin-top:4px; }
   .lic-btn-renovar{ border-color:rgba(57,255,136,0.45); color:var(--positive); }
+  .lic-btn-editar{ border-color:rgba(79,224,255,0.45); color:var(--neon2); }
+  .lic-btn-salvar{ border-color:rgba(57,255,136,0.6); color:var(--positive); font-weight:800; }
+  .lic-editando{ border-color:rgba(79,224,255,0.6); box-shadow:0 0 18px -6px rgba(79,224,255,0.6); }
+  .lic-editor{
+    margin-top:10px; padding:12px 12px 4px;
+    border-top:1px solid var(--line);
+  }
+  .lic-editor .field{ margin-bottom:12px; }
+  .lic-editor label{ display:block; font-size:12px; color:var(--ink-soft); margin-bottom:6px; }
+  .lic-editor input[type="text"], .lic-editor input[type="number"], .lic-editor select,
+  #settings-panel #lic-plano, #settings-panel #lic-prazo-campo select, #settings-panel #lic-prazo-campo input{
+    width:100%; padding:9px 10px; border:1px solid var(--line); border-radius:8px;
+    font-size:15px; font-family:inherit; background:var(--input-bg); color:var(--ink);
+  }
+  /* Número e unidade lado a lado: "6" + "horas" é uma frase só. */
+  .lic-prazo-linha{ display:flex; gap:8px; }
+  .lic-prazo-linha input{ flex:0 0 92px; }
+  .lic-prazo-linha select{ flex:1; min-width:0; }
   .lic-obs{ font-size:12.5px; color:var(--ink); margin-top:5px; }
   .lic-meta{ font-size:11.5px; color:var(--ink-soft); margin-top:3px; }
   .lic-acoes{ display:flex; gap:8px; margin-top:9px; flex-wrap:wrap; }
@@ -1329,18 +1355,27 @@
   function normalizarMetas(m){
     var g = (m && typeof m === 'object') ? m : {};
     var geral = Number(g.geral);
-    var cats = {};
-    var origem = (g.categorias && typeof g.categorias === 'object') ? g.categorias : {};
-    Object.keys(origem).forEach(function(k){
-      var v = Number(origem[k]);
-      if (v > 0) cats[k] = v;
-    });
-    return {geral: (geral > 0 ? geral : null), categorias: cats};
+    function limpar(origem){
+      var out = {};
+      var o = (origem && typeof origem === 'object') ? origem : {};
+      Object.keys(o).forEach(function(k){
+        var v = Number(o[k]);
+        if (v > 0) out[k] = v;
+      });
+      return out;
+    }
+    return {
+      geral: (geral > 0 ? geral : null),
+      categorias: limpar(g.categorias),
+      cartoes: limpar(g.cartoes)
+    };
   }
 
   function metasAtivas(){
     var m = normalizarMetas(state.settings && state.settings.goals);
-    return !!m.geral || Object.keys(m.categorias).length > 0;
+    return !!m.geral
+      || Object.keys(m.categorias).length > 0
+      || Object.keys(m.cartoes).length > 0;
   }
 
   var MONTH_NAMES_PT = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
@@ -1577,40 +1612,102 @@
     return r.data;
   }
 
-  async function gerarLicenca(observacao, plano, dias){
+  async function gerarLicenca(observacao, plano, horas){
     var r = await supa.rpc('gerar_licenca', {
       p_observacao: observacao || null,
       p_plano: plano || 'vitalicio',
-      p_dias: dias || null
+      p_horas: horas || null
     });
     if (r.error) throw r.error;
     return r.data;
   }
 
-  async function renovarLicenca(codigo, dias){
-    var r = await supa.rpc('renovar_licenca', { p_codigo: codigo, p_dias: dias || null });
+  async function renovarLicenca(codigo, horas){
+    var r = await supa.rpc('renovar_licenca', { p_codigo: codigo, p_horas: horas || null });
+    if (r.error) throw r.error;
+    return r.data;
+  }
+
+  async function editarLicenca(codigo, plano, horas, observacao){
+    var r = await supa.rpc('editar_licenca', {
+      p_codigo: codigo,
+      p_plano: plano || null,
+      p_horas: horas || null,
+      p_observacao: observacao || null
+    });
     if (r.error) throw r.error;
     return r.data;
   }
 
   // Cada plano num lugar só, pra tela e banco falarem a mesma língua.
+  // O prazo é guardado em HORAS: assim "7 dias", "1 mês" e "6 horas" são a
+  // mesma coisa por dentro, e dá pra vender teste de qualquer tamanho.
+  var HORA = 1, DIA = 24, MES = 24 * 30;
   var PLANOS = {
-    vitalicio: {nome:'Acesso vitalício', curto:'Vitalício', icone:'♾️', dias:null,
-                explica:'Paga uma vez e usa pra sempre. O link não vence.'},
-    teste:     {nome:'Teste de 7 dias',  curto:'Teste 7 dias', icone:'🕗', dias:7,
-                explica:'Vale 7 dias a partir do dia em que a pessoa se cadastrar. Depois disso o acesso fecha sozinho.'},
-    mensal:    {nome:'Mensalidade',      curto:'Mensal', icone:'🔁', dias:30,
-                explica:'Vale 30 dias por vez. Quando a pessoa pagar o mês seguinte, você clica em "Renovar +30 dias".'}
+    vitalicio:     {nome:'Acesso vitalício', curto:'Vitalício', icone:'♾️', horas:null,
+                    explica:'Paga uma vez e usa pra sempre. O acesso não vence.'},
+    teste:         {nome:'Teste de 7 dias',  curto:'Teste', icone:'🕗', horas:7*DIA,
+                    explica:'Vale 7 dias (ou o prazo que você puser aqui embaixo), contados a partir do cadastro.'},
+    mensal:        {nome:'Mensalidade',      curto:'Mensal', icone:'🔁', horas:30*DIA,
+                    explica:'Vale 30 dias por vez. Quando a pessoa pagar o mês seguinte, você clica em "Renovar".'},
+    personalizado: {nome:'Prazo personalizado', curto:'Personalizado', icone:'⏱️', horas:24,
+                    explica:'Você escolhe o prazo: horas, dias ou meses. Bom pra uma demonstração de 3 horas ou um acesso de 6 meses.'}
   };
   function planoInfo(id){ return PLANOS[id] || PLANOS.vitalicio; }
 
-  // Dias que faltam pro vencimento (negativo = já venceu).
-  function diasAteData(iso){
+  // Escolhe a unidade mais redonda pra mostrar um prazo guardado em horas.
+  function melhorUnidade(horas){
+    horas = Number(horas) || 0;
+    if (horas <= 0) return {valor:1, unidade:'dias'};
+    if (horas % MES === 0) return {valor: horas / MES, unidade:'meses'};
+    if (horas % DIA === 0) return {valor: horas / DIA, unidade:'dias'};
+    return {valor: horas, unidade:'horas'};
+  }
+  function paraHoras(valor, unidade){
+    valor = Number(valor) || 0;
+    if (unidade === 'meses') return Math.round(valor * MES);
+    if (unidade === 'dias')  return Math.round(valor * DIA);
+    return Math.round(valor);
+  }
+  function formatDuracao(horas){
+    if (horas == null) return 'não vence';
+    var u = melhorUnidade(horas);
+    var nomes = {horas:['hora','horas'], dias:['dia','dias'], meses:['mês','meses']};
+    return u.valor + ' ' + nomes[u.unidade][u.valor === 1 ? 0 : 1];
+  }
+
+  // Quanto falta (ou quanto passou) até um vencimento com data e hora.
+  function tempoAte(iso){
     if (!iso) return null;
-    var hoje = new Date(); hoje.setHours(0,0,0,0);
-    var partes = String(iso).slice(0,10).split('-');
-    var alvo = new Date(Number(partes[0]), Number(partes[1])-1, Number(partes[2]));
-    return Math.round((alvo - hoje) / 86400000);
+    var alvo = new Date(iso);
+    if (isNaN(alvo)) return null;
+    var ms = alvo - new Date();
+    var horas = ms / 3600000;
+    var texto;
+    if (ms < 0){
+      var passou = Math.abs(horas);
+      texto = passou < 48
+        ? 'venceu faz ' + Math.max(1, Math.round(passou)) + 'h'
+        : 'venceu faz ' + Math.round(passou / 24) + ' dias';
+    } else if (horas < 48){
+      texto = horas < 1
+        ? 'faltam ' + Math.max(1, Math.round(horas * 60)) + ' min'
+        : 'faltam ' + Math.round(horas) + 'h';
+    } else {
+      texto = 'faltam ' + Math.round(horas / 24) + ' dias';
+    }
+    return {ms: ms, vencido: ms < 0, texto: texto};
+  }
+
+  // Vencimento por extenso. Com hora quando é um prazo curto, porque num
+  // teste de 6 horas a data sozinha não diz nada.
+  function formatVencimento(iso){
+    if (!iso) return '';
+    var d = new Date(iso);
+    if (isNaN(d)) return String(iso).slice(0,10);
+    var data = formatDateBR(d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'));
+    var hora = String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+    return data + ' às ' + hora;
   }
 
   async function listarLicencas(){
@@ -1981,8 +2078,10 @@
       : '';
 
     if (authModo === 'bloqueado'){
-      var venceu = acessoInfo && acessoInfo.expira_em ? formatDateBR(String(acessoInfo.expira_em).slice(0,10)) : null;
-      var eraTeste = acessoInfo && acessoInfo.plano === 'teste';
+      // Com prazo em horas, "venceu em 09/09" não bastaria: num teste de 6
+      // horas a hora é justamente o que a pessoa precisa saber.
+      var venceu = acessoInfo && acessoInfo.expira_em ? formatVencimento(acessoInfo.expira_em) : null;
+      var eraTeste = acessoInfo && (acessoInfo.plano === 'teste' || acessoInfo.plano === 'personalizado');
       var desligado = acessoInfo && acessoInfo.ativa === false;
       authCardEl.innerHTML = ''
         + '<h1>' + (desligado ? 'Acesso desativado' : (eraTeste ? 'Seu teste terminou' : 'Seu acesso venceu')) + '</h1>'
@@ -1990,10 +2089,10 @@
           + (desligado
               ? 'Este acesso foi desligado por quem vendeu o app. Fale com essa pessoa pra religar.'
               : (eraTeste
-                  ? 'O teste de 7 dias acabou' + (venceu ? ' em ' + escapeHTML(venceu) : '') + '. Pra continuar, fale com quem te passou o link.'
+                  ? 'O período de teste acabou' + (venceu ? ' em ' + escapeHTML(venceu) : '') + '. Pra continuar, fale com quem te passou o link.'
                   : 'A mensalidade venceu' + (venceu ? ' em ' + escapeHTML(venceu) : '') + '. Assim que o pagamento for confirmado, o acesso volta na hora.'))
         + '</div>'
-        + '<div class="auth-ok" style="margin-top:4px;">Seus lançamentos <strong>não foram apagados</strong>. Eles voltam exatamente como estavam assim que o acesso for religado.</div>'
+        + '<div class="auth-ok" style="margin-top:4px;">Seus lançamentos, comprovantes e configurações <strong>não foram apagados</strong> — está tudo guardado. Volta exatamente como estava assim que o acesso for religado.</div>'
         + '<button type="button" class="secondary-btn" id="btn-tentar-de-novo" style="margin-top:14px;">Já paguei — verificar de novo</button>'
         + '<div class="auth-troca"><button type="button" class="auth-link" id="btn-sair">Sair da conta</button></div>';
       return;
@@ -3377,22 +3476,42 @@
   /* ---------- Metas ---------- */
 
   // Quanto foi gasto contra o teto, no mês que está na tela.
+  // Quanto foi gasto por categoria e por cartão no mês.
+  // Atenção à diferença, que está escrita na tela pra ninguém se enganar:
+  // categoria conta só as CONTAS DO CASAL (é o que o Resumo mostra), enquanto
+  // cartão conta TUDO que passou nele — casal e pessoal — porque a fatura do
+  // cartão não separa uma coisa da outra.
+  function gastoDoMesPorItem(monthKey){
+    var tudo = expensesFor(monthKey);
+    var casal = tudo.filter(function(e){ return e.type === 'casal'; });
+    var porCat = {}, porCartao = {};
+    casal.forEach(function(e){ porCat[e.category] = (porCat[e.category] || 0) + e.value; });
+    tudo.forEach(function(e){
+      if (usouCartao(e)) porCartao[e.card] = (porCartao[e.card] || 0) + e.value;
+    });
+    return {
+      totalCasal: casal.reduce(function(soma,e){ return soma + e.value; }, 0),
+      categorias: porCat,
+      cartoes: porCartao
+    };
+  }
+
   function metasDoMes(monthKey){
     var m = normalizarMetas(state.settings.goals);
-    var lista = expensesFor(monthKey).filter(function(e){ return e.type === 'casal'; });
-    var total = lista.reduce(function(soma,e){ return soma + e.value; }, 0);
-    var porCat = {};
-    lista.forEach(function(e){ porCat[e.category] = (porCat[e.category] || 0) + e.value; });
+    var g = gastoDoMesPorItem(monthKey);
 
     var linhas = [];
-    if (m.geral) linhas.push({key:'__geral__', nome:'Total do mês', meta:m.geral, gasto:total, geral:true});
+    if (m.geral) linhas.push({key:'__geral__', tipo:'geral', nome:'Total do mês', meta:m.geral, gasto:g.totalCasal});
     Object.keys(m.categorias).forEach(function(c){
-      linhas.push({key:c, nome:c, meta:m.categorias[c], gasto:porCat[c] || 0});
+      linhas.push({key:'cat:'+c, tipo:'categoria', nome:c, meta:m.categorias[c], gasto:g.categorias[c] || 0});
+    });
+    Object.keys(m.cartoes).forEach(function(c){
+      linhas.push({key:'card:'+c, tipo:'cartao', nome:c, meta:m.cartoes[c], gasto:g.cartoes[c] || 0});
     });
     // A meta mais perto de estourar sobe: é a que precisa de decisão.
     linhas.sort(function(a,b){
-      if (a.geral) return -1;
-      if (b.geral) return 1;
+      if (a.tipo === 'geral') return -1;
+      if (b.tipo === 'geral') return 1;
       return (b.gasto/b.meta) - (a.gasto/a.meta);
     });
     return linhas;
@@ -3419,9 +3538,19 @@
       var texto = sobra >= 0
         ? 'Ainda cabe ' + formatBRL(sobra)
         : 'Passou ' + formatBRL(Math.abs(sobra));
+      // O selo da esquerda diz de que tipo é a meta sem precisar de legenda:
+      // alvo = o mês inteiro, ícone da categoria, bolinha colorida = cartão.
+      var selo;
+      if (l.tipo === 'geral') selo = '🎯';
+      else if (l.tipo === 'cartao'){
+        var cor = cardColorFor(l.nome);
+        selo = '<span class="card-dot" style="background:'+cor+';box-shadow:0 0 9px '+hexToRgba(cor,0.8)+';"></span>';
+      } else selo = catChipHTML(l.nome, 20);
+
       return '<div class="meta-row meta-' + e.classe + '">'
         + '<div class="meta-topo">'
-          + '<span class="meta-nome">' + (l.geral ? '🎯' : catChipHTML(l.nome, 20)) + '<span class="meta-nome-txt">' + escapeHTML(l.nome) + '</span></span>'
+          + '<span class="meta-nome">' + selo + '<span class="meta-nome-txt">' + escapeHTML(l.nome)
+            + (l.tipo === 'cartao' ? '<span class="meta-tipo">cartão</span>' : '') + '</span></span>'
           + '<span class="meta-val">' + formatBRL(l.gasto) + '<span class="meta-de"> de ' + formatBRL(l.meta) + '</span></span>'
         + '</div>'
         + '<div class="meta-track"><div class="meta-fill" style="width:' + largura.toFixed(1) + '%;background:' + e.cor + ';box-shadow:0 0 10px ' + hexToRgba(e.cor,0.7) + ';"></div></div>'
@@ -4240,7 +4369,7 @@
   function licencasSectionHTML(){
     if (!modoNuvem() || !souAdmin) return '';
     return '<div class="field" style="margin-top:22px;"><label>🎟️ Links de acesso (vendas)</label>'
-      + '<div class="note" style="margin:-2px 0 10px;">Cada link vale por <strong>um cadastro</strong>. Depois de usado, ele não serve mais pra ninguém. Desligar um acesso corta os dados daquela casa na hora.</div>'
+      + '<div class="note" style="margin:-2px 0 10px;">Cada link vale por <strong>um cadastro</strong>. Depois de usado, ele não serve mais pra ninguém. Desligar ou deixar vencer <strong>não apaga nada</strong>: os lançamentos da casa ficam guardados e voltam inteiros quando o acesso é religado.</div>'
       + '<div class="field"><label>Tipo de acesso</label>'
         + '<select id="lic-plano">'
           + Object.keys(PLANOS).map(function(k){
@@ -4248,6 +4377,8 @@
             }).join('')
         + '</select>'
         + '<div class="note" id="lic-plano-nota">' + escapeHTML(PLANOS.vitalicio.explica) + '</div></div>'
+      + '<div class="field" id="lic-prazo-campo" style="display:none;"><label>Prazo</label>'
+        + duracaoControlHTML('lic', null) + '</div>'
       + '<div class="field"><label>Pra quem é? (só você vê)</label><input type="text" id="lic-obs" placeholder="Ex: João e Marina — vendido 09/09, R$ 1.200"></div>'
       + '<button type="button" id="btn-gerar-licenca" class="secondary-btn">+ Gerar link novo</button>'
       + '<div id="lic-novo"></div>'
@@ -4255,9 +4386,34 @@
       + '</div>';
   }
 
+  // Número + unidade. É o mesmo controle no formulário de gerar e no de
+  // editar, pra "6 horas" e "3 meses" serem escritos do mesmo jeito nos dois.
+  function duracaoControlHTML(prefixo, horas){
+    var u = melhorUnidade(horas == null ? 7*DIA : horas);
+    var unidades = [['horas','horas'], ['dias','dias'], ['meses','meses']];
+    return '<div class="lic-prazo-linha">'
+      + '<input type="number" min="1" step="1" inputmode="numeric" id="'+prefixo+'-prazo-valor" value="'+u.valor+'">'
+      + '<select id="'+prefixo+'-prazo-unidade">'
+        + unidades.map(function(x){
+            return '<option value="'+x[0]+'"'+(x[0]===u.unidade?' selected':'')+'>'+x[1]+'</option>';
+          }).join('')
+      + '</select></div>';
+  }
+
+  function lerDuracao(raiz, prefixo){
+    var v = raiz.querySelector('#'+prefixo+'-prazo-valor');
+    var un = raiz.querySelector('#'+prefixo+'-prazo-unidade');
+    if (!v || !un) return null;
+    var horas = paraHoras(v.value, un.value);
+    return horas > 0 ? horas : null;
+  }
+
   function baseDoSite(){
     return location.origin + location.pathname;
   }
+
+  // Código do acesso que está aberto pra edição (um por vez).
+  var licencaEditando = null;
 
   async function renderListaLicencas(){
     var alvo = settingsPanelEl.querySelector('#lic-lista');
@@ -4268,53 +4424,86 @@
         alvo.innerHTML = '<div class="note">Nenhum link gerado ainda.</div>';
         return;
       }
-      alvo.innerHTML = lista.map(function(l){
-        var usada = !!l.usada_por;
-        var plano = planoInfo(l.plano);
-        var dias = diasAteData(l.expira_em);
-        var vencida = (dias !== null && dias < 0);
-
-        // Um link vencido não é a mesma coisa que um link desligado por você:
-        // um a pessoa resolve pagando, o outro foi decisão sua.
-        var estado = !l.ativa ? 'desligado' : (vencida ? 'vencido' : (usada ? 'usado' : 'livre'));
-        var rotulo = !l.ativa ? 'Desligado' : (vencida ? 'Vencido' : (usada ? 'Em uso' : 'Disponível'));
-        var quando = l.usada_em ? formatDateBR(String(l.usada_em).slice(0,10)) : '';
-
-        var prazo;
-        if (!usada){
-          prazo = l.plano === 'vitalicio'
-            ? 'Ainda não usado · não vence'
-            : 'Ainda não usado · ' + (l.dias_validade || plano.dias) + ' dias começam quando a pessoa se cadastrar';
-        } else if (l.plano === 'vitalicio'){
-          prazo = 'Ativado em ' + quando + ' · não vence';
-        } else if (vencida){
-          prazo = 'Venceu em ' + formatDateBR(String(l.expira_em).slice(0,10)) + ' (há ' + Math.abs(dias) + (Math.abs(dias) === 1 ? ' dia' : ' dias') + ')';
-        } else {
-          prazo = 'Vence em ' + formatDateBR(String(l.expira_em).slice(0,10))
-            + ' · ' + (dias === 0 ? 'vence hoje' : 'faltam ' + dias + (dias === 1 ? ' dia' : ' dias'));
-        }
-
-        var podeRenovar = usada && l.plano !== 'vitalicio';
-
-        return '<div class="lic-row lic-' + estado + '">'
-          + '<div class="lic-topo">'
-            + '<span class="lic-codigo">' + escapeHTML(l.codigo) + '</span>'
-            + '<span class="lic-tag">' + rotulo + '</span>'
-          + '</div>'
-          + '<div class="lic-plano">' + plano.icone + ' ' + escapeHTML(plano.curto) + '</div>'
-          + (l.observacao ? '<div class="lic-obs">' + escapeHTML(l.observacao) + '</div>' : '')
-          + '<div class="lic-meta">' + escapeHTML(prazo) + '</div>'
-          + '<div class="lic-acoes">'
-            + (usada ? '' : '<button type="button" class="secondary-btn lic-btn" data-action="copiar-link" data-codigo="' + escapeHTML(l.codigo) + '">Copiar link</button>')
-            + (podeRenovar ? '<button type="button" class="secondary-btn lic-btn lic-btn-renovar" data-action="renovar-licenca" data-codigo="' + escapeHTML(l.codigo) + '" data-dias="' + (l.dias_validade || 30) + '">Renovar +' + (l.dias_validade || 30) + ' dias</button>' : '')
-            + '<button type="button" class="secondary-btn lic-btn" data-action="alternar-licenca" data-codigo="' + escapeHTML(l.codigo) + '" data-ativa="' + (l.ativa ? '1' : '0') + '">'
-              + (l.ativa ? 'Desligar acesso' : 'Religar acesso') + '</button>'
-          + '</div>'
-          + '</div>';
-      }).join('');
+      alvo.innerHTML = lista.map(licencaRowHTML).join('');
     } catch(e){
       alvo.innerHTML = '<div class="note" style="color:var(--alert);">Não consegui carregar os links: ' + escapeHTML(e.message || '') + '</div>';
     }
+  }
+
+  function licencaRowHTML(l){
+    var usada = !!l.usada_por;
+    var plano = planoInfo(l.plano);
+    var t = tempoAte(l.expira_em);
+    var vencida = !!(t && t.vencido);
+
+    // Um link vencido não é a mesma coisa que um link desligado por você:
+    // um a pessoa resolve pagando, o outro foi decisão sua.
+    var estado = !l.ativa ? 'desligado' : (vencida ? 'vencido' : (usada ? 'usado' : 'livre'));
+    var rotulo = !l.ativa ? 'Desligado' : (vencida ? 'Vencido' : (usada ? 'Em uso' : 'Disponível'));
+    var quando = l.usada_em ? formatDateBR(String(l.usada_em).slice(0,10)) : '';
+
+    var prazo;
+    if (!usada){
+      prazo = l.plano === 'vitalicio'
+        ? 'Ainda não usado · não vence'
+        : 'Ainda não usado · ' + formatDuracao(l.duracao_horas) + ' começam quando a pessoa se cadastrar';
+    } else if (l.plano === 'vitalicio'){
+      prazo = 'Ativado em ' + quando + ' · não vence';
+    } else if (vencida){
+      prazo = 'Venceu em ' + formatVencimento(l.expira_em) + ' (' + t.texto + ')';
+    } else {
+      prazo = 'Vence em ' + formatVencimento(l.expira_em) + ' · ' + t.texto;
+    }
+
+    var podeRenovar = usada && l.plano !== 'vitalicio';
+    var editando = (licencaEditando === l.codigo);
+
+    return '<div class="lic-row lic-' + estado + (editando ? ' lic-editando' : '') + '">'
+      + '<div class="lic-topo">'
+        + '<span class="lic-codigo">' + escapeHTML(l.codigo) + '</span>'
+        + '<span class="lic-tag">' + rotulo + '</span>'
+      + '</div>'
+      + '<div class="lic-plano">' + plano.icone + ' ' + escapeHTML(plano.curto)
+        + (l.duracao_horas ? ' · ' + escapeHTML(formatDuracao(l.duracao_horas)) : '') + '</div>'
+      + (l.observacao ? '<div class="lic-obs">' + escapeHTML(l.observacao) + '</div>' : '')
+      + '<div class="lic-meta">' + escapeHTML(prazo) + '</div>'
+      + (editando ? licencaEditorHTML(l) : ''
+          + '<div class="lic-acoes">'
+            + (usada ? '' : '<button type="button" class="secondary-btn lic-btn" data-action="copiar-link" data-codigo="' + escapeHTML(l.codigo) + '">Copiar link</button>')
+            + '<button type="button" class="secondary-btn lic-btn lic-btn-editar" data-action="editar-licenca" data-codigo="' + escapeHTML(l.codigo) + '">Editar</button>'
+            + (podeRenovar ? '<button type="button" class="secondary-btn lic-btn lic-btn-renovar" data-action="renovar-licenca" data-codigo="' + escapeHTML(l.codigo) + '" data-horas="' + (l.duracao_horas || 30*DIA) + '">Renovar +' + escapeHTML(formatDuracao(l.duracao_horas || 30*DIA)) + '</button>' : '')
+            + '<button type="button" class="secondary-btn lic-btn" data-action="alternar-licenca" data-codigo="' + escapeHTML(l.codigo) + '" data-ativa="' + (l.ativa ? '1' : '0') + '">'
+              + (l.ativa ? 'Desligar acesso' : 'Religar acesso') + '</button>'
+          + '</div>')
+      + '</div>';
+  }
+
+  // A "aba" de edição: abre dentro da própria linha, com o plano e o prazo
+  // que aquele acesso tem hoje já preenchidos.
+  function licencaEditorHTML(l){
+    var usada = !!l.usada_por;
+    return '<div class="lic-editor">'
+      + '<div class="field"><label>Tipo de acesso</label>'
+        + '<select id="lic-edit-plano">'
+          + Object.keys(PLANOS).map(function(k){
+              return '<option value="'+k+'"'+(k === l.plano ? ' selected' : '')+'>'+PLANOS[k].icone+' '+escapeHTML(PLANOS[k].nome)+'</option>';
+            }).join('')
+        + '</select></div>'
+      + '<div class="field" id="lic-edit-prazo-campo" style="display:'+(l.plano === 'vitalicio' ? 'none' : 'block')+';">'
+        + '<label>Prazo</label>' + duracaoControlHTML('lic-edit', l.duracao_horas) + '</div>'
+      + '<div class="field"><label>Pra quem é? (só você vê)</label>'
+        + '<input type="text" id="lic-edit-obs" value="'+escapeHTML(l.observacao || '')+'" placeholder="Ex: Vanessa — mensal"></div>'
+      + '<div class="note">'
+        + (usada
+            ? 'Trocando o prazo, ele começa a contar <strong>a partir de agora</strong>. Pra só somar tempo no vencimento atual, use o botão Renovar.'
+            : 'Este link ainda não foi usado, então o prazo começa a contar quando a pessoa se cadastrar.')
+        + '<br>Mudar o plano <strong>não apaga nada</strong> — os lançamentos da casa continuam intactos.'
+      + '</div>'
+      + '<div class="lic-acoes" style="margin-top:10px;">'
+        + '<button type="button" class="secondary-btn lic-btn lic-btn-salvar" data-action="salvar-licenca" data-codigo="'+escapeHTML(l.codigo)+'">Salvar</button>'
+        + '<button type="button" class="secondary-btn lic-btn" data-action="cancelar-edicao-licenca">Cancelar</button>'
+      + '</div>'
+      + '</div>';
   }
 
   async function acaoGerarLicenca(){
@@ -4322,14 +4511,21 @@
     var obs = settingsPanelEl.querySelector('#lic-obs');
     var selPlano = settingsPanelEl.querySelector('#lic-plano');
     var plano = selPlano ? selPlano.value : 'vitalicio';
+    var horas = plano === 'vitalicio' ? null : lerDuracao(settingsPanelEl, 'lic');
+    if (plano !== 'vitalicio' && !horas){ alert('Informe um prazo maior que zero.'); return; }
     b.disabled = true; b.textContent = 'Gerando...';
     try {
-      var codigo = await gerarLicenca(obs ? obs.value : null, plano, null);
+      var codigo = await gerarLicenca(obs ? obs.value : null, plano, horas);
       var link = baseDoSite() + '?convite=' + codigo;
       var info = planoInfo(plano);
+      var descricao;
+      if (plano === 'vitalicio') descricao = 'acesso vitalício';
+      else if (plano === 'teste') descricao = 'teste de ' + formatDuracao(horas);
+      else if (plano === 'mensal') descricao = 'mensalidade de ' + formatDuracao(horas);
+      else descricao = 'acesso de ' + formatDuracao(horas);
       var caixa = settingsPanelEl.querySelector('#lic-novo');
       caixa.innerHTML = '<div class="lic-novo-caixa">'
-        + '<div class="note" style="margin:0 0 6px;">Link de <strong>' + escapeHTML(info.nome.toLowerCase()) + '</strong> pronto — mande pra pessoa:</div>'
+        + '<div class="note" style="margin:0 0 6px;">Link de <strong>' + escapeHTML(descricao) + '</strong> pronto — mande pra pessoa:</div>'
         + '<div class="lic-link">' + escapeHTML(link) + '</div>'
         + '<button type="button" class="secondary-btn" data-action="copiar-link" data-codigo="' + escapeHTML(codigo) + '" style="margin-top:8px;">Copiar link</button>'
         + '</div>';
@@ -4341,12 +4537,35 @@
     b.disabled = false; b.textContent = '+ Gerar link novo';
   }
 
-  async function acaoRenovarLicenca(codigo, dias){
-    if (!confirm('Renovar este acesso por mais ' + dias + ' dias?\n\nOs dias entram em cima do vencimento atual — quem paga adiantado não perde nada.')) return;
+  async function acaoSalvarLicenca(codigo){
+    var raiz = settingsPanelEl;
+    var plano = (raiz.querySelector('#lic-edit-plano') || {}).value || null;
+    var horas = plano === 'vitalicio' ? null : lerDuracao(raiz, 'lic-edit');
+    var obs = (raiz.querySelector('#lic-edit-obs') || {}).value || null;
+    if (plano && plano !== 'vitalicio' && !horas){ alert('Informe um prazo maior que zero.'); return; }
+    var b = raiz.querySelector('[data-action="salvar-licenca"]');
+    if (b){ b.disabled = true; b.textContent = 'Salvando...'; }
     try {
-      var nova = await renovarLicenca(codigo, Number(dias) || null);
+      var r = await editarLicenca(codigo, plano, horas, obs);
+      licencaEditando = null;
       await renderListaLicencas();
-      alert('Renovado. Novo vencimento: ' + formatDateBR(String(nova).slice(0,10)) + '.');
+      if (r && r.expira_em){
+        alert('Pronto. Agora vence em ' + formatVencimento(r.expira_em) + '.');
+      } else if (plano === 'vitalicio'){
+        alert('Pronto. Esse acesso agora é vitalício — não vence mais.');
+      }
+    } catch(e){
+      alert('Não deu certo: ' + (e.message || ''));
+      if (b){ b.disabled = false; b.textContent = 'Salvar'; }
+    }
+  }
+
+  async function acaoRenovarLicenca(codigo, horas){
+    if (!confirm('Renovar este acesso por mais ' + formatDuracao(Number(horas)) + '?\n\nO tempo entra em cima do vencimento atual — quem paga adiantado não perde nada.')) return;
+    try {
+      var nova = await renovarLicenca(codigo, Number(horas) || null);
+      await renderListaLicencas();
+      alert('Renovado. Agora vence em ' + formatVencimento(nova) + '.');
     } catch(e){
       alert('Não deu certo: ' + (e.message || ''));
     }
@@ -4537,59 +4756,108 @@
 
   function openMetasModal(){
     var m = normalizarMetas(state.settings.goals);
-    metasDraft = {geral: m.geral, categorias: Object.assign({}, m.categorias)};
+    metasDraft = {
+      geral: m.geral,
+      categorias: Object.assign({}, m.categorias),
+      cartoes: Object.assign({}, m.cartoes),
+      // Itens que a pessoa mandou aparecer na lista mas ainda estão sem valor.
+      // Sem esta lista eles sumiriam no primeiro redesenho, porque só entra no
+      // rascunho o que tem meta preenchida.
+      extras: {categoria:[], cartao:[]}
+    };
     renderMetasModal();
     metasModalEl.classList.remove('hidden');
   }
   function closeMetasModal(){ metasModalEl.classList.add('hidden'); metasDraft = null; }
 
+  function mesDaJanelaDeMetas(){
+    return (state.resumoMonth && state.resumoMonth !== 'all') ? state.resumoMonth : currentMonthKey();
+  }
+
+  // Quantos lançamentos usam este item. É o número que decide se dá pra
+  // apagar (nenhum) ou só renomear (tem gasto pendurado nele).
+  function quantosUsam(tipo, nome){
+    return state.expenses.filter(function(e){
+      return tipo === 'cartao' ? (e.card === nome) : (e.category === nome);
+    }).length;
+  }
+
+  function listaDeCartoes(){
+    var c = (state.settings.cards && state.settings.cards.length) ? state.settings.cards : DEFAULT_CARDS;
+    return c.slice();
+  }
+
   function renderMetasModal(){
-    var mes = (state.resumoMonth && state.resumoMonth !== 'all') ? state.resumoMonth : currentMonthKey();
-    var lista = expensesFor(mes).filter(function(e){ return e.type === 'casal'; });
-    var totalMes = lista.reduce(function(soma,e){ return soma + e.value; }, 0);
-    var porCat = {};
-    lista.forEach(function(e){ porCat[e.category] = (porCat[e.category] || 0) + e.value; });
+    var mes = mesDaJanelaDeMetas();
+    var g = gastoDoMesPorItem(mes);
 
-    // Linhas que aparecem: as que já têm meta, mais as categorias em que houve
-    // gasto neste mês. Não adianta oferecer meta de uma categoria que a casa
-    // nunca usa — vira uma lista de 15 itens que ninguém lê.
-    var chaves = Object.keys(metasDraft.categorias);
-    Object.keys(porCat).forEach(function(c){ if (chaves.indexOf(c) === -1) chaves.push(c); });
-    chaves.sort(function(a,b){ return (porCat[b] || 0) - (porCat[a] || 0); });
+    // Uma linha por item. Aparecem: os que já têm meta, mais os que tiveram
+    // gasto neste mês. Oferecer meta pra coisa que a casa nunca usa só encheria
+    // a lista de itens que ninguém lê.
+    function bloco(tipo, metas, gastos, extras){
+      var chaves = Object.keys(metas);
+      Object.keys(gastos).forEach(function(k){ if (chaves.indexOf(k) === -1) chaves.push(k); });
+      (metasDraft.extras[tipo] || []).forEach(function(k){ if (chaves.indexOf(k) === -1) chaves.push(k); });
+      (extras || []).forEach(function(k){ if (chaves.indexOf(k) === -1) chaves.push(k); });
+      chaves.sort(function(a,b){ return (gastos[b] || 0) - (gastos[a] || 0); });
 
-    var linhasCat = chaves.map(function(c){
-      var valor = metasDraft.categorias[c];
-      return '<div class="meta-linha-cfg" data-categoria="'+escapeHTML(c)+'">'
-        + '<span class="meta-cfg-nome">' + catChipHTML(c, 22)
-          + '<span>' + escapeHTML(c)
-            + '<span class="meta-cfg-gasto">gastou ' + formatBRL(porCat[c] || 0) + ' neste mês</span></span></span>'
-        + '<input type="number" inputmode="decimal" min="0" step="0.01" class="meta-cfg-input meta-cat-input"'
-          + ' data-categoria="' + escapeHTML(c) + '" placeholder="sem meta" value="' + (valor ? valor : '') + '">'
-        + (valor ? '<button type="button" class="meta-cfg-tirar" data-action="tirar-meta" data-categoria="'+escapeHTML(c)+'" title="Tirar esta meta">✕</button>' : '<span style="width:19px;"></span>')
-        + '</div>';
-    }).join('');
+      if (!chaves.length) return '<div class="note">Nada lançado neste mês ainda.</div>';
 
-    // Categorias sem gasto neste mês, pra quem quiser criar uma meta antes de
-    // gastar (ex: "Lazer, no máximo 300").
-    var faltando = CATEGORIES.map(function(c){ return c.id; }).filter(function(c){ return chaves.indexOf(c) === -1; });
-    var addSelect = faltando.length
-      ? '<div class="field" style="margin-top:14px;"><label>Adicionar outra categoria</label>'
-        + '<select id="meta-add-cat"><option value="">Escolher uma categoria…</option>'
-        + faltando.map(function(c){ return '<option value="'+escapeHTML(c)+'">'+escapeHTML(c)+'</option>'; }).join('')
-        + '</select></div>'
-      : '';
+      return chaves.map(function(k){
+        var valor = metas[k];
+        var usos = quantosUsam(tipo, k);
+        var selo = tipo === 'cartao'
+          ? '<span class="card-dot" style="background:'+cardColorFor(k)+';"></span>'
+          : catChipHTML(k, 22);
+        return '<div class="meta-linha-cfg">'
+          + '<span class="meta-cfg-nome">' + selo
+            + '<span>' + escapeHTML(k)
+              + '<span class="meta-cfg-gasto">gastou ' + formatBRL(gastos[k] || 0) + ' neste mês</span></span></span>'
+          + '<input type="number" inputmode="decimal" min="0" step="0.01" class="meta-cfg-input meta-input-' + tipo + '"'
+            + ' data-item="' + escapeHTML(k) + '" placeholder="sem meta" value="' + (valor ? valor : '') + '">'
+          + '<button type="button" class="meta-cfg-acao" data-action="renomear-item" data-tipo="'+tipo+'" data-item="'+escapeHTML(k)+'" title="Renomear">✏️</button>'
+          // Item com lançamento não pode ser apagado — sumiria o nome de gastos
+          // que já existem. Nesse caso o botão tira só a meta.
+          + '<button type="button" class="meta-cfg-acao" data-action="apagar-item" data-tipo="'+tipo+'" data-item="'+escapeHTML(k)+'" data-usos="'+usos+'"'
+            + ' title="' + (usos ? 'Tirar a meta (tem ' + usos + ' lançamento' + (usos===1?'':'s') + ' usando este nome)' : 'Apagar da lista') + '">'
+            + (usos ? '✕' : '🗑️') + '</button>'
+          + '</div>';
+      }).join('');
+    }
+
+    var faltandoCat = CATEGORIES.map(function(c){ return c.id; })
+      .filter(function(c){ return !metasDraft.categorias[c] && !g.categorias[c]; });
+    var faltandoCartao = listaDeCartoes()
+      .filter(function(c){ return !metasDraft.cartoes[c] && !g.cartoes[c]; });
+
+    function adicionar(id, rotulo, opcoes, textoNovo){
+      return '<div class="meta-add-linha">'
+        + '<select id="' + id + '"><option value="">' + escapeHTML(rotulo) + '</option>'
+          + opcoes.map(function(c){ return '<option value="'+escapeHTML(c)+'">'+escapeHTML(c)+'</option>'; }).join('')
+          + '<option value="__novo__">✏️ ' + escapeHTML(textoNovo) + '</option>'
+        + '</select></div>';
+    }
 
     metasPanelEl.innerHTML = ''
       + '<h2>🎯 Metas de gasto</h2>'
-      + '<div class="note" style="margin:6px 0 14px;">Meta é um teto, não uma conta a pagar. Nada trava quando passa — o app só avisa. Deixe em branco a meta que você não quiser usar; sem nenhuma meta preenchida, nada de meta aparece na tela.</div>'
+      + '<div class="note" style="margin:6px 0 14px;">Meta é um teto, não uma conta a pagar — nada trava quando passa, o app só avisa. Deixe em branco a que você não quiser usar; sem nenhuma meta preenchida, nada de meta aparece na tela.</div>'
+
       + '<div class="field"><label>Meta geral do mês (contas do casal)</label>'
         + '<input type="number" inputmode="decimal" min="0" step="0.01" id="meta-geral" placeholder="Ex: 7000" value="' + (metasDraft.geral ? metasDraft.geral : '') + '">'
-        + '<div class="note">Neste mês vocês já estão em <strong>' + formatBRL(totalMes) + '</strong>.</div></div>'
-      + '<div class="field" style="margin-top:16px;"><label>Metas por categoria</label>'
-        + '<div class="note" style="margin:-2px 0 4px;">Um teto separado pra cada coisa — mercado, gasolina, iFood.</div>'
-        + (linhasCat || '<div class="note">Nenhum gasto lançado neste mês ainda.</div>')
-        + '</div>'
-      + addSelect
+        + '<div class="note">Neste mês vocês já estão em <strong>' + formatBRL(g.totalCasal) + '</strong>.</div></div>'
+
+      + '<div class="field" style="margin-top:18px;"><label>Metas por categoria</label>'
+        + '<div class="note" style="margin:-2px 0 6px;">Conta as contas do casal — mercado, gasolina, iFood.</div>'
+        + bloco('categoria', metasDraft.categorias, g.categorias)
+        + adicionar('meta-add-cat', 'Adicionar categoria…', faltandoCat, 'Criar uma categoria nova')
+      + '</div>'
+
+      + '<div class="field" style="margin-top:18px;"><label>Metas por cartão</label>'
+        + '<div class="note" style="margin:-2px 0 6px;">Conta <strong>tudo</strong> que passou no cartão no mês, do casal e pessoal — é o que vai chegar na fatura.</div>'
+        + bloco('cartao', metasDraft.cartoes, g.cartoes, listaDeCartoes().filter(function(c){ return metasDraft.cartoes[c]; }))
+        + adicionar('meta-add-cartao', 'Adicionar cartão…', faltandoCartao, 'Cadastrar um cartão novo')
+      + '</div>'
+
       + '<div class="settings-actions" style="margin-top:18px;">'
         + '<button type="button" class="submit-btn" id="btn-salvar-metas" style="background:var(--positive);color:#04220f;">Salvar metas</button>'
         + '<button type="button" class="secondary-btn" data-action="close-metas">Cancelar</button>'
@@ -4600,12 +4868,148 @@
   function lerMetasDoFormulario(){
     var geralEl = metasPanelEl.querySelector('#meta-geral');
     var geral = geralEl ? parseFloat(geralEl.value) : NaN;
-    var cats = {};
-    metasPanelEl.querySelectorAll('.meta-cat-input').forEach(function(el){
-      var v = parseFloat(el.value);
-      if (v > 0) cats[el.getAttribute('data-categoria')] = v;
+    function colher(classe){
+      var out = {};
+      metasPanelEl.querySelectorAll(classe).forEach(function(el){
+        var v = parseFloat(el.value);
+        if (v > 0) out[el.getAttribute('data-item')] = v;
+      });
+      return out;
+    }
+    return {
+      geral: (geral > 0 ? geral : null),
+      categorias: colher('.meta-input-categoria'),
+      cartoes: colher('.meta-input-cartao')
+    };
+  }
+
+  // Guarda o que já está digitado antes de redesenhar a janela, senão um
+  // clique em renomear apagaria os números que a pessoa acabou de escrever.
+  function guardarRascunhoMetas(){
+    var atual = lerMetasDoFormulario();
+    metasDraft.geral = atual.geral;
+    metasDraft.categorias = atual.categorias;
+    metasDraft.cartoes = atual.cartoes;
+    // Tudo que está na tela sem valor preenchido continua listado.
+    ['categoria','cartao'].forEach(function(tipo){
+      var alvo = tipo === 'cartao' ? atual.cartoes : atual.categorias;
+      metasPanelEl.querySelectorAll('.meta-input-' + tipo).forEach(function(el){
+        var nome = el.getAttribute('data-item');
+        if (alvo[nome] === undefined && metasDraft.extras[tipo].indexOf(nome) === -1){
+          metasDraft.extras[tipo].push(nome);
+        }
+      });
     });
-    return {geral: (geral > 0 ? geral : null), categorias: cats};
+  }
+
+  function adicionarItemMeta(tipo, nome){
+    nome = (nome || '').trim();
+    if (!nome) return;
+    guardarRascunhoMetas();
+    if (metasDraft.extras[tipo].indexOf(nome) === -1) metasDraft.extras[tipo].push(nome);
+    // Cartão novo entra também na lista de cartões da casa, senão ele não
+    // apareceria na hora de lançar um gasto.
+    if (tipo === 'cartao'){
+      var cards = listaDeCartoes();
+      if (cards.indexOf(nome) === -1){
+        cards.push(nome);
+        state.settings = Object.assign({}, state.settings, {cards: cards});
+        saveSettings(state.settings);
+      }
+    }
+    renderMetasModal();
+    var novo = metasPanelEl.querySelector('.meta-input-' + tipo + '[data-item="' + nome.replace(/"/g,'\\"') + '"]');
+    if (novo) novo.focus();
+  }
+
+  // Renomear vale pra tudo de uma vez: os lançamentos antigos, a meta e (no
+  // caso do cartão) a lista de cartões. Se mudasse só num lugar, o gasto
+  // antigo ficaria órfão com o nome velho.
+  async function renomearItemMeta(tipo, antigo){
+    var oQue = tipo === 'cartao' ? 'cartão' : 'categoria';
+    var novo = prompt('Novo nome para o ' + oQue + ' "' + antigo + '":', antigo);
+    if (novo === null) return;
+    novo = novo.trim();
+    if (!novo || novo === antigo) return;
+
+    var usos = quantosUsam(tipo, antigo);
+    var existe = tipo === 'cartao'
+      ? listaDeCartoes().indexOf(novo) !== -1
+      : (CATEGORIES.some(function(c){ return c.id === novo; }) || state.expenses.some(function(e){ return e.category === novo; }));
+
+    var aviso = usos
+      ? 'Isso vai renomear em ' + usos + ' lançamento' + (usos === 1 ? '' : 's') + ' já registrado' + (usos === 1 ? '' : 's') + '.'
+      : 'Nenhum lançamento usa esse nome ainda.';
+    if (existe) aviso += '\n\nAtenção: já existe "' + novo + '". Os dois vão virar um só.';
+    if (!confirm(aviso + '\n\nRenomear?')) return;
+
+    guardarRascunhoMetas();
+
+    state.expenses.forEach(function(e){
+      if (tipo === 'cartao'){ if (e.card === antigo) e.card = novo; }
+      else if (e.category === antigo) e.category = novo;
+    });
+
+    metasDraft.extras[tipo] = metasDraft.extras[tipo].map(function(k){ return k === antigo ? novo : k; });
+    var alvo = tipo === 'cartao' ? metasDraft.cartoes : metasDraft.categorias;
+    if (alvo[antigo] !== undefined){
+      // Se os dois nomes tinham meta, fica a maior — juntar somando daria um
+      // teto que ninguém escolheu.
+      alvo[novo] = Math.max(Number(alvo[novo]) || 0, Number(alvo[antigo]) || 0);
+      delete alvo[antigo];
+    }
+
+    var novoSettings = state.settings;
+    if (tipo === 'cartao'){
+      var cards = listaDeCartoes().map(function(c){ return c === antigo ? novo : c; });
+      cards = cards.filter(function(c, i){ return cards.indexOf(c) === i; });
+      novoSettings = Object.assign({}, state.settings, {cards: cards});
+    }
+    novoSettings = Object.assign({}, novoSettings, {goals: normalizarMetas(metasDraft)});
+
+    var okG = await saveExpenses(state.expenses);
+    var okS = await saveSettings(novoSettings);
+    if (!okG || !okS){ alert('Não consegui salvar a troca de nome. Tente de novo.'); return; }
+    state.settings = novoSettings;
+    invalidateCustomColors();
+    renderMetasModal();
+    render();
+  }
+
+  async function apagarItemMeta(tipo, nome, usos){
+    guardarRascunhoMetas();
+    var alvo = tipo === 'cartao' ? metasDraft.cartoes : metasDraft.categorias;
+
+    function tirarDosExtras(){
+      metasDraft.extras[tipo] = metasDraft.extras[tipo].filter(function(k){ return k !== nome; });
+    }
+
+    if (usos > 0){
+      // Tem gasto pendurado: apagar o item apagaria o nome de lançamentos que
+      // existem. Então só a meta sai.
+      delete alvo[nome];
+      tirarDosExtras();
+      renderMetasModal();
+      return;
+    }
+
+    var oQue = tipo === 'cartao' ? 'o cartão' : 'a categoria';
+    if (!confirm('Tirar ' + oQue + ' "' + nome + '" da lista?')) return;
+    delete alvo[nome];
+    tirarDosExtras();
+
+    var novoSettings = state.settings;
+    if (tipo === 'cartao'){
+      var cards = listaDeCartoes().filter(function(c){ return c !== nome; });
+      if (!cards.length) cards = DEFAULT_CARDS.slice();
+      novoSettings = Object.assign({}, state.settings, {cards: cards});
+    }
+    novoSettings = Object.assign({}, novoSettings, {goals: normalizarMetas(metasDraft)});
+    var ok = await saveSettings(novoSettings);
+    if (!ok){ alert('Não consegui salvar. Tente de novo.'); return; }
+    state.settings = novoSettings;
+    renderMetasModal();
+    render();
   }
 
   async function salvarMetas(){
@@ -5974,7 +6378,23 @@
       }
       var renovar = e.target.closest('[data-action="renovar-licenca"]');
       if (renovar){
-        acaoRenovarLicenca(renovar.getAttribute('data-codigo'), renovar.getAttribute('data-dias'));
+        acaoRenovarLicenca(renovar.getAttribute('data-codigo'), renovar.getAttribute('data-horas'));
+        return;
+      }
+      var editarLic = e.target.closest('[data-action="editar-licenca"]');
+      if (editarLic){
+        licencaEditando = editarLic.getAttribute('data-codigo');
+        renderListaLicencas();
+        return;
+      }
+      if (e.target.closest('[data-action="cancelar-edicao-licenca"]')){
+        licencaEditando = null;
+        renderListaLicencas();
+        return;
+      }
+      var salvarLic = e.target.closest('[data-action="salvar-licenca"]');
+      if (salvarLic){
+        acaoSalvarLicenca(salvarLic.getAttribute('data-codigo'));
         return;
       }
       var alternar = e.target.closest('[data-action="alternar-licenca"]');
@@ -6005,37 +6425,42 @@
       if (e.target.closest('#btn-salvar-metas')){ salvarMetas(); return; }
       if (e.target.closest('#btn-limpar-metas')){
         if (!confirm('Tirar todas as metas? A tela volta a não mostrar meta nenhuma.')) return;
-        metasDraft = {geral:null, categorias:{}};
+        metasDraft = {geral:null, categorias:{}, cartoes:{}, extras:{categoria:[], cartao:[]}};
         var el = metasPanelEl.querySelector('#meta-geral');
         if (el) el.value = '';
-        metasPanelEl.querySelectorAll('.meta-cat-input').forEach(function(i){ i.value = ''; });
+        metasPanelEl.querySelectorAll('.meta-cfg-input').forEach(function(i){ i.value = ''; });
         salvarMetas();
         return;
       }
-      var tirar = e.target.closest('[data-action="tirar-meta"]');
-      if (tirar){
-        var cat = tirar.getAttribute('data-categoria');
-        delete metasDraft.categorias[cat];
-        // Guarda o que já estava digitado antes de redesenhar a lista.
-        var atuais = lerMetasDoFormulario();
-        delete atuais.categorias[cat];
-        metasDraft = atuais;
-        renderMetasModal();
+      var renomear = e.target.closest('[data-action="renomear-item"]');
+      if (renomear){
+        renomearItemMeta(renomear.getAttribute('data-tipo'), renomear.getAttribute('data-item'));
+        return;
+      }
+      var apagar = e.target.closest('[data-action="apagar-item"]');
+      if (apagar){
+        apagarItemMeta(apagar.getAttribute('data-tipo'), apagar.getAttribute('data-item'), Number(apagar.getAttribute('data-usos')) || 0);
         return;
       }
     });
     metasPanelEl.addEventListener('change', function(e){
-      if (e.target.matches('#meta-add-cat')){
-        var cat = e.target.value;
-        if (!cat) return;
-        metasDraft = lerMetasDoFormulario();
-        metasDraft.categorias[cat] = metasDraft.categorias[cat] || 0;
-        renderMetasModal();
-        // Já deixa o cursor no campo que a pessoa acabou de criar.
-        var novo = metasPanelEl.querySelector('.meta-cat-input[data-categoria="' + cat.replace(/"/g,'\\"') + '"]');
-        if (novo) novo.focus();
+      var tipo = null;
+      if (e.target.matches('#meta-add-cat')) tipo = 'categoria';
+      else if (e.target.matches('#meta-add-cartao')) tipo = 'cartao';
+      if (!tipo) return;
+
+      var escolha = e.target.value;
+      e.target.value = '';
+      if (!escolha) return;
+
+      if (escolha === '__novo__'){
+        var oQue = tipo === 'cartao' ? 'do cartão' : 'da categoria';
+        var nome = prompt('Nome ' + oQue + ' novo:', '');
+        if (nome === null) return;
+        adicionarItemMeta(tipo, nome);
         return;
       }
+      adicionarItemMeta(tipo, escolha);
     });
 
     futureModalEl.addEventListener('click', function(e){ if (e.target === futureModalEl) closeFutureModal(); });
@@ -6055,9 +6480,25 @@
     });
 
     settingsPanelEl.addEventListener('change', function(e){
-      if (e.target.matches('#lic-plano')){
+      if (e.target.matches('#lic-plano') || e.target.matches('#lic-edit-plano')){
+        var ehEdicao = e.target.matches('#lic-edit-plano');
+        var prefixo = ehEdicao ? 'lic-edit' : 'lic';
+        var info = planoInfo(e.target.value);
         var nota = settingsPanelEl.querySelector('#lic-plano-nota');
-        if (nota) nota.textContent = planoInfo(e.target.value).explica;
+        if (nota && !ehEdicao) nota.textContent = info.explica;
+
+        // Vitalício não tem prazo, então o campo some em vez de ficar ali
+        // pedindo um número que não vai ser usado.
+        var campo = settingsPanelEl.querySelector('#' + prefixo + '-prazo-campo');
+        if (campo) campo.style.display = (e.target.value === 'vitalicio') ? 'none' : 'block';
+
+        // Ao trocar de plano, o prazo já vem no padrão daquele plano.
+        if (info.horas){
+          var u = melhorUnidade(info.horas);
+          var elV = settingsPanelEl.querySelector('#' + prefixo + '-prazo-valor');
+          var elU = settingsPanelEl.querySelector('#' + prefixo + '-prazo-unidade');
+          if (elV && elU && e.target.value !== 'personalizado'){ elV.value = u.valor; elU.value = u.unidade; }
+        }
         return;
       }
       if (e.target.matches('#import-input')){
