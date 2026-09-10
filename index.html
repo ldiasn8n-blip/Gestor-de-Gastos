@@ -104,6 +104,26 @@
   .ajuda-btn:hover{ border-color:var(--neon2); color:var(--neon2); }
 
   #ajuda-modal{ z-index:85; }
+  #membro-modal{ z-index:90; }
+  .membro-excluir{
+    background:transparent; border:none; cursor:pointer; font-size:15px;
+    padding:6px 4px; flex:0 0 26px; border-radius:6px; line-height:1;
+  }
+  .membro-excluir:hover{ background:rgba(255,77,109,.14); }
+  .membro-escolha{
+    display:block; padding:12px 14px; margin-bottom:8px;
+    border:1px solid var(--line); border-radius:10px;
+    font-size:14px; cursor:pointer; line-height:1.45;
+  }
+  .membro-escolha input{ margin-right:9px; accent-color:var(--neon2); }
+  .membro-escolha.is-on{ border-color:var(--neon2); background:rgba(79,224,255,.06); }
+  .membro-escolha small{ display:block; color:var(--ink-soft); font-size:12px; margin:3px 0 0 24px; }
+  .membro-escolha select{ margin:8px 0 0 24px; width:calc(100% - 24px); }
+  .membro-aviso{
+    padding:12px 14px; border-left:2px solid var(--alert);
+    background:rgba(255,77,109,.07); border-radius:0 9px 9px 0;
+    font-size:13.5px; margin:0 0 16px; line-height:1.5;
+  }
   .ajuda-passo{
     display:flex; gap:12px; padding:13px 0;
     border-bottom:1px solid var(--line);
@@ -683,23 +703,31 @@
   .cat-linha-uso{ display:block; font-size:11px; color:var(--ink-soft); font-weight:500; }
 
   #cats-modal{ z-index:80; }
-  #ajuda-modal, #cats-modal, #metas-modal, #future-modal{
+  #membro-modal, #ajuda-modal, #cats-modal, #metas-modal, #future-modal{
     position:fixed;inset:0;background:var(--backdrop);
     display:flex;align-items:flex-end;justify-content:center;z-index:70;
     opacity:1;visibility:visible;transition:opacity .18s ease, visibility .18s ease;
   }
-  #ajuda-modal.hidden, #cats-modal.hidden, #metas-modal.hidden, #future-modal.hidden{opacity:0;visibility:hidden;pointer-events:none;}
+  #membro-modal.hidden, #ajuda-modal.hidden, #cats-modal.hidden, #metas-modal.hidden, #future-modal.hidden{opacity:0;visibility:hidden;pointer-events:none;}
+  #membro-modal.hidden #membro-panel{ transform:translateY(24px); }
   #ajuda-modal.hidden #ajuda-panel{ transform:translateY(24px); }
   #cats-modal.hidden #cats-panel{ transform:translateY(24px); }
   #future-modal.hidden #future-panel{ transform:translateY(24px); }
   #metas-modal.hidden #metas-panel{ transform:translateY(24px); }
-  #ajuda-panel, #cats-panel, #metas-panel, #future-panel{
+  #membro-panel, #ajuda-panel, #cats-panel, #metas-panel, #future-panel{
     background:var(--paper-raised);width:100%;max-width:480px;
     border-radius:18px 18px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));
     max-height:85vh;overflow-y:auto;box-shadow:var(--shadow-lg);
     transform:translateY(0);transition:transform .2s ease;
   }
-  #ajuda-panel h2, #cats-panel h2, #metas-panel h2, #future-panel h2{font-size:17px;margin:0 0 6px;}
+  #membro-panel h2, #ajuda-panel h2, #cats-panel h2, #metas-panel h2, #future-panel h2{font-size:17px;margin:0 0 6px;}
+  #membro-panel .field{ margin-bottom:14px; }
+  #membro-panel label.rot{ display:block; font-size:12px; color:var(--ink-soft); margin-bottom:6px; }
+  #membro-panel input[type="text"], #membro-panel select{
+    width:100%; padding:10px; border:1px solid var(--line); border-radius:8px;
+    font-size:16px; font-family:inherit; background:var(--input-bg); color:var(--ink);
+  }
+  #membro-panel input:focus, #membro-panel select:focus{ outline:none; border-color:var(--alert); box-shadow:0 0 0 3px rgba(255,77,109,.18); }
   #cats-panel .field{ margin-bottom:14px; }
   #cats-panel label{ display:block; font-size:12px; color:var(--ink-soft); margin-bottom:6px; }
   #cats-panel input[type="text"]{
@@ -828,6 +856,27 @@
   .lic-desligado .lic-tag{ color:var(--alert); }
   .lic-vencido .lic-tag{ color:#FFC24F; }
   .lic-plano{ font-size:11.5px; font-weight:700; color:var(--ink-soft); margin-top:4px; }
+  .lic-filtros{ margin:14px 0 10px; }
+  .lic-filtros input[type="text"]{
+    width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:9px;
+    font-size:15px; font-family:inherit; background:var(--input-bg); color:var(--ink);
+  }
+  .lic-filtros input:focus, .lic-filtros select:focus{
+    outline:none; border-color:var(--neon2); box-shadow:0 0 0 3px var(--focus-ring);
+  }
+  .lic-filtro-linha{ display:flex; gap:8px; margin-top:8px; }
+  .lic-filtro-linha select{
+    flex:1; min-width:0; padding:9px 10px;
+    border:1px solid var(--line); border-radius:9px;
+    font-size:13.5px; font-family:inherit; background:var(--input-bg); color:var(--ink);
+  }
+  .lic-contagem{ margin-top:9px; font-size:12px; color:var(--ink-soft); }
+  .lic-contagem b{ color:var(--ink); }
+  .lic-limpar{
+    background:transparent; border:none; padding:0 0 0 8px; cursor:pointer;
+    font-family:inherit; font-size:12px; font-weight:600; color:var(--neon2);
+    text-decoration:underline;
+  }
   .lic-btn-renovar{ border-color:rgba(57,255,136,0.45); color:var(--positive); }
   .lic-btn-editar{ border-color:rgba(79,224,255,0.45); color:var(--neon2); }
   .lic-btn-salvar{ border-color:rgba(57,255,136,0.6); color:var(--positive); font-weight:800; }
@@ -1141,6 +1190,42 @@
   .cat-bar-share{ font-size:11px; color:var(--ink-soft); font-weight:600; margin-left:6px; }
   .cat-bar-track{ display:block; height:6px; border-radius:3px; background:var(--hover-soft); overflow:hidden; }
 
+  /* Contas por cartão — botões de pessoa */
+  .pessoa-chips{ display:flex; flex-wrap:wrap; gap:7px; margin-bottom:12px; }
+  .pessoa-chip{
+    display:inline-flex; align-items:center; gap:7px;
+    border:1px solid var(--line); background:transparent; color:var(--ink-soft);
+    font-family:inherit; font-size:12px; font-weight:600; cursor:pointer;
+    padding:7px 12px; border-radius:999px; white-space:nowrap;
+  }
+  .pessoa-chip b{ color:var(--ink); font-weight:800; font-variant-numeric:tabular-nums; }
+  .pessoa-chip:hover{ border-color:var(--line-strong, #2C3D49); }
+  /* Ligado, o botão acende na cor da própria pessoa — a mesma do resto do app. */
+  .pessoa-chip.is-on{
+    border-color:var(--cor-pessoa, var(--neon2));
+    color:var(--cor-pessoa, var(--neon2));
+    box-shadow:0 0 13px -3px var(--cor-pessoa, var(--neon2));
+  }
+  .pessoa-chip.is-on b{ color:var(--cor-pessoa, var(--neon2)); }
+  .pessoa-ponto{ width:9px; height:9px; border-radius:50%; flex:0 0 auto; }
+  .chip-modo{ margin-left:auto; }
+  .chip-modo.is-on{ border-color:var(--neon2); color:var(--neon2); box-shadow:0 0 13px -3px var(--neon2); }
+
+  .pessoa-bloco{
+    border-left:2px solid var(--cor-pessoa, var(--line));
+    padding-left:12px; margin-bottom:16px;
+  }
+  .pessoa-bloco:last-child{ margin-bottom:0; }
+  .pessoa-bloco-topo{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    margin-bottom:8px;
+  }
+  .pessoa-bloco-nome{
+    display:flex; align-items:center; gap:8px;
+    font-size:13px; font-weight:700; color:var(--cor-pessoa, var(--ink));
+  }
+  .pessoa-bloco-total{ font-size:13px; font-weight:700; font-variant-numeric:tabular-nums; }
+
   /* Contas por cartão */
   .card-list{ gap:6px; }
   .card-dot{ width:11px; height:11px; border-radius:50%; flex:0 0 auto; }
@@ -1227,8 +1312,8 @@
 
   /* ---------- Tablet ---------- */
   @media (min-width:640px){
-    #settings-modal, #items-modal, #reset-modal, #future-modal, #metas-modal, #cats-modal, #ajuda-modal{ align-items:center; }
-    #settings-panel, #items-panel, #reset-panel, #future-panel, #metas-panel, #cats-panel, #ajuda-panel{ border-radius:16px; max-height:80vh; }
+    #settings-modal, #items-modal, #reset-modal, #future-modal, #metas-modal, #cats-modal, #ajuda-modal, #membro-modal{ align-items:center; }
+    #settings-panel, #items-panel, #reset-panel, #future-panel, #metas-panel, #cats-panel, #ajuda-panel, #membro-panel{ border-radius:16px; max-height:80vh; }
     #ajuda-panel{ max-width:560px; }
     .row2, .row2.installment-fields{ gap:14px; }
   }
@@ -1443,6 +1528,10 @@
   <div id="ajuda-panel"></div>
 </div>
 
+<div id="membro-modal" class="hidden">
+  <div id="membro-panel"></div>
+</div>
+
 <!--
   Tesseract.js faz a leitura automática (OCR) das notas fiscais direto no
   navegador da pessoa, sem precisar de servidor nem de chave de API.
@@ -1547,7 +1636,11 @@
     // Meses futuros marcados no indicador "Próximos meses". null = todos.
     futureMonths: null,
     // Cartão aberto no painel "Contas por cartão": {scope, card, filter}.
-    cardOpen: null
+    cardOpen: null,
+    // Filtro de pessoas do painel de cartões (escopo -> lista de ids) e se
+    // ele está no modo "cada um o seu".
+    cardFiltro: {},
+    cardSeparado: {}
   };
 
   var storageAvailable = false;
@@ -1559,6 +1652,7 @@
   var metasModalEl, metasPanelEl;
   var catsModalEl, catsPanelEl;
   var ajudaModalEl, ajudaPanelEl;
+  var membroModalEl, membroPanelEl;
   var resetModalEl, resetPanelEl;
 
   function ensureSubTabDefaults(){
@@ -4070,18 +4164,20 @@
       + '</div>';
   }
 
-  function cardsPanelHTML(list, escopo){
+  // A lista de cartões propriamente dita. Separada do painel porque no modo
+  // "ver separado" ela é desenhada uma vez por pessoa, cada uma com seu
+  // próprio escopo de abrir/fechar.
+  function listaCartoesHTML(list, escopo){
     var groups = groupByCard(list);
-    if (!groups.length){
-      return '<div class="empty-state">Nada lançado neste mês ainda.</div>';
-    }
+    if (!groups.length) return '<div class="empty-state">Nada lançado aqui neste mês.</div>';
+
     var aberto = (state.cardOpen && state.cardOpen.scope === escopo) ? state.cardOpen.card : null;
     if (aberto && !groups.some(function(g){ return g.card === aberto; })) aberto = null;
 
     var max = groups.reduce(function(m,g){ return Math.max(m, g.total); }, 0) || 1;
     var totalAll = groups.reduce(function(sum,g){ return sum + g.total; }, 0) || 1;
 
-    var linhas = groups.map(function(g){
+    return '<div class="cat-bars card-list">' + groups.map(function(g){
       var cor = cardColorFor(g.card);
       var pct = g.total / max * 100;
       var share = Math.round(g.total / totalAll * 100);
@@ -4098,13 +4194,80 @@
         + '<span class="cat-bar-track"><span class="cat-bar-fill" style="width:'+pct.toFixed(2)+'%;background:'+cor+';box-shadow:0 0 10px '+hexToRgba(cor,0.75)+';"></span></span>'
         + '</button>';
       return estaAberto ? (head + cardOpenHTML(g)) : head;
-    }).join('');
+    }).join('') + '</div>';
+  }
 
-    var semCartao = groups.every(function(g){ return g.card === CARTAO_OUTRO; });
-    return '<div class="cat-bars card-list">' + linhas + '</div>'
+  // Quem aparece nos botões: só quem tem gasto na lista, na ordem dos membros.
+  function pessoasNaLista(list){
+    var ids = {};
+    list.forEach(function(e){ ids[e.person] = true; });
+    return state.settings.members.filter(function(m){ return ids[m.id]; });
+  }
+
+  function cardsPanelHTML(list, escopo){
+    if (!list.length) return '<div class="empty-state">Nada lançado neste mês ainda.</div>';
+
+    var pessoas = pessoasNaLista(list);
+    var temEscolha = pessoas.length > 1;
+
+    var sel = (state.cardFiltro[escopo] || []).filter(function(id){
+      return pessoas.some(function(p){ return p.id === id; });
+    });
+    var separado = !!state.cardSeparado[escopo];
+    var filtrada = sel.length ? list.filter(function(e){ return sel.indexOf(e.person) !== -1; }) : list;
+
+    // Botões de pessoa: cada um com o próprio total, pra dar pra comparar sem
+    // clicar. Dá pra marcar mais de um.
+    var chips = '';
+    if (temEscolha){
+      var totalGeral = list.reduce(function(soma,e){ return soma + e.value; }, 0);
+      chips = '<div class="pessoa-chips">'
+        + '<button type="button" class="pessoa-chip'+(sel.length === 0 ? ' is-on' : '')+'"'
+          + ' data-action="card-pessoa" data-scope="'+escapeHTML(escopo)+'" data-pessoa="">'
+          + 'Todos <b>'+formatBRL(totalGeral)+'</b></button>'
+        + pessoas.map(function(m){
+            var meu = list.filter(function(e){ return e.person === m.id; })
+                          .reduce(function(soma,e){ return soma + e.value; }, 0);
+            var ligado = sel.indexOf(m.id) !== -1;
+            return '<button type="button" class="pessoa-chip'+(ligado ? ' is-on' : '')+'"'
+              + ' style="--cor-pessoa:'+m.color+';"'
+              + ' data-action="card-pessoa" data-scope="'+escapeHTML(escopo)+'" data-pessoa="'+escapeHTML(m.id)+'">'
+              + '<span class="pessoa-ponto" style="background:'+m.color+';"></span>'
+              + escapeHTML(m.name) + ' <b>'+formatBRL(meu)+'</b></button>';
+          }).join('')
+        + '<button type="button" class="pessoa-chip chip-modo'+(separado ? ' is-on' : '')+'"'
+          + ' data-action="card-separado" data-scope="'+escapeHTML(escopo)+'"'
+          + ' title="Mostra a lista de cartões de cada pessoa em separado">'
+          + (separado ? '◫ Junto' : '⇅ Ver separado') + '</button>'
+        + '</div>';
+    }
+
+    var corpo;
+    if (separado && temEscolha){
+      // Uma lista por pessoa: cada um enxerga o próprio cartão sem o do outro
+      // no meio. O escopo leva o id da pessoa pra abrir um cartão de cada vez.
+      var quais = sel.length ? pessoas.filter(function(p){ return sel.indexOf(p.id) !== -1; }) : pessoas;
+      corpo = quais.map(function(m){
+        var meus = list.filter(function(e){ return e.person === m.id; });
+        var meuTotal = meus.reduce(function(soma,e){ return soma + e.value; }, 0);
+        return '<div class="pessoa-bloco" style="--cor-pessoa:'+m.color+';">'
+          + '<div class="pessoa-bloco-topo">'
+            + '<span class="pessoa-bloco-nome"><span class="pessoa-ponto" style="background:'+m.color+';"></span>'+escapeHTML(m.name)+'</span>'
+            + '<span class="pessoa-bloco-total">'+formatBRL(meuTotal)+'</span>'
+          + '</div>'
+          + listaCartoesHTML(meus, escopo + '::' + m.id)
+          + '</div>';
+      }).join('');
+    } else {
+      corpo = listaCartoesHTML(filtrada, escopo);
+    }
+
+    var semCartao = groupByCard(filtrada).every(function(g){ return g.card === CARTAO_OUTRO; });
+    return chips + corpo
       + (semCartao
           ? '<div class="trend-legend">Nenhuma conta deste mês foi marcada com cartão. Ao lançar, escolha <b>Crédito</b> ou <b>Débito</b> e diga qual cartão — aí cada um vira uma linha aqui.</div>'
-          : '<div class="trend-legend">Toque num cartão pra abrir o que foi débito, crédito à vista e parcelado nele.</div>');
+          : '<div class="trend-legend">Toque num cartão pra abrir o que foi débito, crédito à vista e parcelado nele.'
+            + (temEscolha ? ' Toque num nome pra ver só os cartões daquela pessoa.' : '') + '</div>');
   }
 
   // Gráfico de barras por mês. É usado em dois lugares — nas contas do casal
@@ -4508,10 +4671,15 @@
     var d = state.settingsDraft;
     if (!Array.isArray(d.cards)) d.cards = DEFAULT_CARDS.slice();
     var rows = d.members.map(function(m, idx){
+      // Com uma pessoa só não dá pra excluir: a casa ficaria sem ninguém.
+      var podeExcluir = d.members.length > 1;
       return '<div class="settings-member-row">'
         + '<span class="member-badge" style="background:'+m.color+';">'+escapeHTML((m.name||'?').charAt(0).toUpperCase())+'</span>'
         + '<input type="text" class="member-name-input" data-idx="'+idx+'" value="'+escapeHTML(m.name)+'">'
         + '<input type="number" inputmode="decimal" step="any" min="0" class="member-pct-input" data-idx="'+idx+'" value="'+m.percentage+'"><span class="pct-sign">%</span>'
+        + (podeExcluir
+            ? '<button type="button" class="membro-excluir" data-action="excluir-membro" data-idx="'+idx+'" title="Excluir '+escapeHTML(m.name)+'">🗑️</button>'
+            : '<span style="width:26px;flex:0 0 26px;"></span>')
         + '</div>';
     }).join('');
     var sum = d.members.reduce(function(s,m){ return s+(Number(m.percentage)||0); },0);
@@ -4738,8 +4906,41 @@
       + '<div class="field"><label>Pra quem é? (só você vê)</label><input type="text" id="lic-obs" placeholder="Ex: João e Marina — vendido 09/09, R$ 1.200"></div>'
       + '<button type="button" id="btn-gerar-licenca" class="secondary-btn">+ Gerar link novo</button>'
       + '<div id="lic-novo"></div>'
+      + licencaFiltrosHTML()
       + '<div id="lic-lista" class="lic-lista"><div class="note">Carregando...</div></div>'
       + '</div>';
+  }
+
+  // Com 3 acessos a lista se lê inteira. Com 40, não — então busca por nome,
+  // filtro de plano e de situação. Fica escondido enquanto não faz falta.
+  var licFiltro = {busca:'', plano:'', status:''};
+  var licencasCache = null;
+
+  function licencaFiltrosHTML(){
+    return '<div class="lic-filtros" id="lic-filtros" style="display:none;">'
+      + '<input type="text" id="lic-busca" placeholder="🔎 Procurar por nome ou código" autocomplete="off" value="'+escapeHTML(licFiltro.busca)+'">'
+      + '<div class="lic-filtro-linha">'
+        + '<select id="lic-f-plano">'
+          + '<option value="">Todos os tipos</option>'
+          + Object.keys(PLANOS).map(function(k){
+              return '<option value="'+k+'"'+(licFiltro.plano === k ? ' selected' : '')+'>'+PLANOS[k].icone+' '+escapeHTML(PLANOS[k].curto)+'</option>';
+            }).join('')
+        + '</select>'
+        + '<select id="lic-f-status">'
+          + [['','Todas as situações'],['livre','Disponível'],['usado','Em uso'],['vencido','Vencido'],['desligado','Desligado']]
+              .map(function(o){ return '<option value="'+o[0]+'"'+(licFiltro.status === o[0] ? ' selected' : '')+'>'+o[1]+'</option>'; }).join('')
+        + '</select>'
+      + '</div>'
+      + '<div class="lic-contagem" id="lic-contagem"></div>'
+      + '</div>';
+  }
+
+  // Situação de um acesso, num rótulo só — é por ela que o filtro trabalha.
+  function situacaoLicenca(l){
+    var t = tempoAte(l.expira_em);
+    if (!l.ativa) return 'desligado';
+    if (t && t.vencido) return 'vencido';
+    return l.usada_por ? 'usado' : 'livre';
   }
 
   // Número + unidade. É o mesmo controle no formulário de gerar e no de
@@ -4775,15 +4976,53 @@
     var alvo = settingsPanelEl.querySelector('#lic-lista');
     if (!alvo) return;
     try {
-      var lista = await listarLicencas();
-      if (!lista.length){
-        alvo.innerHTML = '<div class="note">Nenhum link gerado ainda.</div>';
-        return;
-      }
-      alvo.innerHTML = lista.map(licencaRowHTML).join('');
+      licencasCache = await listarLicencas();
+      pintarListaLicencas();
     } catch(e){
+      licencasCache = null;
       alvo.innerHTML = '<div class="note" style="color:var(--alert);">Não consegui carregar os links: ' + escapeHTML(e.message || '') + '</div>';
     }
+  }
+
+  // Filtra em cima do que já foi baixado: mexer no filtro não faz ida e volta
+  // ao servidor nem pisca a lista.
+  function pintarListaLicencas(){
+    var alvo = settingsPanelEl.querySelector('#lic-lista');
+    var caixaFiltros = settingsPanelEl.querySelector('#lic-filtros');
+    if (!alvo || !licencasCache) return;
+
+    var todas = licencasCache;
+    if (!todas.length){
+      if (caixaFiltros) caixaFiltros.style.display = 'none';
+      alvo.innerHTML = '<div class="note">Nenhum link gerado ainda.</div>';
+      return;
+    }
+    // Menos de 4 acessos não precisam de filtro nenhum.
+    if (caixaFiltros) caixaFiltros.style.display = todas.length >= 4 ? 'block' : 'none';
+
+    var busca = (licFiltro.busca || '').trim().toLowerCase();
+    var lista = todas.filter(function(l){
+      if (licFiltro.plano && l.plano !== licFiltro.plano) return false;
+      if (licFiltro.status && situacaoLicenca(l) !== licFiltro.status) return false;
+      if (busca){
+        var alvoTexto = ((l.observacao || '') + ' ' + (l.codigo || '')).toLowerCase();
+        if (alvoTexto.indexOf(busca) === -1) return false;
+      }
+      return true;
+    });
+
+    var contagem = settingsPanelEl.querySelector('#lic-contagem');
+    if (contagem){
+      var filtrando = busca || licFiltro.plano || licFiltro.status;
+      contagem.innerHTML = filtrando
+        ? '<b>' + lista.length + '</b> de ' + todas.length + ' acessos'
+          + ' <button type="button" class="lic-limpar" data-action="limpar-filtro-lic">limpar filtro</button>'
+        : todas.length + ' acessos gerados';
+    }
+
+    alvo.innerHTML = lista.length
+      ? lista.map(licencaRowHTML).join('')
+      : '<div class="note">Nenhum acesso bate com esse filtro.</div>';
   }
 
   function licencaRowHTML(l){
@@ -4904,6 +5143,7 @@
     try {
       var r = await editarLicenca(codigo, plano, horas, obs);
       licencaEditando = null;
+      licencasCache = null;
       await renderListaLicencas();
       if (r && r.expira_em){
         alert('Pronto. Agora vence em ' + formatVencimento(r.expira_em) + '.');
@@ -5110,6 +5350,116 @@
   }
 
   /* ---------- Janela dos próximos meses ---------- */
+
+  /* ---------- Excluir um integrante ----------
+     Sair da casa é diferente de nunca ter existido: os gastos que a pessoa
+     lançou aconteceram de verdade. Por isso a janela pergunta o que fazer com
+     eles antes de apagar qualquer coisa, e exige a palavra escrita — o mesmo
+     cuidado do "zerar dados". */
+
+  var membroExcluindo = null;   // índice na lista de pessoas do rascunho
+
+  function openMembroModal(idx){
+    membroExcluindo = idx;
+    renderMembroModal();
+    membroModalEl.classList.remove('hidden');
+  }
+  function closeMembroModal(){
+    membroModalEl.classList.add('hidden');
+    membroExcluindo = null;
+  }
+
+  function renderMembroModal(){
+    var d = state.settingsDraft;
+    var m = d.members[membroExcluindo];
+    if (!m){ closeMembroModal(); return; }
+
+    var quantos = state.expenses.filter(function(e){ return e.person === m.id; }).length;
+    var outros = d.members.filter(function(x){ return x.id !== m.id; });
+
+    var escolha = quantos
+      ? '<div class="field"><label class="rot">O que fazer com os lançamentos de ' + escapeHTML(m.name) + '?</label>'
+        + '<label class="membro-escolha is-on"><input type="radio" name="destino-gastos" value="mover" checked>Passar pra outra pessoa'
+          + '<small>Os lançamentos continuam existindo, contando como se essa pessoa tivesse pago.</small>'
+          + '<select id="membro-destino">'
+            + outros.map(function(x){ return '<option value="'+escapeHTML(x.id)+'">'+escapeHTML(x.name)+'</option>'; }).join('')
+          + '</select></label>'
+        + '<label class="membro-escolha"><input type="radio" name="destino-gastos" value="apagar">Apagar os lançamentos junto'
+          + '<small>Some tudo que ' + escapeHTML(m.name) + ' lançou. Os totais dos meses passados vão mudar.</small></label>'
+        + '</div>'
+      : '';
+
+    membroPanelEl.innerHTML = ''
+      + '<h2>Excluir ' + escapeHTML(m.name) + '?</h2>'
+      + '<div class="membro-aviso">'
+        + (quantos
+            ? '<strong>' + quantos + (quantos === 1 ? ' lançamento está' : ' lançamentos estão') + ' no nome de ' + escapeHTML(m.name) + '.</strong> Escolha abaixo o que fazer com ' + (quantos === 1 ? 'ele' : 'eles') + '.'
+            : escapeHTML(m.name) + ' não tem nenhum lançamento. Excluir não vai mudar número nenhum.')
+        + '<br>Isso não tem como desfazer.'
+      + '</div>'
+      + escolha
+      + '<div class="field"><label class="rot">Pra confirmar, digite <strong>excluir</strong> abaixo</label>'
+        + '<input type="text" id="membro-confirma" placeholder="excluir" autocomplete="off"></div>'
+      + '<div class="settings-actions">'
+        + '<button type="button" class="secondary-btn" data-action="fechar-membro">Cancelar</button>'
+        + '<button type="button" class="submit-btn danger-btn" id="btn-excluir-membro" disabled>Excluir ' + escapeHTML(m.name) + '</button>'
+      + '</div>';
+
+    var campo = membroPanelEl.querySelector('#membro-confirma');
+    if (campo) campo.focus();
+  }
+
+  function atualizarBotaoMembro(){
+    var campo = membroPanelEl.querySelector('#membro-confirma');
+    var btn = membroPanelEl.querySelector('#btn-excluir-membro');
+    if (btn) btn.disabled = !(campo && campo.value.trim().toLowerCase() === 'excluir');
+  }
+
+  async function confirmarExcluirMembro(){
+    var d = state.settingsDraft;
+    var m = d.members[membroExcluindo];
+    if (!m) return;
+
+    var radio = membroPanelEl.querySelector('input[name="destino-gastos"]:checked');
+    var modo = radio ? radio.value : 'mover';
+    var destinoEl = membroPanelEl.querySelector('#membro-destino');
+    var destino = destinoEl ? destinoEl.value : null;
+
+    var btn = membroPanelEl.querySelector('#btn-excluir-membro');
+    if (btn){ btn.disabled = true; btn.textContent = 'Excluindo...'; }
+
+    var antes = state.expenses.slice();
+    if (modo === 'apagar'){
+      state.expenses = state.expenses.filter(function(e){ return e.person !== m.id; });
+    } else if (destino){
+      state.expenses.forEach(function(e){ if (e.person === m.id) e.person = destino; });
+    }
+
+    var novoDraft = Object.assign({}, d, {
+      members: d.members.filter(function(x){ return x.id !== m.id; })
+    });
+
+    var okG = await saveExpenses(state.expenses);
+    var okS = await saveSettings(novoDraft);
+    if (!okG || !okS){
+      state.expenses = antes;                       // desfaz se não deu pra gravar
+      alert('Não consegui salvar a exclusão. Nada foi mudado.');
+      renderMembroModal();
+      return;
+    }
+
+    state.settingsDraft = novoDraft;
+    state.settings = novoDraft;
+    // A aba da pessoa não existe mais: se você estava nela, volta pro Resumo.
+    if (state.currentTab === m.id) state.currentTab = 'resumo';
+    delete state.subTab[m.id];
+    ensureSubTabDefaults();
+    invalidateCustomColors();
+
+    closeMembroModal();
+    renderSettingsModal();
+    render();
+  }
 
   /* ---------- Janela de ajuda ----------
      O tutorial mora dentro do app de propósito: quem tem dúvida está com o
@@ -6806,6 +7156,30 @@
         render();
         return;
       }
+      var chipPessoa = e.target.closest('[data-action="card-pessoa"]');
+      if (chipPessoa){
+        var escP = chipPessoa.getAttribute('data-scope');
+        var quem = chipPessoa.getAttribute('data-pessoa');
+        var atual = (state.cardFiltro[escP] || []).slice();
+        if (!quem){
+          atual = [];                                  // "Todos" limpa a escolha
+        } else {
+          var i = atual.indexOf(quem);
+          if (i === -1) atual.push(quem); else atual.splice(i, 1);
+        }
+        state.cardFiltro[escP] = atual;
+        state.cardOpen = null;                         // o cartão aberto pode nem existir mais
+        render();
+        return;
+      }
+      var modoSeparado = e.target.closest('[data-action="card-separado"]');
+      if (modoSeparado){
+        var escS = modoSeparado.getAttribute('data-scope');
+        state.cardSeparado[escS] = !state.cardSeparado[escS];
+        state.cardOpen = null;
+        render();
+        return;
+      }
       var chipCartao = e.target.closest('[data-action="card-filter"]');
       if (chipCartao){
         if (state.cardOpen) state.cardOpen.filter = chipCartao.getAttribute('data-filter');
@@ -6985,6 +7359,11 @@
         state.settingsDraft.cards[cidx] = e.target.value;
         return;
       }
+      if (e.target.matches('#lic-busca')){
+        licFiltro.busca = e.target.value;
+        pintarListaLicencas();
+        return;
+      }
     });
 
     settingsPanelEl.addEventListener('click', function(e){
@@ -6998,6 +7377,11 @@
         if (!Array.isArray(state.settingsDraft.cards)) state.settingsDraft.cards = [];
         state.settingsDraft.cards.push('Novo cartão');
         renderSettingsModal();
+        return;
+      }
+      var excluirMembroBtn = e.target.closest('[data-action="excluir-membro"]');
+      if (excluirMembroBtn){
+        openMembroModal(Number(excluirMembroBtn.getAttribute('data-idx')));
         return;
       }
       var removeCardBtn = e.target.closest('[data-action="remove-card"]');
@@ -7024,6 +7408,14 @@
       var renovar = e.target.closest('[data-action="renovar-licenca"]');
       if (renovar){
         acaoRenovarLicenca(renovar.getAttribute('data-codigo'), renovar.getAttribute('data-horas'));
+        return;
+      }
+      if (e.target.closest('[data-action="limpar-filtro-lic"]')){
+        licFiltro = {busca:'', plano:'', status:''};
+        var b = settingsPanelEl.querySelector('#lic-busca'); if (b) b.value = '';
+        var fp = settingsPanelEl.querySelector('#lic-f-plano'); if (fp) fp.value = '';
+        var fs = settingsPanelEl.querySelector('#lic-f-status'); if (fs) fs.value = '';
+        pintarListaLicencas();
         return;
       }
       var editarLic = e.target.closest('[data-action="editar-licenca"]');
@@ -7063,6 +7455,18 @@
       if (e.target.closest('#remove-demo-btn')){ removeDemoData(); return; }
       if (e.target.closest('#open-reset-btn')){ closeSettingsModal(); openResetModal(); return; }
     });
+
+    membroModalEl.addEventListener('click', function(e){ if (e.target === membroModalEl) closeMembroModal(); });
+    membroPanelEl.addEventListener('click', function(e){
+      if (e.target.closest('[data-action="fechar-membro"]')){ closeMembroModal(); return; }
+      if (e.target.closest('#btn-excluir-membro')){ confirmarExcluirMembro(); return; }
+      var esc = e.target.closest('.membro-escolha');
+      if (esc){
+        membroPanelEl.querySelectorAll('.membro-escolha').forEach(function(x){ x.classList.remove('is-on'); });
+        esc.classList.add('is-on');
+      }
+    });
+    membroPanelEl.addEventListener('input', atualizarBotaoMembro);
 
     document.getElementById('ajuda-btn').addEventListener('click', openAjudaModal);
     ajudaModalEl.addEventListener('click', function(e){ if (e.target === ajudaModalEl) closeAjudaModal(); });
@@ -7158,6 +7562,8 @@
     });
 
     settingsPanelEl.addEventListener('change', function(e){
+      if (e.target.matches('#lic-f-plano')){ licFiltro.plano = e.target.value; pintarListaLicencas(); return; }
+      if (e.target.matches('#lic-f-status')){ licFiltro.status = e.target.value; pintarListaLicencas(); return; }
       if (e.target.matches('#lic-plano') || e.target.matches('#lic-edit-plano')){
         var ehEdicao = e.target.matches('#lic-edit-plano');
         var prefixo = ehEdicao ? 'lic-edit' : 'lic';
@@ -7228,6 +7634,8 @@
     itemsPanelEl = document.getElementById('items-panel');
     resetModalEl = document.getElementById('reset-modal');
     resetPanelEl = document.getElementById('reset-panel');
+    membroModalEl = document.getElementById('membro-modal');
+    membroPanelEl = document.getElementById('membro-panel');
     ajudaModalEl = document.getElementById('ajuda-modal');
     ajudaPanelEl = document.getElementById('ajuda-panel');
     catsModalEl = document.getElementById('cats-modal');
