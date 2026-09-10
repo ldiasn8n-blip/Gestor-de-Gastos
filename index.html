@@ -703,6 +703,99 @@
   .cat-linha-uso{ display:block; font-size:11px; color:var(--ink-soft); font-weight:500; }
 
   #cats-modal{ z-index:80; }
+  #cartao-modal{ z-index:95; }
+  #agenda-modal{ z-index:100; }
+  #agenda-panel{ max-width:400px; }
+
+  .prazo-data-linha{ display:flex; gap:8px; margin-top:8px; }
+  .prazo-botao{
+    flex:1; display:flex; align-items:center; gap:9px;
+    padding:11px 12px; border-radius:9px;
+    border:1px solid var(--line); background:var(--input-bg); color:var(--ink);
+    font-size:14px; font-family:inherit; text-align:left; cursor:pointer;
+  }
+  .prazo-botao:hover{ border-color:var(--neon2); }
+  .prazo-ic{ font-size:16px; flex:0 0 auto; }
+  .prazo-txt{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+  /* ---------- Calendário ---------- */
+
+  .ag-topo{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    margin-bottom:12px;
+  }
+  .ag-mes{ font-size:15px; font-weight:700; }
+  .ag-navs{ display:flex; gap:6px; }
+  .ag-nav{
+    width:32px; height:32px; border-radius:9px; padding:0; line-height:1;
+    border:1px solid var(--line); background:transparent; color:var(--ink-soft);
+    font-size:15px; font-family:inherit; cursor:pointer;
+    display:grid; place-items:center;
+  }
+  .ag-nav:hover{ border-color:var(--neon2); color:var(--neon2); }
+  .ag-semana{
+    display:grid; grid-template-columns:repeat(7,1fr); gap:4px;
+    font-size:11px; font-weight:700; color:var(--ink-soft); text-align:center;
+    margin-bottom:6px;
+  }
+  .ag-grade{ display:grid; grid-template-columns:repeat(7,1fr); gap:4px; }
+  .ag-dia{
+    aspect-ratio:1/1; border-radius:10px; padding:0;
+    border:1px solid transparent; background:transparent; color:var(--ink);
+    font-size:14px; font-family:inherit; cursor:pointer;
+    display:grid; place-items:center;
+  }
+  .ag-dia:hover{ background:var(--hover); }
+  .ag-dia.fora{ color:var(--ink-soft); opacity:.42; }
+  .ag-dia.hoje{ border-color:var(--line-strong, var(--line)); box-shadow:inset 0 0 0 1px var(--line); }
+  .ag-dia.is-on{
+    background:var(--neon2); color:#06222c; font-weight:800;
+    box-shadow:0 0 16px -3px rgba(79,224,255,.9);
+  }
+  .ag-dia:disabled{ opacity:.22; cursor:default; }
+  .ag-dia:disabled:hover{ background:transparent; }
+  .ag-atalhos{ display:flex; flex-wrap:wrap; gap:7px; margin-top:14px; }
+  .ag-atalho{
+    padding:8px 12px; border-radius:999px;
+    border:1px solid var(--line); background:transparent; color:var(--ink-soft);
+    font-size:12.5px; font-weight:600; font-family:inherit; cursor:pointer;
+  }
+  .ag-atalho:hover{ border-color:var(--neon2); color:var(--neon2); }
+
+  .cartao-linha{
+    display:flex; align-items:center; gap:9px;
+    padding:7px 0;
+  }
+  .cartao-linha .card-name-input{ flex:1; min-width:0; }
+  .cartao-editar{
+    flex:0 0 auto; padding:7px 10px; border-radius:8px;
+    border:1px solid var(--line); background:transparent; color:var(--ink-soft);
+    font-size:12px; font-weight:700; font-family:inherit; cursor:pointer;
+  }
+  .cartao-editar:hover{ border-color:var(--neon2); color:var(--neon2); }
+
+  .cartao-previa{
+    display:flex; align-items:center; gap:12px;
+    padding:14px; border:1px solid var(--line); border-radius:12px;
+    background:var(--paper); margin-bottom:16px;
+  }
+  .cartao-previa > span:last-child{ min-width:0; }
+  .cartao-previa-nome{ display:block; font-size:15px; font-weight:700; }
+  .cartao-previa-dica{ display:block; font-size:11.5px; color:var(--ink-soft); margin-top:3px; line-height:1.45; }
+
+  .escolha-grade{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+  .escolha-cor{
+    width:32px; height:32px; border-radius:9px; padding:0;
+    border:2px solid transparent; cursor:pointer;
+  }
+  .escolha-cor.is-on{ border-color:var(--ink); box-shadow:0 0 0 2px var(--paper), 0 0 12px currentColor; }
+  .escolha-ic{
+    min-width:36px; height:36px; padding:0 8px; border-radius:9px;
+    border:1px solid var(--line); background:var(--input-bg); color:var(--ink);
+    font-size:15px; font-family:inherit; cursor:pointer;
+    display:inline-flex; align-items:center; justify-content:center;
+  }
+  .escolha-ic.is-on{ border-color:var(--neon2); box-shadow:0 0 0 2px rgba(79,224,255,.22); }
 
   /* ---------- Apps extras ---------- */
 
@@ -767,25 +860,27 @@
   #appfull-acoes button:hover{ border-color:var(--neon2); color:var(--neon2); }
   #appfull-frame{ flex:1; width:100%; border:none; background:var(--paper); }
 
-  #membro-modal, #ajuda-modal, #cats-modal, #metas-modal, #future-modal, #apps-modal{
+  #membro-modal, #ajuda-modal, #cats-modal, #metas-modal, #future-modal, #apps-modal, #cartao-modal, #agenda-modal{
     position:fixed;inset:0;background:var(--backdrop);
     display:flex;align-items:flex-end;justify-content:center;z-index:70;
     opacity:1;visibility:visible;transition:opacity .18s ease, visibility .18s ease;
   }
-  #membro-modal.hidden, #ajuda-modal.hidden, #cats-modal.hidden, #metas-modal.hidden, #future-modal.hidden, #apps-modal.hidden{opacity:0;visibility:hidden;pointer-events:none;}
+  #membro-modal.hidden, #ajuda-modal.hidden, #cats-modal.hidden, #metas-modal.hidden, #future-modal.hidden, #apps-modal.hidden, #cartao-modal.hidden, #agenda-modal.hidden{opacity:0;visibility:hidden;pointer-events:none;}
+  #agenda-modal.hidden #agenda-panel{ transform:translateY(24px); }
+  #cartao-modal.hidden #cartao-panel{ transform:translateY(24px); }
   #apps-modal.hidden #apps-panel{ transform:translateY(24px); }
   #membro-modal.hidden #membro-panel{ transform:translateY(24px); }
   #ajuda-modal.hidden #ajuda-panel{ transform:translateY(24px); }
   #cats-modal.hidden #cats-panel{ transform:translateY(24px); }
   #future-modal.hidden #future-panel{ transform:translateY(24px); }
   #metas-modal.hidden #metas-panel{ transform:translateY(24px); }
-  #membro-panel, #ajuda-panel, #cats-panel, #metas-panel, #future-panel, #apps-panel{
+  #membro-panel, #ajuda-panel, #cats-panel, #metas-panel, #future-panel, #apps-panel, #cartao-panel, #agenda-panel{
     background:var(--paper-raised);width:100%;max-width:480px;
     border-radius:18px 18px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));
     max-height:85vh;overflow-y:auto;box-shadow:var(--shadow-lg);
     transform:translateY(0);transition:transform .2s ease;
   }
-  #membro-panel h2, #ajuda-panel h2, #cats-panel h2, #metas-panel h2, #future-panel h2, #apps-panel h2{font-size:17px;margin:0 0 6px;}
+  #membro-panel h2, #ajuda-panel h2, #cats-panel h2, #metas-panel h2, #future-panel h2, #apps-panel h2, #cartao-panel h2, #agenda-panel h2{font-size:17px;margin:0 0 6px;}
   #membro-panel .field{ margin-bottom:14px; }
   #membro-panel label.rot{ display:block; font-size:12px; color:var(--ink-soft); margin-bottom:6px; }
   #membro-panel input[type="text"], #membro-panel select{
@@ -880,6 +975,22 @@
     min-height:0;
   }
   #auth-card .auth-ok{ font-size:12.5px; color:var(--positive); margin:-4px 0 12px; line-height:1.45; }
+  /* Vem depois da regra genérica de label do #auth-card, que é display:block —
+     aqui o rótulo tem que ficar ao lado da caixinha, não em cima dela. */
+  #auth-card label.auth-lembrar,
+  #settings-panel label.auth-lembrar,
+  .auth-lembrar{
+    display:flex; align-items:flex-start; gap:10px;
+    margin:2px 0 16px; cursor:pointer;
+    font-size:13.5px; color:var(--ink);
+  }
+  .auth-lembrar input{
+    width:18px; height:18px; margin:1px 0 0; flex:0 0 auto;
+    accent-color:var(--neon2); cursor:pointer;
+  }
+  .auth-lembrar b{ display:block; font-size:13.5px; font-weight:600; color:var(--ink); }
+  .auth-lembrar small{ display:block; font-size:11.5px; color:var(--ink-soft); line-height:1.45; margin-top:2px; }
+
   .auth-troca{
     margin-top:16px; text-align:center; font-size:13px; color:var(--ink-soft);
   }
@@ -1034,6 +1145,11 @@
   .cat-group.current-month{ box-shadow:var(--shadow-md), inset 0 0 0 1.5px var(--positive); }
   .cat-group.future-month{ opacity:0.82; }
   .installment-badge{ font-size:11px;font-weight:600;white-space:nowrap; }
+  .prazo-selo{
+    color:var(--neon2); font-weight:600;
+  }
+  .prazo-selo.prazo-fim{ color:var(--ink-soft); }
+  .fixed-tag.fixo-fim{ opacity:.6; }
   .fixed-tag{
     color:var(--neon2); font-weight:700;
     text-shadow:0 0 10px rgba(79,224,255,0.55);
@@ -1294,6 +1410,16 @@
   /* Contas por cartão */
   .card-list{ gap:6px; }
   .card-dot{ width:11px; height:11px; border-radius:50%; flex:0 0 auto; }
+
+  /* Plaquinha do cartão: cor da marca + símbolo. Não é a logomarca do banco. */
+  .card-mark{
+    width:22px; height:22px; border-radius:7px; flex:0 0 auto;
+    display:inline-flex; align-items:center; justify-content:center;
+    font-size:11.5px; font-weight:800; line-height:1;
+    font-family:inherit; letter-spacing:-0.02em;
+  }
+  .card-mark-sm{ width:18px; height:18px; border-radius:6px; font-size:10px; }
+  .card-mark-lg{ width:40px; height:40px; border-radius:12px; font-size:18px; }
   .card-caret{ margin-left:8px; color:var(--ink-soft); font-weight:700; }
   .card-row.is-open{ background:var(--hover-soft); }
   .card-row.is-open .card-caret{ color:var(--neon2); }
@@ -1377,8 +1503,8 @@
 
   /* ---------- Tablet ---------- */
   @media (min-width:640px){
-    #settings-modal, #items-modal, #reset-modal, #future-modal, #metas-modal, #cats-modal, #ajuda-modal, #membro-modal, #apps-modal{ align-items:center; }
-    #settings-panel, #items-panel, #reset-panel, #future-panel, #metas-panel, #cats-panel, #ajuda-panel, #membro-panel, #apps-panel{ border-radius:16px; max-height:80vh; }
+    #settings-modal, #items-modal, #reset-modal, #future-modal, #metas-modal, #cats-modal, #ajuda-modal, #membro-modal, #apps-modal, #cartao-modal, #agenda-modal{ align-items:center; }
+    #settings-panel, #items-panel, #reset-panel, #future-panel, #metas-panel, #cats-panel, #ajuda-panel, #membro-panel, #apps-panel, #cartao-panel, #agenda-panel{ border-radius:16px; max-height:80vh; }
     #ajuda-panel{ max-width:560px; }
     .row2, .row2.installment-fields{ gap:14px; }
   }
@@ -1601,6 +1727,14 @@
   <div id="apps-panel"></div>
 </div>
 
+<div id="cartao-modal" class="hidden">
+  <div id="cartao-panel"></div>
+</div>
+
+<div id="agenda-modal" class="hidden">
+  <div id="agenda-panel"></div>
+</div>
+
 <!--
   Janela cheia dos apps extras. Cada app roda dentro do iframe abaixo, com o
   HTML vindo de um bloco <script type="text/html"> lá embaixo. O iframe isola
@@ -1738,6 +1872,8 @@
   var membroModalEl, membroPanelEl;
   var resetModalEl, resetPanelEl;
   var appsModalEl, appsPanelEl, appfullEl, appfullFrameEl, appfullNomeEl, appfullAcoesEl;
+  var cartaoModalEl, cartaoPanelEl;
+  var agendaModalEl, agendaPanelEl;
 
   /* ---------- Apps extras ----------
      Cada app extra é uma página HTML completa guardada num bloco
@@ -2078,12 +2214,90 @@
     return r.data || [];
   }
 
+  /* ---------- Continuar conectado, ou não ----------
+     Quem marca "continuar conectado" tem a sessão gravada no navegador e não
+     precisa entrar de novo. Quem não marca fica com a sessão só na aba: fechou
+     o navegador, saiu — que é o que se espera de um computador emprestado ou
+     de uma lan house. A senha em si nunca é guardada pelo app; quem oferece
+     isso é o gerenciador de senhas do navegador, e ele continua funcionando
+     normal porque os campos têm os autocomplete certos.
+
+     Este adaptador existe porque a escolha é feita na hora de entrar, e o
+     cliente do Supabase já foi criado antes disso. Então ele decide na hora
+     de cada leitura e escrita em qual dos dois lugares mexer. */
+
+  var LEMBRAR_KEY = 'gastos_casa_lembrar';
+  var AUTH_VERSAO = '2';
+  var AUTH_VERSAO_KEY = 'gastos_casa_auth_v';
+
+  function lembrarLigado(){
+    try { return localStorage.getItem(LEMBRAR_KEY) === '1'; } catch(e){ return false; }
+  }
+  function definirLembrar(sim){
+    try {
+      if (sim) localStorage.setItem(LEMBRAR_KEY, '1');
+      else localStorage.removeItem(LEMBRAR_KEY);
+    } catch(e){}
+  }
+
+  // Trocar a escolha com a pessoa já logada: a chave da sessão muda de lugar,
+  // senão ela seria deslogada na hora sem querer.
+  function mudarLembrar(sim){
+    var chave = 'sb-gastos-da-casa-auth-token';
+    var valor = null;
+    try { valor = (lembrarLigado() ? localStorage : sessionStorage).getItem(chave); } catch(e){}
+    definirLembrar(sim);
+    try {
+      if (valor != null) (sim ? localStorage : sessionStorage).setItem(chave, valor);
+      (sim ? sessionStorage : localStorage).removeItem(chave);
+    } catch(e){}
+  }
+
+  var guardaDaSessao = {
+    getItem: function(k){
+      try { return (lembrarLigado() ? localStorage : sessionStorage).getItem(k); }
+      catch(e){ return null; }
+    },
+    setItem: function(k, v){
+      try { (lembrarLigado() ? localStorage : sessionStorage).setItem(k, v); } catch(e){}
+    },
+    removeItem: function(k){
+      // Sair limpa os dois lados, senão sobra sessão velha no outro lugar.
+      try { localStorage.removeItem(k); } catch(e){}
+      try { sessionStorage.removeItem(k); } catch(e){}
+    }
+  };
+
+  // Uma vez só: todo mundo que já estava logado entra de novo, pra escolher
+  // onde a sessão vai ficar daqui pra frente. Só apaga a chave da sessão —
+  // os lançamentos guardados no aparelho continuam onde estão.
+  function pedirLoginDeNovoUmaVez(){
+    try {
+      if (localStorage.getItem(AUTH_VERSAO_KEY) === AUTH_VERSAO) return;
+      [localStorage, sessionStorage].forEach(function(loja){
+        var apagar = [];
+        for (var i = 0; i < loja.length; i++){
+          var k = loja.key(i);
+          if (k && k.indexOf('sb-') === 0 && k.indexOf('-auth-token') !== -1) apagar.push(k);
+        }
+        apagar.forEach(function(k){ try { loja.removeItem(k); } catch(e){} });
+      });
+      localStorage.setItem(AUTH_VERSAO_KEY, AUTH_VERSAO);
+    } catch(e){}
+  }
+
   function iniciarSupabase(){
     try {
       if (!SUPABASE_URL || !SUPABASE_KEY) return null;
       if (typeof window.supabase === 'undefined') return null;
+      pedirLoginDeNovoUmaVez();
       return window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-        auth: { persistSession: true, autoRefreshToken: true }
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true,
+          storage: guardaDaSessao,
+          storageKey: 'sb-gastos-da-casa-auth-token'
+        }
       });
     } catch(e){ console.error('Supabase indisponível', e); return null; }
   }
@@ -2103,6 +2317,7 @@
       thumb: e.thumb || null,
       items: e.items || null,
       fixed: !!e.fixed,
+      fixo_ate: e.fixedUntil || null,
       installment: !!e.installment,
       installments_total: e.installmentsTotal == null ? null : Number(e.installmentsTotal),
       installments_paid: e.installmentsPaid == null ? null : Number(e.installmentsPaid),
@@ -2125,6 +2340,7 @@
       thumb: r.thumb || null,
       items: r.items || null,
       fixed: !!r.fixed,
+      fixedUntil: r.fixo_ate || null,
       installment: !!r.installment,
       installmentsTotal: r.installments_total,
       installmentsPaid: r.installments_paid,
@@ -2138,7 +2354,7 @@
   // um carimbo de data mudando sozinho faria tudo parecer "alterado".
   function assinaturaGasto(e){
     return JSON.stringify([e.person, e.type, e.category, e.description, Number(e.value)||0,
-      e.date, e.thumb || null, e.items || null, !!e.fixed, !!e.installment,
+      e.date, e.thumb || null, e.items || null, !!e.fixed, e.fixedUntil || null, !!e.installment,
       e.installmentsTotal == null ? null : Number(e.installmentsTotal),
       e.installmentsPaid == null ? null : Number(e.installmentsPaid),
       e.paymentMethod || null, e.card || null, !!e.demo]);
@@ -2276,7 +2492,9 @@
         codigoConvite = rc.data.codigo_convite;
         var s = {
           householdName: rc.data.nome || 'Gastos da Casa',
-          cards: Array.isArray(rc.data.cartoes) && rc.data.cartoes.length ? rc.data.cartoes : DEFAULT_CARDS.slice(),
+          cards: (normalizarCartoes(rc.data.cartoes).length ? normalizarCartoes(rc.data.cartoes) : DEFAULT_CARDS.slice()),
+          cardIcons: aparenciaDaLista(rc.data.cartoes, 'i'),
+          cardColors: aparenciaDaLista(rc.data.cartoes, 'c'),
           goals: normalizarMetas(rc.data.metas),
           categories: normalizarCategorias(rc.data.categorias),
           categoryIcons: iconesDaLista(rc.data.categorias),
@@ -2292,6 +2510,10 @@
     var cache = lerCache('gastos_casa_settings', null);
     var loaded = (cache && Array.isArray(cache.members)) ? cache : defaultSettings();
     if (!Array.isArray(loaded.cards) || !loaded.cards.length) loaded.cards = DEFAULT_CARDS.slice();
+    loaded.cards = normalizarCartoes(loaded.cards);
+    if (!loaded.cards.length) loaded.cards = DEFAULT_CARDS.slice();
+    if (!loaded.cardIcons || typeof loaded.cardIcons !== 'object') loaded.cardIcons = {};
+    if (!loaded.cardColors || typeof loaded.cardColors !== 'object') loaded.cardColors = {};
     loaded.goals = normalizarMetas(loaded.goals);
     loaded.categories = normalizarCategorias(loaded.categories);
     if (!loaded.categoryIcons || typeof loaded.categoryIcons !== 'object') loaded.categoryIcons = {};
@@ -2305,7 +2527,7 @@
       var r1 = await supa.from('casas')
         .update({
           nome: s.householdName || 'Gastos da Casa',
-          cartoes: s.cards || [],
+          cartoes: cartoesParaBanco(s),
           metas: normalizarMetas(s.goals),
           categorias: categoriasParaBanco(s)
         })
@@ -2500,6 +2722,9 @@
       + aviso
       + '<div class="field"><label>E-mail</label><input type="email" id="auth-email" autocomplete="email" placeholder="voce@email.com"></div>'
       + '<div class="field"><label>Senha</label><input type="password" id="auth-senha" autocomplete="' + (cadastro ? 'new-password' : 'current-password') + '" placeholder="' + (cadastro ? 'Pelo menos 6 caracteres' : 'Sua senha') + '"></div>'
+      + '<label class="auth-lembrar"><input type="checkbox" id="auth-lembrar"' + (lembrarLigado() ? ' checked' : '') + '>'
+        + '<span><b>Continuar conectado neste aparelho</b>'
+        + '<small>Deixe desmarcado em computador emprestado: aí a sessão acaba quando você fechar o navegador.</small></span></label>'
       + '<button type="button" class="submit-btn" id="btn-auth" style="background:var(--neon2);color:#06222c;">' + (cadastro ? 'Criar conta' : 'Entrar') + '</button>'
       + '<div class="auth-troca">' + (cadastro
           ? 'Já tem conta? <button type="button" class="auth-link" id="btn-troca">Entrar</button>'
@@ -2530,6 +2755,11 @@
     var senha = document.getElementById('auth-senha').value || '';
     var botao = document.getElementById('btn-auth');
     if (!email || !senha){ renderAuth('Preencha e-mail e senha.'); return; }
+
+    // Decide ANTES de entrar: é essa escolha que diz ao adaptador se a sessão
+    // vai pro navegador (fica salva) ou só pra aba (some ao fechar).
+    var lembrar = document.getElementById('auth-lembrar');
+    definirLembrar(!lembrar || lembrar.checked);
 
     botao.disabled = true;
     botao.textContent = authModo === 'cadastrar' ? 'Criando...' : 'Entrando...';
@@ -3189,10 +3419,30 @@
 
   function baseExpenseId(id){ return String(id || '').split('@')[0]; }
 
+  // Último mês em que um gasto fixo ainda vale. Sem prazo, devolve null.
+  function fixedEndMonth(e){
+    if (!e || !e.fixed || !e.fixedUntil) return null;
+    var fim = monthKeyFromDate(e.fixedUntil);
+    return fim || null;
+  }
+
+  // Quantos meses ainda vão cair, contando o mês atual. Serve pro selo
+  // "faltam 5 meses" da aba Contas Fixas.
+  function fixedMesesRestantes(e){
+    var fim = fixedEndMonth(e);
+    if (!fim) return null;
+    var inicio = monthKeyFromDate(e.date);
+    var de = (currentMonthKey() > inicio) ? currentMonthKey() : inicio;
+    return Math.max(0, mesesEntre(de, fim) + 1);
+  }
+
   function fixedOccurrence(e, mk){
     if (!e.fixed) return null;
     var inicio = monthKeyFromDate(e.date);
     if (!inicio || mk < inicio) return null;
+    // Conta fixa com prazo para de aparecer depois do mês combinado.
+    var fim = fixedEndMonth(e);
+    if (fim && mk > fim) return null;
     if (mk === inicio) return e;
     var dia = parseInt(String(e.date).slice(8,10), 10) || 1;
     var copia = Object.assign({}, e);
@@ -3213,7 +3463,8 @@
     var limite = fixedHorizon();
     state.expenses.forEach(function(e){
       if (e.fixed){
-        // O mês de origem entra sempre; as repetições param no horizonte.
+        // O mês de origem entra sempre; as repetições param no horizonte
+        // (e antes disso, no prazo, se a pessoa tiver posto um).
         if (mk > limite && mk !== monthKeyFromDate(e.date)) return;
         var occ = fixedOccurrence(e, mk);
         if (occ) out.push(occ);
@@ -3397,6 +3648,42 @@
     return out.length ? out : CATEGORIES.map(function(x){ return x.id; });
   }
 
+  // Cartões seguem o mesmo caminho das categorias: no banco a lista pode vir
+  // como ['Nubank', ...] (formato antigo) ou como [{n:'Nubank',i:'N',c:'#820AD1'}]
+  // — os dois entram aqui, então nenhuma casa antiga quebra e nenhum SQL novo
+  // precisa ser rodado.
+  function normalizarCartoes(lista){
+    var vistos = {}, out = [];
+    (Array.isArray(lista) ? lista : []).forEach(function(c){
+      var nome = (c && typeof c === 'object') ? String(c.n || '').trim() : String(c || '').trim();
+      if (!nome || vistos[nome]) return;
+      vistos[nome] = true;
+      out.push(nome);
+    });
+    return out;
+  }
+
+  function aparenciaDaLista(lista, campo){
+    var out = {};
+    (Array.isArray(lista) ? lista : []).forEach(function(c){
+      if (c && typeof c === 'object' && c.n && c[campo]) out[String(c.n).trim()] = String(c[campo]);
+    });
+    return out;
+  }
+
+  // Só grava o que a pessoa escolheu de propósito: o que vem da marca conhecida
+  // fica de fora, senão a lista engorda com o que o app já sabe sozinho.
+  function cartoesParaBanco(s){
+    var icones = (s && s.cardIcons) || {};
+    var cores = (s && s.cardColors) || {};
+    return ((s && s.cards) || []).map(function(nome){
+      var o = {n: nome};
+      if (icones[nome]) o.i = icones[nome];
+      if (cores[nome]) o.c = cores[nome];
+      return (o.i || o.c) ? o : nome;
+    });
+  }
+
   function iconesDaLista(lista){
     var out = {};
     (Array.isArray(lista) ? lista : []).forEach(function(c){
@@ -3542,6 +3829,45 @@
     }
   }
 
+  /* ---------- Prazo do gasto fixo ----------
+     Nem toda conta fixa é pra sempre: financiamento acaba, curso tem 10 meses,
+     seguro é anual. Quem não quiser pensar nisso deixa em "sem prazo" e nada
+     muda — o campo do prazo só aparece depois de marcar "Sim". */
+
+  function prazoFixoHTML(editingExpense, isFixed, sempreFixo){
+    var ate = (editingExpense && editingExpense.fixed && editingExpense.fixedUntil) ? editingExpense.fixedUntil : '';
+    var temPrazo = !!ate;
+    return '<div class="field prazo-fixo-field"' + (sempreFixo ? ' data-sempre-fixo="1"' : '')
+      + ' style="display:' + (isFixed ? 'block' : 'none') + ';">'
+      + '<label>Por quanto tempo?</label>'
+      + '<select class="prazo-toggle-select">'
+        + '<option value="sempre"' + (temPrazo ? '' : ' selected') + '>Sem prazo — repete até eu tirar</option>'
+        + '<option value="ate"' + (temPrazo ? ' selected' : '') + '>Tem prazo — vai até um mês certo</option>'
+      + '</select>'
+      + '<div class="prazo-data-linha" style="display:' + (temPrazo ? 'flex' : 'none') + ';">'
+        + '<input type="hidden" class="prazo-ate-input" value="' + escapeHTML(ate) + '">'
+        + '<button type="button" class="prazo-botao" data-action="abrir-calendario">'
+          + '<span class="prazo-ic">📅</span>'
+          + '<span class="prazo-txt">' + (temPrazo ? escapeHTML(rotuloPrazo(ate)) : 'Escolher até quando') + '</span>'
+        + '</button>'
+      + '</div>'
+      + '<div class="items-hint prazo-dica" style="display:' + (isFixed ? 'block' : 'none') + ';margin:6px 0 0;">'
+        + (temPrazo
+            ? 'Depois desse mês ele para de aparecer sozinho. O que já passou continua no histórico.'
+            : 'Financiamento, curso, seguro: se tem data pra acabar, escolha o prazo e o app para de repetir na hora certa.')
+      + '</div></div>';
+  }
+
+  function rotuloPrazo(iso){
+    if (!iso) return 'Escolher até quando';
+    var mk = monthKeyFromDate(iso);
+    var dia = String(iso).slice(8,10);
+    var falta = mesesEntre(currentMonthKey(), mk) + 1;
+    var quanto = falta <= 0 ? 'já terminou'
+      : (falta === 1 ? 'este é o último mês' : 'faltam ' + falta + ' meses');
+    return 'Até ' + dia + ' de ' + monthLabelFromKey(mk) + ' · ' + quanto;
+  }
+
   function cardSelectHTML(selected){
     var cards = state.settings.cards && state.settings.cards.length ? state.settings.cards : DEFAULT_CARDS;
     var isKnown = cards.indexOf(selected) !== -1;
@@ -3680,6 +4006,7 @@
       + '<div class="field custom-card-field" style="display:'+((usaCartao&&card.customSelected)?'block':'none')+';"><label>Nome do cartão</label><input type="text" class="custom-card-input" placeholder="Ex: C6, PicPay..." value="'+(card.customSelected&&editingExpense?escapeHTML(editingExpense.card):'')+'"></div>'
       + '<div class="field"><label>É um gasto fixo?</label><select class="fixed-toggle-select"><option value="nao"'+(!isFixed?' selected':'')+'>Não, só deste mês</option><option value="sim"'+(isFixed?' selected':'')+'>Sim, repete todo mês</option></select>'
         + '<div class="items-hint" style="margin:6px 0 0;">Marcando como fixo, esse gasto aparece sozinho em todos os meses seguintes com o mesmo valor — você não precisa lançar de novo.</div></div>'
+      + prazoFixoHTML(editingExpense, isFixed)
       + '<div class="field parcelavel-field" style="display:'+((isFixed||paymentMethod==='debito')?'none':'block')+';"><label>Foi parcelado?</label><select class="installment-toggle-select"><option value="nao"'+(!isInstallment?' selected':'')+'>Não</option><option value="sim"'+(isInstallment?' selected':'')+'>Sim</option></select></div>'
       + parcelaCamposHTML(editingExpense, isInstallment && !isFixed)
       + '</div>'
@@ -3732,6 +4059,7 @@
       + '</div>'
       + '<div class="field"><label>É um gasto fixo?</label><select class="fixed-toggle-select"><option value="nao"'+(!isFixed?' selected':'')+'>Não, só deste mês</option><option value="sim"'+(isFixed?' selected':'')+'>Sim, repete todo mês</option></select>'
         + '<div class="items-hint" style="margin:6px 0 0;">Academia, streaming, plano do celular — marcado como fixo, ele aparece sozinho todo mês.</div></div>'
+      + prazoFixoHTML(editingExpense, isFixed)
       + '</div>'
       + '<div class="form-col acc-amber">'
       + '<div class="form-col-title">Como foi pago</div>'
@@ -3782,7 +4110,7 @@
         var c = casalCalc(e);
         var detailLine = c.installment
           ? (' · '+c.total+'x de '+formatBRL(c.parcelValue)+' · ✅ '+c.paid+' pagas'+(c.remaining>0?(' · ⏳ '+c.remaining+' restantes'):''))
-          : (e.fixed ? ' · <span class="fixed-tag">🔁 fixo</span>' : '');
+          : (e.fixed ? ' · ' + seloFixoHTML(e) : '');
         return ''
           + '<div class="entry">'
           + thumb
@@ -3816,7 +4144,7 @@
       ? (c.total + 'x de ' + formatBRL(c.parcelValue) + ' · ✅ ' + c.paid + ' pagas · ⏳ ' + c.remaining + ' restantes' + (c.remainingValue>0.005 ? (' · Falta ' + formatBRL(c.remainingValue)) : ''))
       : (e.paymentMethod === 'debito' ? 'Débito · pago'
          : (e.paymentMethod === 'outro' ? 'Pix, dinheiro ou boleto · pago' : 'Crédito à vista · pago'))
-        + (e.fixed ? ' · <span class="fixed-tag">🔁 fixo</span>' : '');
+        + (e.fixed ? ' · ' + seloFixoHTML(e) : '');
     return ''
       + '<div class="entry personal-entry">'
       + thumb
@@ -4096,10 +4424,8 @@
       // alvo = o mês inteiro, ícone da categoria, bolinha colorida = cartão.
       var selo;
       if (l.tipo === 'geral') selo = '🎯';
-      else if (l.tipo === 'cartao'){
-        var cor = cardColorFor(l.nome);
-        selo = '<span class="card-dot" style="background:'+cor+';box-shadow:0 0 9px '+hexToRgba(cor,0.8)+';"></span>';
-      } else selo = catChipHTML(l.nome, 20);
+      else if (l.tipo === 'cartao') selo = cardChipHTML(l.nome, 'sm');
+      else selo = catChipHTML(l.nome, 20);
 
       return '<div class="meta-row meta-' + e.classe + '">'
         + '<div class="meta-topo">'
@@ -4206,12 +4532,111 @@
   var CARD_COLORS = ['#8B5CF6','#4FE0FF','#FF9F43','#35D6C4','#FF5D8F','#9BE564'];
   var CARTAO_OUTRO = '__outro__';
 
+  /* Aparência dos cartões conhecidos: a cor da marca e um símbolo. Não são as
+     logomarcas dos bancos — logo de banco é marca registrada e eu não posso
+     desenhar. Cor + inicial dá o mesmo reconhecimento à distância (é o que o
+     próprio app do banco faz no ícone da tela de início) e não põe você em
+     apuro por usar marca de terceiro num produto que vende. Quem quiser outra
+     coisa troca o símbolo e a cor na janela do cartão. */
+  var CARTOES_CONHECIDOS = {
+    'nubank':      {cor:'#820AD1', icone:'N'},
+    'nu':          {cor:'#820AD1', icone:'N'},
+    'inter':       {cor:'#FF7A00', icone:'I'},
+    'itau':        {cor:'#004990', icone:'I'},
+    'itaú':        {cor:'#004990', icone:'I'},
+    'santander':   {cor:'#EC0000', icone:'S'},
+    'bradesco':    {cor:'#CC092F', icone:'B'},
+    'caixa':       {cor:'#0070AF', icone:'C'},
+    'banco do brasil': {cor:'#F9DD16', icone:'B'},
+    'bb':          {cor:'#F9DD16', icone:'B'},
+    'c6':          {cor:'#242424', icone:'6'},
+    'c6 bank':     {cor:'#242424', icone:'6'},
+    'picpay':      {cor:'#21C25E', icone:'P'},
+    'mercado pago':{cor:'#00B1EA', icone:'M'},
+    'will':        {cor:'#FFD100', icone:'W'},
+    'neon':        {cor:'#00E0C7', icone:'N'},
+    'next':        {cor:'#00FF5F', icone:'N'},
+    'original':    {cor:'#00A86B', icone:'O'},
+    'safra':       {cor:'#003B71', icone:'S'},
+    'btg':         {cor:'#0D2B45', icone:'B'},
+    'xp':          {cor:'#101820', icone:'X'},
+    'pan':         {cor:'#00AEEF', icone:'P'},
+    'digio':       {cor:'#0F62FE', icone:'D'},
+    'sicredi':     {cor:'#3FA110', icone:'S'},
+    'sicoob':      {cor:'#003641', icone:'S'},
+    'ame':         {cor:'#EB1D5E', icone:'A'},
+    'nubank ultravioleta': {cor:'#4B0082', icone:'N'}
+  };
+
+  // Símbolos prontos pra quem não quiser a letra.
+  var ICONES_CARTAO = ['💳','🏦','💰','💵','🪙','🧾','📱','⭐','🔷','🔶','🟣','🟢','🔵','🔴','🟡','⚫'];
+
+  // Cores boas em cima do fundo escuro do app.
+  var CORES_CARTAO = ['#820AD1','#FF7A00','#EC7000','#EC0000','#0070AF','#F9DD16',
+                      '#21C25E','#00B1EA','#8B5CF6','#4FE0FF','#FF9F43','#35D6C4',
+                      '#FF5D8F','#9BE564','#B18CFF','#7C8A97'];
+
+  function chaveCartao(nome){ return String(nome || '').trim().toLowerCase(); }
+
+  function marcaConhecida(nome){
+    var k = chaveCartao(nome);
+    if (CARTOES_CONHECIDOS[k]) return CARTOES_CONHECIDOS[k];
+    // "Nubank Ultravioleta", "Inter Gold": vale a marca que abre o nome.
+    var primeira = k.split(/[\s\-]+/)[0];
+    return CARTOES_CONHECIDOS[primeira] || null;
+  }
+
   function cardColorFor(nome){
     if (nome === CARTAO_OUTRO) return '#7C8A97';
+    var escolhida = (state.settings.cardColors || {})[nome];
+    if (escolhida) return escolhida;
+    var marca = marcaConhecida(nome);
+    if (marca) return marca.cor;
     var lista = (state.settings.cards && state.settings.cards.length) ? state.settings.cards : DEFAULT_CARDS;
     var i = lista.indexOf(nome);
     if (i === -1) i = hashString(nome) % CARD_COLORS.length;
     return CARD_COLORS[i % CARD_COLORS.length];
+  }
+
+  function cardIconFor(nome){
+    if (nome === CARTAO_OUTRO) return '💸';
+    var escolhido = (state.settings.cardIcons || {})[nome];
+    if (escolhido) return escolhido;
+    var marca = marcaConhecida(nome);
+    if (marca) return marca.icone;
+    return inicialDeCartao(nome);
+  }
+
+  // Dois cartões que começam com a mesma letra ("Itaú" e "Inter") viravam duas
+  // plaquinhas idênticas. Quando isso acontece, a letra vira duas.
+  function inicialDeCartao(nome){
+    var limpo = String(nome || '?').trim();
+    var uma = (limpo.charAt(0) || '?').toUpperCase();
+    var lista = (state.settings.cards && state.settings.cards.length) ? state.settings.cards : DEFAULT_CARDS;
+    var repete = lista.filter(function(c){
+      return c !== nome && !marcaConhecida(c)
+        && (String(c || '').trim().charAt(0) || '').toUpperCase() === uma;
+    }).length > 0;
+    return repete ? limpo.slice(0, 2).toUpperCase() : uma;
+  }
+
+  // A "plaquinha" do cartão: quadradinho na cor da marca com o símbolo dentro.
+  function cardChipHTML(nome, tamanho){
+    var cor = cardColorFor(nome);
+    var ic = cardIconFor(nome);
+    var cls = 'card-mark' + (tamanho ? ' card-mark-' + tamanho : '');
+    return '<span class="' + cls + '" style="background:' + cor + ';color:' + textoSobre(cor) + ';'
+      + 'box-shadow:0 0 10px ' + hexToRgba(cor, 0.55) + ';">' + escapeHTML(ic) + '</span>';
+  }
+
+  // Cor da marca clara (o amarelo do BB, por exemplo) pede texto escuro.
+  function textoSobre(hex){
+    var h = String(hex || '').replace('#','');
+    if (h.length === 3) h = h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+    var r = parseInt(h.slice(0,2),16), g = parseInt(h.slice(2,4),16), b = parseInt(h.slice(4,6),16);
+    if (isNaN(r) || isNaN(g) || isNaN(b)) return '#fff';
+    // Luminância relativa simplificada — o verde pesa mais pro olho humano.
+    return (0.299*r + 0.587*g + 0.114*b) > 150 ? '#10151C' : '#FFFFFF';
   }
 
   function cardLabelFor(nome){
@@ -4290,7 +4715,7 @@
         + ' data-action="toggle-card" data-scope="'+escapeHTML(escopo)+'" data-card="'+escapeHTML(g.card)+'"'
         + ' title="'+escapeHTML(cardLabelFor(g.card))+' — '+formatBRL(g.total)+'. Toque pra abrir.">'
         + '<span class="cat-bar-head">'
-          + '<span class="cat-bar-name"><span class="card-dot" style="background:'+cor+';box-shadow:0 0 9px '+hexToRgba(cor,0.8)+';"></span>'
+          + '<span class="cat-bar-name">' + cardChipHTML(g.card, 'sm')
             + '<span class="cat-bar-label">'+escapeHTML(cardLabelFor(g.card))+'</span></span>'
           + '<span class="cat-bar-val">'+formatBRL(g.total)+'<span class="cat-bar-share">'+share+'%</span>'
             + '<span class="card-caret">'+(estaAberto ? '⌄' : '›')+'</span></span>'
@@ -4614,6 +5039,17 @@
 
   // Formulário curto pra cadastrar uma conta da casa direto nesta aba: só o
   // essencial de um gasto fixo (o quê, quanto, quem paga e desde quando).
+  // Selo do gasto fixo. Com prazo, ele diz quanto falta — que é o que a
+  // pessoa quer saber ao bater o olho numa conta que vai acabar.
+  function seloFixoHTML(e){
+    var fim = fixedEndMonth(e);
+    if (!fim) return '<span class="fixed-tag">🔁 fixo</span>';
+    var faltam = fixedMesesRestantes(e);
+    var texto = faltam === 0 ? 'terminou'
+      : (faltam === 1 ? 'último mês' : 'faltam ' + faltam);
+    return '<span class="fixed-tag' + (faltam === 0 ? ' fixo-fim' : '') + '">🔁 fixo · ' + escapeHTML(texto) + '</span>';
+  }
+
   function fixaFormHTML(){
     var cat = categorySelectHTML(null);
     var opcoesPessoa = state.settings.members.map(function(m){
@@ -4632,9 +5068,41 @@
         + '</div>'
         + '<div class="field"><label>A partir de quando</label><input type="date" class="date-input" value="'+todayISO()+'">'
           + '<div class="items-hint" style="margin:6px 0 0;">A conta passa a aparecer deste mês em diante. Se ela já vem sendo paga há um tempo, coloque a data do primeiro mês.</div></div>'
+        + prazoFixoHTML(null, true, true)
       + '</div>'
       + '<div class="form-submit-area"><button type="submit" class="submit-btn" style="background:var(--neon2);color:#06222c;">Adicionar conta fixa</button></div>'
       + '</form>';
+  }
+
+  // Na aba Contas Fixas o prazo aparece por extenso: a pessoa está justamente
+  // olhando quanto ainda vai sair todo mês.
+  function prazoNaListaHTML(e){
+    var fim = fixedEndMonth(e);
+    if (!fim) return '';
+    var faltam = fixedMesesRestantes(e);
+    var quanto = faltam === 0 ? 'já terminou'
+      : (faltam === 1 ? 'este é o último mês' : 'faltam ' + faltam + ' meses');
+    return ' · <span class="prazo-selo' + (faltam === 0 ? ' prazo-fim' : '') + '">até '
+      + escapeHTML(monthLabelFromKey(fim)) + ' · ' + quanto + '</span>';
+  }
+
+  /* Quanto as contas fixas realmente somam nos próximos 12 meses. Multiplicar
+     o mês por 12 mentia assim que uma delas tinha prazo: o financiamento que
+     acaba em outubro aparecia inteiro no ano. Aqui cada mês é somado com as
+     contas que estiverem valendo nele. */
+  function totalDoze(fixos){
+    var total = 0;
+    for (var i = 0; i < 12; i++){
+      var mk = monthKeyAdd(currentMonthKey(), i);
+      fixos.forEach(function(e){
+        var inicio = monthKeyFromDate(e.date);
+        if (mk < inicio) return;
+        var fim = fixedEndMonth(e);
+        if (fim && mk > fim) return;
+        total += e.value;
+      });
+    }
+    return total;
   }
 
   function renderFixasTab(){
@@ -4657,11 +5125,14 @@
     var totalPessoais = fixos.filter(function(e){ return e.type === 'pessoal'; })
                              .reduce(function(s,e){ return s + e.value; }, 0);
 
+    var temPrazo = fixos.some(function(e){ return !!fixedEndMonth(e); });
+
     var cartoes = '<div class="kpi-row">'
       + kpiTileHTML('Fixas da casa', formatBRL(totalCasa), daCasa.length + (daCasa.length === 1 ? ' conta por mês' : ' contas por mês'), 'acc-cyan')
       + kpiTileHTML('Fixas pessoais', formatBRL(totalPessoais), 'Fora da divisão', 'acc-purple')
       + kpiTileHTML('Total por mês', formatBRL(totalCasa + totalPessoais), 'Sai todo mês, sem falta', 'acc-amber')
-      + kpiTileHTML('Por ano', formatBRL((totalCasa + totalPessoais) * 12), 'Se nada mudar', 'acc-green')
+      + kpiTileHTML('Próximos 12 meses', formatBRL(totalDoze(fixos)),
+          temPrazo ? 'Já descontando o que acaba' : 'Se nada mudar', 'acc-green')
       + '</div>';
 
     var quemPaga = porPessoa.length
@@ -4687,7 +5158,8 @@
           + '<div class="thumb-placeholder" style="background:'+hexToRgba(catColor(e.category),0.15)+';color:'+catColor(e.category)+';">'+catIcon(e.category)+'</div>'
           + '<div class="info"><div class="desc">'+escapeHTML(e.description)+'</div>'
             + '<div class="date">'+escapeHTML(e.category)+' · paga por '+escapeHTML(dono ? dono.name : '?')
-            + ' · desde '+escapeHTML(monthLabelFromKey(monthKeyFromDate(e.date)))+'</div></div>'
+            + ' · desde '+escapeHTML(monthLabelFromKey(monthKeyFromDate(e.date)))
+            + prazoNaListaHTML(e)+'</div></div>'
           + '<div class="value">'+formatBRL(e.value)+'</div>'
           + '<button class="edit" data-action="edit-fixed" data-id="'+e.id+'" data-person="'+escapeHTML(e.person)+'" data-type="'+e.type+'">✏️</button>'
           + '<button class="del" data-action="delete-expense" data-id="'+e.id+'">🗑️</button>'
@@ -4757,6 +5229,9 @@
 
   function openSettingsModal(){
     state.settingsDraft = JSON.parse(JSON.stringify(state.settings));
+    // Guarda os nomes como estavam: se a pessoa renomear um cartão, o símbolo
+    // e a cor dele vão junto em vez de ficarem órfãos com o nome velho.
+    state.settingsDraft.cardsOriginais = (state.settings.cards || []).slice();
     renderSettingsModal();
     settingsModalEl.classList.remove('hidden');
     if (souAdmin) renderListaLicencas();
@@ -4788,8 +5263,12 @@
     }).join('');
     var sum = d.members.reduce(function(s,m){ return s+(Number(m.percentage)||0); },0);
     var cardRows = d.cards.map(function(c, idx){
-      return '<div class="settings-member-row">'
+      var cor = (d.cardColors || {})[c] || (marcaConhecida(c) ? marcaConhecida(c).cor : CARD_COLORS[hashString(c) % CARD_COLORS.length]);
+      var ic = (d.cardIcons || {})[c] || (marcaConhecida(c) ? marcaConhecida(c).icone : (String(c||'?').trim().charAt(0)||'?').toUpperCase());
+      return '<div class="cartao-linha">'
+        + '<span class="card-mark" style="background:'+cor+';color:'+textoSobre(cor)+';box-shadow:0 0 10px '+hexToRgba(cor,0.55)+';">'+escapeHTML(ic)+'</span>'
         + '<input type="text" class="card-name-input" data-idx="'+idx+'" value="'+escapeHTML(c)+'">'
+        + '<button type="button" class="cartao-editar" data-action="editar-cartao" data-idx="'+idx+'" title="Símbolo e cor de '+escapeHTML(c)+'">🎨</button>'
         + '<button type="button" class="photo-remove" data-action="remove-card" data-idx="'+idx+'">Remover</button>'
         + '</div>';
     }).join('');
@@ -4799,7 +5278,9 @@
       + '<div class="field"><label>Pessoas e porcentagem da divisão</label>' + rows + '</div>'
       + '<div class="pct-sum-note" id="pct-sum-note">Soma das porcentagens: '+sum+'%'+(Math.abs(sum-100)>0.5 ? ' (não precisa somar 100 — é usado de forma proporcional)':'')+'</div>'
       + '<button type="button" id="add-member-btn" class="secondary-btn">+ Adicionar pessoa</button>'
-      + '<div class="field" style="margin-top:18px;"><label>Cartões cadastrados (gastos pessoais)</label>' + cardRows + '</div>'
+      + '<div class="field" style="margin-top:18px;"><label>Cartões cadastrados</label>'
+        + '<div class="note" style="margin:-2px 0 8px;">O 🎨 abre o símbolo e a cor do cartão — é como ele aparece nas listas e nos gráficos.</div>'
+        + cardRows + '</div>'
       + '<button type="button" id="add-card-btn" class="secondary-btn">+ Adicionar cartão</button>'
       + contaSectionHTML()
       + licencasSectionHTML()
@@ -5297,6 +5778,9 @@
         + '<button type="button" class="secondary-btn" id="copiar-convite" style="width:auto;padding:8px 14px;">Copiar</button>'
       + '</div>'
       + (email ? '<div class="note" style="margin-top:10px;">Conectado como <strong>' + escapeHTML(email) + '</strong></div>' : '')
+      + '<label class="auth-lembrar" style="margin:12px 0 6px;"><input type="checkbox" id="cfg-lembrar"' + (lembrarLigado() ? ' checked' : '') + '>'
+        + '<span><b>Continuar conectado neste aparelho</b>'
+        + '<small>Desmarque num computador emprestado: a sessão passa a acabar quando o navegador fechar. Não muda nada nos seus lançamentos.</small></span></label>'
       + '<button type="button" id="btn-sair-conta" class="secondary-btn" style="margin-top:8px;">Sair desta conta</button>'
       + '</div>';
   }
@@ -5672,6 +6156,208 @@
   }
   function closeAppsModal(){ appsModalEl.classList.add('hidden'); }
 
+  /* ---------- Janela do cartão (símbolo e cor) ----------
+     Mexe no rascunho das configurações, não no que está salvo: só vale quando
+     a pessoa aperta Salvar lá fora, igual ao resto da janela de configurações. */
+
+  var cartaoEditando = null;   // {idx, nome, icone, cor}
+
+  function openCartaoModal(idx){
+    var d = state.settingsDraft;
+    if (!d || !d.cards[idx]) return;
+    var nome = d.cards[idx];
+    cartaoEditando = {
+      idx: idx,
+      nome: nome,
+      icone: (d.cardIcons || {})[nome] || null,
+      cor: (d.cardColors || {})[nome] || null
+    };
+    renderCartaoModal();
+    cartaoModalEl.classList.remove('hidden');
+    cartaoPanelEl.scrollTop = 0;
+  }
+  function closeCartaoModal(){
+    cartaoModalEl.classList.add('hidden');
+    cartaoEditando = null;
+  }
+
+  // O que aparece agora: o escolhido pela pessoa ou, na falta, o que o app
+  // deduz do nome (marca conhecida, senão a inicial).
+  function cartaoPreviaIcone(){
+    if (cartaoEditando.icone) return cartaoEditando.icone;
+    var m = marcaConhecida(cartaoEditando.nome);
+    if (m) return m.icone;
+    return (String(cartaoEditando.nome || '?').trim().charAt(0) || '?').toUpperCase();
+  }
+  function cartaoPreviaCor(){
+    if (cartaoEditando.cor) return cartaoEditando.cor;
+    var m = marcaConhecida(cartaoEditando.nome);
+    return m ? m.cor : CARD_COLORS[hashString(cartaoEditando.nome) % CARD_COLORS.length];
+  }
+
+  function renderCartaoModal(){
+    if (!cartaoEditando) return;
+    var cor = cartaoPreviaCor();
+    var ic = cartaoPreviaIcone();
+    var inicial = (String(cartaoEditando.nome || '?').trim().charAt(0) || '?').toUpperCase();
+    var marca = marcaConhecida(cartaoEditando.nome);
+    var padrao = !cartaoEditando.icone && !cartaoEditando.cor;
+
+    var cores = CORES_CARTAO.map(function(c){
+      return '<button type="button" class="escolha-cor' + (cartaoEditando.cor === c ? ' is-on' : '') + '"'
+        + ' style="background:' + c + ';color:' + c + ';" data-cor="' + c + '" title="' + c + '"></button>';
+    }).join('');
+
+    var icones = [inicial].concat(ICONES_CARTAO).map(function(i){
+      return '<button type="button" class="escolha-ic' + (ic === i ? ' is-on' : '') + '"'
+        + ' data-icone="' + escapeHTML(i) + '">' + escapeHTML(i) + '</button>';
+    }).join('');
+
+    cartaoPanelEl.innerHTML = ''
+      + '<h2>Aparência do cartão</h2>'
+      + '<div class="cartao-previa">'
+        + '<span class="card-mark card-mark-lg" style="background:' + cor + ';color:' + textoSobre(cor) + ';'
+          + 'box-shadow:0 0 16px ' + hexToRgba(cor, 0.55) + ';">' + escapeHTML(ic) + '</span>'
+        + '<span><span class="cartao-previa-nome">' + escapeHTML(cartaoEditando.nome) + '</span>'
+          + '<span class="cartao-previa-dica">' + (padrao
+              ? (marca ? 'Do jeito que o app reconheceu a marca.' : 'Cor e letra que o app escolheu sozinho.')
+              : 'Do seu jeito.') + '</span></span>'
+      + '</div>'
+      + '<div class="field"><label>Cor</label><div class="escolha-grade">' + cores + '</div></div>'
+      + '<div class="field"><label>Símbolo</label><div class="escolha-grade">' + icones + '</div>'
+        + '<div class="note" style="margin:8px 0 0;">Não uso a logomarca do banco aqui: logo de banco é marca registrada '
+        + 'e não posso desenhar nem distribuir. Cor da marca com a inicial dá o mesmo reconhecimento de longe.</div></div>'
+      + (padrao ? '' : '<button type="button" class="secondary-btn" data-action="cartao-padrao" style="margin-top:6px;">Voltar ao padrão</button>')
+      + '<div class="settings-actions" style="margin-top:18px;">'
+        + '<button type="button" class="secondary-btn" data-action="fechar-cartao">Cancelar</button>'
+        + '<button type="button" class="submit-btn" data-action="salvar-cartao" style="background:var(--neon2);color:#06222c;">Usar este</button>'
+      + '</div>';
+  }
+
+  /* ---------- Calendário ----------
+     O <input type="date"> abre o calendário do sistema, que é branco no
+     Windows e não tem nada a ver com o app. Este aqui é desenhado com as cores
+     e o traço do resto da tela, e ainda cabe atalho ("daqui a 12 meses"), que
+     é como as pessoas realmente pensam num prazo. */
+
+  var DIAS_SEMANA = ['D','S','T','Q','Q','S','S'];
+  var agendaEstado = null;   // {campo, mesVisto, escolhido, minimo}
+
+  function abrirAgenda(campoEl){
+    if (!campoEl) return;
+    var atual = campoEl.value || '';
+    var form = campoEl.closest('form');
+    var dataEl = form ? form.querySelector('.date-input') : null;
+    // O prazo nunca pode ser antes do próprio lançamento.
+    var minimo = (dataEl && dataEl.value) ? dataEl.value : todayISO();
+    var base = atual || monthKeyAdd(monthKeyFromDate(minimo), 11) + '-' + String(minimo).slice(8,10);
+    agendaEstado = {
+      campo: campoEl,
+      mesVisto: monthKeyFromDate(base),
+      escolhido: atual || null,
+      minimo: minimo
+    };
+    renderAgenda();
+    agendaModalEl.classList.remove('hidden');
+  }
+  function fecharAgenda(){
+    agendaModalEl.classList.add('hidden');
+    agendaEstado = null;
+  }
+
+  function renderAgenda(){
+    if (!agendaEstado) return;
+    var mk = agendaEstado.mesVisto;
+    var p = mk.split('-');
+    var ano = Number(p[0]), mes = Number(p[1]);
+    var primeiro = new Date(ano, mes - 1, 1);
+    var diasNoMes = new Date(ano, mes, 0).getDate();
+    var comecaEm = primeiro.getDay();
+    var hoje = todayISO();
+
+    var celulas = '';
+    // Sobra do mês anterior, só pra grade não começar torta.
+    var anterior = monthKeyAdd(mk, -1);
+    var diasAntes = new Date(Number(anterior.split('-')[0]), Number(anterior.split('-')[1]), 0).getDate();
+    for (var b = comecaEm - 1; b >= 0; b--){
+      celulas += '<button type="button" class="ag-dia fora" data-ir="' + anterior + '">' + (diasAntes - b) + '</button>';
+    }
+    for (var d = 1; d <= diasNoMes; d++){
+      var iso = mk + '-' + String(d).padStart(2, '0');
+      var cls = 'ag-dia';
+      if (iso === agendaEstado.escolhido) cls += ' is-on';
+      else if (iso === hoje) cls += ' hoje';
+      var bloqueado = iso < agendaEstado.minimo;
+      celulas += '<button type="button" class="' + cls + '" data-dia="' + iso + '"'
+        + (bloqueado ? ' disabled title="Antes da data do lançamento"' : '') + '>' + d + '</button>';
+    }
+    // Completa a última semana com o começo do mês seguinte.
+    var usadas = comecaEm + diasNoMes;
+    var faltam = (7 - (usadas % 7)) % 7;
+    var seguinte = monthKeyAdd(mk, 1);
+    for (var f = 1; f <= faltam; f++){
+      celulas += '<button type="button" class="ag-dia fora" data-ir="' + seguinte + '">' + f + '</button>';
+    }
+
+    var atalhos = [6, 12, 24, 36].map(function(n){
+      var alvo = monthKeyAdd(monthKeyFromDate(agendaEstado.minimo), n - 1);
+      var dia = Number(String(agendaEstado.minimo).slice(8, 10)) || 1;
+      return '<button type="button" class="ag-atalho" data-atalho="' + dateInMonth(alvo, dia) + '">'
+        + n + ' meses</button>';
+    }).join('');
+
+    agendaPanelEl.innerHTML = ''
+      + '<h2>Até quando repete?</h2>'
+      + '<div class="note" style="margin:4px 0 14px;">Escolha o <b>último mês</b> em que essa conta ainda vai cair.</div>'
+      + '<div class="ag-topo">'
+        + '<span class="ag-mes">' + escapeHTML(monthLabelFromKey(mk)) + '</span>'
+        + '<span class="ag-navs">'
+          + '<button type="button" class="ag-nav" data-ir="' + monthKeyAdd(mk, -1) + '" aria-label="Mês anterior">‹</button>'
+          + '<button type="button" class="ag-nav" data-ir="' + monthKeyAdd(mk, 1) + '" aria-label="Próximo mês">›</button>'
+        + '</span>'
+      + '</div>'
+      + '<div class="ag-semana">' + DIAS_SEMANA.map(function(x){ return '<span>' + x + '</span>'; }).join('') + '</div>'
+      + '<div class="ag-grade">' + celulas + '</div>'
+      + '<div class="note" style="margin:14px 0 0;">Ou conte a partir do lançamento:</div>'
+      + '<div class="ag-atalhos">' + atalhos + '</div>'
+      + '<div class="settings-actions" style="margin-top:18px;">'
+        + '<button type="button" class="secondary-btn" data-action="fechar-agenda">Cancelar</button>'
+        + '<button type="button" class="submit-btn" data-action="usar-agenda"'
+          + (agendaEstado.escolhido ? '' : ' disabled')
+          + ' style="background:var(--neon2);color:#06222c;">Usar esta data</button>'
+      + '</div>';
+  }
+
+  function usarDataDaAgenda(){
+    if (!agendaEstado || !agendaEstado.escolhido) return;
+    var campo = agendaEstado.campo;
+    var iso = agendaEstado.escolhido;
+    campo.value = iso;
+    var linha = campo.closest('.prazo-fixo-field');
+    if (linha){
+      var txt = linha.querySelector('.prazo-txt');
+      if (txt) txt.textContent = rotuloPrazo(iso);
+      var dica = linha.querySelector('.prazo-dica');
+      if (dica) dica.textContent = 'Depois desse mês ele para de aparecer sozinho. O que já passou continua no histórico.';
+    }
+    fecharAgenda();
+  }
+
+  function salvarAparenciaCartao(){
+    if (!cartaoEditando) return;
+    var d = state.settingsDraft;
+    if (!d) return closeCartaoModal();
+    // O nome pode ter sido editado na caixa de texto enquanto a janela estava
+    // aberta; quem manda é o que está no rascunho agora.
+    var nome = d.cards[cartaoEditando.idx] || cartaoEditando.nome;
+    d.cardIcons = d.cardIcons || {};
+    d.cardColors = d.cardColors || {};
+    if (cartaoEditando.icone) d.cardIcons[nome] = cartaoEditando.icone; else delete d.cardIcons[nome];
+    if (cartaoEditando.cor) d.cardColors[nome] = cartaoEditando.cor; else delete d.cardColors[nome];
+    closeCartaoModal();
+    renderSettingsModal();
+  }
+
   function appExtraPorId(id){
     return APPS_EXTRAS.filter(function(a){ return a.id === id; })[0] || null;
   }
@@ -5958,9 +6644,7 @@
       return chaves.map(function(k){
         var valor = metas[k];
         var usos = quantosUsam(tipo, k);
-        var selo = tipo === 'cartao'
-          ? '<span class="card-dot" style="background:'+cardColorFor(k)+';"></span>'
-          : catChipHTML(k, 22);
+        var selo = tipo === 'cartao' ? cardChipHTML(k) : catChipHTML(k, 22);
         return '<div class="meta-linha-cfg">'
           + '<span class="meta-cfg-nome">' + selo
             + '<span>' + escapeHTML(k)
@@ -6331,6 +7015,28 @@
       el.style.display = (!ehFixo && metodo !== 'debito') ? 'block' : 'none';
     });
 
+    // O prazo só existe quando é fixo. Deixando de ser fixo, o prazo é
+    // esquecido — senão um "até março" invisível iria junto ao salvar.
+    var prazoCaixa = form.querySelector('.prazo-fixo-field');
+    if (prazoCaixa){
+      // Na aba Contas Fixas tudo que se cadastra já é fixo — lá não existe a
+      // pergunta "é fixo?", então a caixa fica sempre à vista.
+      var fixoAqui = prazoCaixa.getAttribute('data-sempre-fixo') === '1' ? true : ehFixo;
+      prazoCaixa.style.display = fixoAqui ? 'block' : 'none';
+      var prazoSel = prazoCaixa.querySelector('.prazo-toggle-select');
+      var prazoInp = prazoCaixa.querySelector('.prazo-ate-input');
+      if (!fixoAqui){
+        if (prazoSel) prazoSel.value = 'sempre';
+        if (prazoInp) prazoInp.value = '';
+      }
+      var comPrazo = fixoAqui && prazoSel && prazoSel.value === 'ate';
+      var linha = prazoCaixa.querySelector('.prazo-data-linha');
+      if (linha) linha.style.display = comPrazo ? 'flex' : 'none';
+      if (!comPrazo && prazoInp) prazoInp.value = '';
+      var txt = prazoCaixa.querySelector('.prazo-txt');
+      if (txt && (!prazoInp || !prazoInp.value)) txt.textContent = 'Escolher até quando';
+    }
+
     // Se a pergunta "foi parcelado?" saiu da tela, ela volta pra "não" — senão
     // um "sim" escondido seguiria valendo na hora de salvar.
     var tog = form.querySelector('.installment-toggle-select');
@@ -6356,6 +7062,8 @@
     el = form.querySelector('.card-select'); if (el) draft.card = el.value;
     el = form.querySelector('.custom-card-input'); if (el) draft.customCard = el.value;
     el = form.querySelector('.fixed-toggle-select'); if (el) draft.fixedToggle = el.value;
+    el = form.querySelector('.prazo-toggle-select'); if (el) draft.prazoToggle = el.value;
+    el = form.querySelector('.prazo-ate-input'); if (el) draft.prazoAte = el.value;
     el = form.querySelector('.installment-toggle-select'); if (el) draft.installmentToggle = el.value;
     el = form.querySelector('.installments-total-input'); if (el) draft.installmentsTotal = el.value;
     el = form.querySelector('.installments-paid-input'); if (el) draft.installmentsPaid = el.value;
@@ -6392,6 +7100,18 @@
     el = form.querySelector('.custom-card-input'); if (el && draft.customCard != null) el.value = draft.customCard;
     el = form.querySelector('.fixed-toggle-select');
     if (el && draft.fixedToggle != null){ el.value = draft.fixedToggle; el.dispatchEvent(new Event('change', {bubbles:true})); }
+    // O prazo volta antes do change do seletor, senão o campo escondido
+    // limparia a data que a pessoa tinha escolhido.
+    el = form.querySelector('.prazo-ate-input'); if (el && draft.prazoAte != null) el.value = draft.prazoAte;
+    el = form.querySelector('.prazo-toggle-select');
+    if (el && draft.prazoToggle != null){
+      el.value = draft.prazoToggle;
+      var campoAte = form.querySelector('.prazo-ate-input');
+      if (campoAte && draft.prazoAte) campoAte.value = draft.prazoAte;
+      el.dispatchEvent(new Event('change', {bubbles:true}));
+      var txt = form.querySelector('.prazo-txt');
+      if (txt && draft.prazoAte) txt.textContent = rotuloPrazo(draft.prazoAte);
+    }
     el = form.querySelector('.installment-toggle-select');
     if (el && draft.installmentToggle != null){ el.value = draft.installmentToggle; el.dispatchEvent(new Event('change', {bubbles:true})); }
     el = form.querySelector('.installments-total-input'); if (el && draft.installmentsTotal != null) el.value = draft.installmentsTotal;
@@ -6415,8 +7135,23 @@
       if (!m.name || !m.name.trim()) m.name = 'Pessoa';
       m.percentage = Number(m.percentage) || 0;
     });
-    d.cards = (d.cards || []).map(function(c){ return (c||'').trim(); }).filter(function(c){ return c.length > 0; });
+    var originais = d.cardsOriginais || [];
+    var brutos = (d.cards || []).map(function(c){ return (c||'').trim(); });
+    var iconesAntes = d.cardIcons || {}, coresAntes = d.cardColors || {};
+    var icones = {}, cores = {};
+    brutos.forEach(function(nome, i){
+      if (!nome) return;
+      var antigo = originais[i];
+      var ic = iconesAntes[nome] || (antigo ? iconesAntes[antigo] : null);
+      var cor = coresAntes[nome] || (antigo ? coresAntes[antigo] : null);
+      if (ic) icones[nome] = ic;
+      if (cor) cores[nome] = cor;
+    });
+    d.cards = brutos.filter(function(c){ return c.length > 0; });
     if (!d.cards.length) d.cards = DEFAULT_CARDS.slice();
+    d.cardIcons = icones;
+    d.cardColors = cores;
+    delete d.cardsOriginais;
     var ok = await saveSettings(d);
     if (!ok){ alert('Não foi possível salvar as configurações. Tente de novo.'); return; }
     var formDraft = captureAddFormDraft();
@@ -6531,6 +7266,19 @@
     var extra = {};
     var fixedToggleEl = form.querySelector('.fixed-toggle-select');
     extra.fixed = !!fixedToggleEl && fixedToggleEl.value === 'sim';
+
+    // Prazo do gasto fixo. Só vale quando é fixo E a pessoa escolheu "tem
+    // prazo" — nos outros casos vai null e a conta repete sem fim.
+    extra.fixedUntil = null;
+    if (extra.fixed){
+      var prazoSel = form.querySelector('.prazo-toggle-select');
+      if (prazoSel && prazoSel.value === 'ate'){
+        var ate = (form.querySelector('.prazo-ate-input') || {}).value || '';
+        if (!ate){ alert('Escolha até quando esse gasto fixo vai.'); return; }
+        if (ate < date){ alert('O prazo não pode ser antes da data do lançamento.'); return; }
+        extra.fixedUntil = ate;
+      }
+    }
     // Forma de pagamento agora vale pros dois formulários — é ela que alimenta
     // o quadro "Contas por cartão" no Resumo.
     var paymentMethodEl = form.querySelector('.payment-method-select');
@@ -6650,10 +7398,18 @@
 
     var pessoa = form.querySelector('.fixa-person-select').value;
 
+    var ateQuando = null;
+    var prazoSel = form.querySelector('.prazo-toggle-select');
+    if (prazoSel && prazoSel.value === 'ate'){
+      ateQuando = (form.querySelector('.prazo-ate-input') || {}).value || '';
+      if (!ateQuando){ alert('Escolha até quando essa conta fixa vai.'); return; }
+      if (ateQuando < data){ alert('O prazo não pode ser antes do mês em que a conta começa.'); return; }
+    }
+
     var nova = {
       id: generateId(), person: pessoa, type: 'casal',
       category: categoria, description: descricao, value: valor, date: data,
-      thumb: null, items: null, fixed: true,
+      thumb: null, items: null, fixed: true, fixedUntil: ateQuando,
       installment: false, installmentsTotal: null, installmentsPaid: null
     };
     state.expenses.push(nova);
@@ -6852,6 +7608,124 @@
   var ONLY_MONEY_RE = new RegExp('^R?\\$?\\s*(' + MONEY_SRC + ')\\s*[A-Za-z]?$');
 
   /* ---------- Parser principal ---------- */
+  /* ---------- Quem vendeu ----------
+     O cabeçalho do cupom traz a razão social ("SHIBATA SUPERMERCADOS LTDA",
+     "CIA BRASILEIRA DE DISTRIBUICAO"), que ninguém escreveria à mão na
+     descrição. Aqui isso vira o nome que a pessoa usa: "Shibata". Duas
+     tentativas, nessa ordem: procurar uma rede conhecida em qualquer lugar do
+     texto (o OCR erra o cabeçalho com frequência, mas o nome costuma aparecer
+     mais de uma vez), e, se não achar, limpar a primeira linha que pareça um
+     nome de loja. */
+
+  var REDES = [
+    {nome:'Shibata',       re:/SHIBATA/i,                    categoria:'Mercado'},
+    {nome:'Assaí',         re:/ASSAI|ASSA[ÍI]\s*ATACADISTA/i, categoria:'Mercado'},
+    {nome:'Atacadão',      re:/ATACAD[ÃA]O/i,                categoria:'Mercado'},
+    {nome:'Carrefour',     re:/CARREFOUR/i,                  categoria:'Mercado'},
+    {nome:'Pão de Açúcar', re:/P[ÃA]O\s*DE\s*A[ÇC][ÚU]CAR/i, categoria:'Mercado'},
+    {nome:'Extra',         re:/\bEXTRA\s*(HIPER|SUPER|MERCADO)?\b/i, categoria:'Mercado'},
+    {nome:'Dia',           re:/\bDIA\s*(SUPERMERCADO|BRASIL)\b/i, categoria:'Mercado'},
+    {nome:'Tenda',         re:/TENDA\s*ATACADO/i,            categoria:'Mercado'},
+    {nome:'Sonda',         re:/SONDA\s*SUPERMERCADO/i,       categoria:'Mercado'},
+    {nome:'Nagumo',        re:/NAGUMO/i,                     categoria:'Mercado'},
+    {nome:'Semar',         re:/\bSEMAR\b/i,                  categoria:'Mercado'},
+    {nome:'Roldão',        re:/ROLD[ÃA]O/i,                  categoria:'Mercado'},
+    {nome:'Enxuto',        re:/\bENXUTO\b/i,                 categoria:'Mercado'},
+    {nome:'Mambo',         re:/\bMAMBO\b/i,                  categoria:'Mercado'},
+    {nome:'Sam\'s Club',   re:/SAM.?S\s*CLUB/i,              categoria:'Mercado'},
+    {nome:'Makro',         re:/\bMAKRO\b/i,                  categoria:'Mercado'},
+    {nome:'Big',           re:/\bBIG\s*(BOMPRE[ÇC]O)?\b/i,   categoria:'Mercado'},
+    {nome:'Zaffari',       re:/ZAFFARI/i,                    categoria:'Mercado'},
+    {nome:'Angeloni',      re:/ANGELONI/i,                   categoria:'Mercado'},
+    {nome:'Drogasil',      re:/DROGASIL/i,                   categoria:'Saúde'},
+    {nome:'Droga Raia',    re:/DROGA\s*RAIA|\bRAIA\b/i,      categoria:'Saúde'},
+    {nome:'Pague Menos',   re:/PAGUE\s*MENOS/i,              categoria:'Saúde'},
+    {nome:'Drogaria SP',   re:/DROGARIA\s*S[ÃA]O\s*PAULO/i,  categoria:'Saúde'},
+    {nome:'Ultrafarma',    re:/ULTRAFARMA/i,                 categoria:'Saúde'},
+    {nome:'Panvel',        re:/PANVEL/i,                     categoria:'Saúde'},
+    {nome:'Ipiranga',      re:/IPIRANGA/i,                   categoria:'Transporte'},
+    {nome:'Shell',         re:/\bSHELL\b/i,                  categoria:'Transporte'},
+    {nome:'Petrobras',     re:/PETROBRAS|\bBR\s*DISTRIBUIDORA\b/i, categoria:'Transporte'},
+    {nome:'Ale',           re:/\bALE\s*COMBUST[ÍI]VEIS\b/i,  categoria:'Transporte'},
+    {nome:'Leroy Merlin',  re:/LEROY\s*MERLIN/i,             categoria:'Outros'},
+    {nome:'Telhanorte',    re:/TELHANORTE/i,                 categoria:'Outros'},
+    {nome:'Americanas',    re:/AMERICANAS/i,                 categoria:'Outros'},
+    {nome:'Magazine Luiza',re:/MAGAZINE\s*LUIZA|MAGALU/i,    categoria:'Outros'},
+    {nome:'Casas Bahia',   re:/CASAS\s*BAHIA/i,              categoria:'Outros'},
+    {nome:'Petz',          re:/\bPETZ\b/i,                   categoria:'Outros'},
+    {nome:'Cobasi',        re:/COBASI/i,                     categoria:'Outros'}
+  ];
+
+  function lojaConhecida(texto){
+    var t = String(texto || '');
+    if (!t) return null;
+    for (var i = 0; i < REDES.length; i++){
+      if (REDES[i].re.test(t)) return REDES[i];
+    }
+    return null;
+  }
+
+  // Palavras que descrevem o tipo de negócio ou a forma jurídica: nenhuma
+  // delas é o nome que a pessoa usa pra falar da loja.
+  var LIXO_RAZAO_SOCIAL = /^(LTDA|ME|EPP|EIRELI|S\/?A|SA|CIA|COMPANHIA|COM|COMERCIO|COMÉRCIO|DE|DA|DO|DOS|DAS|E|ALIMENTOS|PRODUTOS|DISTRIBUIDORA|DISTRIBUICAO|DISTRIBUIÇÃO|SUPERMERCADO|SUPERMERCADOS|MERCADO|MERCADOS|HIPERMERCADO|ATACADISTA|ATACADO|VAREJO|VAREJISTA|FARMACIA|FARMÁCIA|DROGARIA|DROGARIAS|POSTO|AUTO|SERVICO|SERVIÇO|SERVICOS|SERVIÇOS|COMERCIAL|INDUSTRIA|INDÚSTRIA|LOJA|LOJAS|FILIAL|MATRIZ)$/i;
+
+  function acharLoja(linhas){
+    for (var j = 0; j < Math.min(linhas.length, 6); j++){
+      var lj = linhas[j];
+      if (!/[A-Za-zÀ-ÿ]{3,}/.test(lj)) continue;
+      if (NOISE_RE.test(lj) || TABLE_HEAD_RE.test(lj) || ANCHOR_STRONG_RE.test(lj)) continue;
+      var limpo = lj.replace(/[^A-Za-zÀ-ÿ0-9 .,\-&']/g, ' ').replace(/\s+/g, ' ').trim();
+      if (limpo.length < 3) continue;
+      var bonito = enxugarRazaoSocial(limpo);
+      if (bonito) return bonito;
+    }
+    return null;
+  }
+
+  /* "SHIBATA SUPERMERCADOS LTDA" -> "Shibata".
+     "COMERCIAL DE ALIMENTOS SAO JOSE LTDA ME" -> "Sao Jose".
+     O nome de verdade quase sempre está no meio: primeiro pulamos as palavras
+     genéricas do começo (COMERCIAL, DE, ALIMENTOS, SUPERMERCADO), depois
+     juntamos o que vem até a próxima genérica. */
+  function enxugarRazaoSocial(bruto){
+    var palavras = String(bruto).split(' ')
+      .map(function(w){ return w.replace(/[.,]+$/, ''); })
+      .filter(function(w){ return w.length > 0; });
+
+    var marca = [];
+    var comecou = false;
+    for (var i = 0; i < palavras.length; i++){
+      var w = palavras[i];
+      var generica = LIXO_RAZAO_SOCIAL.test(w) || /^\d+$/.test(w);
+      if (!comecou){
+        if (generica) continue;    // ainda no cabeçalho genérico
+        comecou = true;
+      } else if (generica){
+        break;                     // acabou o nome
+      }
+      marca.push(w);
+      if (marca.length === 3) break;   // nome comprido demais não ajuda ninguém
+    }
+
+    if (!marca.length){
+      // A razão social inteira era genérica: usa as duas primeiras palavras.
+      marca = palavras.slice(0, 2);
+    }
+    var nome = marca.join(' ').trim();
+    if (nome.length < 3) return null;
+    return maiusculaBonita(nome);
+  }
+
+  // GRITANDO EM CAIXA ALTA vira Caixa Alta Normal.
+  function maiusculaBonita(txt){
+    return String(txt).toLowerCase().split(' ').map(function(w){
+      if (!w) return w;
+      // "de", "da", "do" no meio ficam minúsculos, como se escreve de verdade.
+      if (['de','da','do','dos','das','e'].indexOf(w) !== -1) return w;
+      return w.charAt(0).toUpperCase() + w.slice(1);
+    }).join(' ').replace(/^./, function(c){ return c.toUpperCase(); });
+  }
+
   function parseReceiptText(rawText){
     var moneyRe = new RegExp(MONEY_SRC, 'g');
     var text = normalizeOcrText(rawText);
@@ -6859,7 +7733,7 @@
       .map(function(l){ return l.replace(/\s+/g, ' ').trim(); })
       .filter(function(l){ return l.length > 0; }));
 
-    var result = { date:null, total:null, storeName:null, itemCountPrinted:null, items:[], rawText:String(rawText||'') };
+    var result = { date:null, total:null, storeName:null, storeCategory:null, itemCountPrinted:null, items:[], rawText:String(rawText||'') };
 
     /* --- Data --- */
     for (var i = 0; i < allLines.length; i++){
@@ -6875,12 +7749,11 @@
     }
 
     /* --- Nome da loja --- */
-    for (var j = 0; j < Math.min(allLines.length, 6); j++){
-      var lj = allLines[j];
-      if (/[A-Za-zÀ-ÿ]{3,}/.test(lj) && !NOISE_RE.test(lj) && !TABLE_HEAD_RE.test(lj) && !ANCHOR_STRONG_RE.test(lj)){
-        var cl = lj.replace(/[^A-Za-zÀ-ÿ0-9 .,\-&]/g, '').trim();
-        if (cl.length >= 3){ result.storeName = cl; break; }
-      }
+    result.storeName = acharLoja(allLines);
+    var conhecida = lojaConhecida(result.storeName) || lojaConhecida(text);
+    if (conhecida){
+      result.storeName = conhecida.nome;
+      result.storeCategory = conhecida.categoria || null;
     }
 
     /* --- Total impresso (só pra conferência) --- */
@@ -7103,11 +7976,26 @@
 
   function applyOcrResult(formEl, parsed){
     var filled = false;
+    var lojaDita = null;
 
     var descInput = formEl.querySelector('.description-input');
     if (descInput && !descInput.value.trim() && parsed.storeName){
       descInput.value = parsed.storeName;
+      lojaDita = parsed.storeName;
       filled = true;
+    }
+
+    // Rede conhecida também sugere a categoria — mas só se a categoria ainda
+    // estiver no padrão e a casa realmente tiver essa categoria na lista.
+    // Se a pessoa já escolheu, ninguém mexe.
+    var catSel = formEl.querySelector('.category-select');
+    if (catSel && parsed.storeCategory && !formEl.dataset.catTocada){
+      var temOpcao = Array.prototype.some.call(catSel.options, function(o){ return o.value === parsed.storeCategory; });
+      var noPadrao = catSel.selectedIndex === 0;
+      if (temOpcao && noPadrao && catSel.value !== parsed.storeCategory){
+        catSel.value = parsed.storeCategory;
+        filled = true;
+      }
     }
 
     var dateInput = formEl.querySelector('.date-input');
@@ -7143,7 +8031,7 @@
       return;
     }
 
-    var msg = '✅ ' + readCount + (readCount === 1 ? ' item lido' : ' itens lidos');
+    var msg = '✅ ' + (lojaDita ? lojaDita + ' · ' : '') + readCount + (readCount === 1 ? ' item lido' : ' itens lidos');
     var kind = 'ok';
     // A própria nota costuma imprimir quantos itens tem — se o número que
     // lemos for diferente, algum item ficou de fora e é melhor avisar.
@@ -7286,6 +8174,13 @@
 
       var view = e.target.closest('[data-action="view-receipt"]');
       if (view){ handleViewReceipt(view.getAttribute('data-id')); return; }
+
+      var abrirCal = e.target.closest('[data-action="abrir-calendario"]');
+      if (abrirCal){
+        var caixa = abrirCal.closest('.prazo-fixo-field');
+        abrirAgenda(caixa ? caixa.querySelector('.prazo-ate-input') : null);
+        return;
+      }
 
       var remPending = e.target.closest('[data-action="remove-photo"]');
       if (remPending){ state.pendingPhoto = null; refreshPhotoSlot(remPending.closest('form')); return; }
@@ -7456,12 +8351,13 @@
         render();
         return;
       }
-      if (e.target.matches('.fixed-toggle-select')){
+      if (e.target.matches('.fixed-toggle-select') || e.target.matches('.prazo-toggle-select')){
         atualizarCamposPagamento(e.target.closest('form'));
         return;
       }
       if (e.target.matches('.category-select')){
         var form = e.target.closest('form');
+        form.dataset.catTocada = '1';
         var customField = form.querySelector('.custom-cat-field');
         customField.style.display = (e.target.value === '__custom__') ? 'block' : 'none';
         return;
@@ -7557,6 +8453,10 @@
         state.settingsDraft.cards[cidx] = e.target.value;
         return;
       }
+      if (e.target.matches('#cfg-lembrar')){
+        mudarLembrar(e.target.checked);
+        return;
+      }
       if (e.target.matches('#lic-busca')){
         licFiltro.busca = e.target.value;
         pintarListaLicencas();
@@ -7589,6 +8489,8 @@
         renderSettingsModal();
         return;
       }
+      var edCartao = e.target.closest('[data-action="editar-cartao"]');
+      if (edCartao){ openCartaoModal(Number(edCartao.getAttribute('data-idx'))); return; }
       if (e.target.closest('#save-settings-btn')){ saveSettingsAndClose(); return; }
       if (e.target.closest('#cancel-settings-btn')){ closeSettingsModal(); return; }
       if (e.target.closest('#btn-gerar-licenca')){ acaoGerarLicenca(); return; }
@@ -7680,6 +8582,46 @@
     });
     document.getElementById('appfull-voltar').addEventListener('click', fecharAppExtra);
     ouvirAppExtra();
+
+    agendaModalEl.addEventListener('click', function(e){ if (e.target === agendaModalEl) fecharAgenda(); });
+    agendaPanelEl.addEventListener('click', function(e){
+      if (e.target.closest('[data-action="fechar-agenda"]')){ fecharAgenda(); return; }
+      if (e.target.closest('[data-action="usar-agenda"]')){ usarDataDaAgenda(); return; }
+      var ir = e.target.closest('[data-ir]');
+      if (ir){ agendaEstado.mesVisto = ir.getAttribute('data-ir'); renderAgenda(); return; }
+      var dia = e.target.closest('[data-dia]');
+      if (dia){ agendaEstado.escolhido = dia.getAttribute('data-dia'); renderAgenda(); return; }
+      var at = e.target.closest('[data-atalho]');
+      if (at){
+        agendaEstado.escolhido = at.getAttribute('data-atalho');
+        agendaEstado.mesVisto = monthKeyFromDate(agendaEstado.escolhido);
+        renderAgenda();
+        return;
+      }
+    });
+
+    cartaoModalEl.addEventListener('click', function(e){ if (e.target === cartaoModalEl) closeCartaoModal(); });
+    cartaoPanelEl.addEventListener('click', function(e){
+      if (e.target.closest('[data-action="fechar-cartao"]')){ closeCartaoModal(); return; }
+      if (e.target.closest('[data-action="salvar-cartao"]')){ salvarAparenciaCartao(); return; }
+      if (e.target.closest('[data-action="cartao-padrao"]')){
+        cartaoEditando.icone = null; cartaoEditando.cor = null;
+        renderCartaoModal(); return;
+      }
+      var bc = e.target.closest('[data-cor]');
+      if (bc){
+        var cor = bc.getAttribute('data-cor');
+        // Tocar de novo na cor que já está marcada volta pro padrão do app.
+        cartaoEditando.cor = (cartaoEditando.cor === cor) ? null : cor;
+        renderCartaoModal(); return;
+      }
+      var bi = e.target.closest('[data-icone]');
+      if (bi){
+        var ic = bi.getAttribute('data-icone');
+        cartaoEditando.icone = (cartaoEditando.icone === ic) ? null : ic;
+        renderCartaoModal(); return;
+      }
+    });
 
     catsModalEl.addEventListener('click', function(e){ if (e.target === catsModalEl) closeCatsModal(); });
     catsPanelEl.addEventListener('click', function(e){
@@ -7857,6 +8799,10 @@
     appfullFrameEl = document.getElementById('appfull-frame');
     appfullNomeEl = document.getElementById('appfull-nome');
     appfullAcoesEl = document.getElementById('appfull-acoes');
+    cartaoModalEl = document.getElementById('cartao-modal');
+    cartaoPanelEl = document.getElementById('cartao-panel');
+    agendaModalEl = document.getElementById('agenda-modal');
+    agendaPanelEl = document.getElementById('agenda-panel');
     authScreenEl = document.getElementById('auth-screen');
     authCardEl = document.getElementById('auth-card');
     syncBarEl = document.getElementById('sync-bar');
