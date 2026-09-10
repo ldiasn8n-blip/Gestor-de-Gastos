@@ -703,24 +703,89 @@
   .cat-linha-uso{ display:block; font-size:11px; color:var(--ink-soft); font-weight:500; }
 
   #cats-modal{ z-index:80; }
-  #membro-modal, #ajuda-modal, #cats-modal, #metas-modal, #future-modal{
+
+  /* ---------- Apps extras ---------- */
+
+  #apps-modal{ z-index:86; }
+
+  .app-card{
+    display:flex; align-items:center; gap:12px;
+    padding:13px 12px; margin-bottom:10px;
+    border:1px solid var(--line); border-radius:12px;
+    background:var(--paper);
+  }
+  .app-card-ic{
+    width:42px; height:42px; border-radius:12px; flex:0 0 auto;
+    display:grid; place-items:center; font-size:20px;
+    background:var(--input-bg); border:1px solid var(--line);
+  }
+  .app-card-txt{ flex:1; min-width:0; }
+  .app-card-nome{ display:block; font-size:14.5px; font-weight:700; }
+  .app-card-desc{ display:block; font-size:12px; color:var(--ink-soft); margin-top:2px; line-height:1.45; }
+  .app-card-abrir{
+    flex:0 0 auto; padding:9px 15px; border-radius:9px; border:none;
+    background:var(--neon2); color:#06222c;
+    font-size:13px; font-weight:800; font-family:inherit; cursor:pointer;
+  }
+  .app-card-abrir:active{ transform:scale(0.96); }
+  .apps-vazio{
+    text-align:center; color:var(--ink-soft); font-size:12.5px; line-height:1.55;
+    padding:16px 12px; border:1px dashed var(--line); border-radius:12px; margin-top:4px;
+  }
+
+  /* A janela cheia onde o app extra roda, dentro de um iframe próprio: o
+     CSS e o JS dele ficam isolados e não encostam no Gestor. */
+  #appfull{
+    position:fixed; inset:0; z-index:120;
+    display:flex; flex-direction:column;
+    background:var(--paper);
+  }
+  #appfull.hidden{ display:none; }
+  #appfull-bar{
+    display:flex; align-items:center; gap:10px;
+    padding:7px 12px; border-bottom:1px solid var(--line);
+    background:var(--paper-raised); flex:0 0 auto;
+    padding-top:calc(7px + env(safe-area-inset-top));
+  }
+  #appfull-voltar{
+    display:flex; align-items:center; gap:6px;
+    padding:6px 11px; border-radius:9px;
+    border:1px solid var(--line); background:transparent; color:var(--ink);
+    font-size:13px; font-weight:700; font-family:inherit; cursor:pointer;
+  }
+  #appfull-voltar:hover{ border-color:var(--neon2); color:var(--neon2); }
+  #appfull-nome{ font-size:14px; font-weight:700; flex:1; min-width:0;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  /* Botões que o próprio app extra pede pra colocar aqui (ajuda, zerar…). */
+  #appfull-acoes{ display:flex; align-items:center; gap:5px; flex:0 0 auto; }
+  #appfull-acoes button{
+    width:30px; height:30px; border-radius:50%; padding:0; line-height:1;
+    border:1px solid var(--line); background:transparent; color:var(--ink-soft);
+    font-size:14px; font-weight:800; font-family:inherit;
+    display:grid; place-items:center; cursor:pointer;
+  }
+  #appfull-acoes button:hover{ border-color:var(--neon2); color:var(--neon2); }
+  #appfull-frame{ flex:1; width:100%; border:none; background:var(--paper); }
+
+  #membro-modal, #ajuda-modal, #cats-modal, #metas-modal, #future-modal, #apps-modal{
     position:fixed;inset:0;background:var(--backdrop);
     display:flex;align-items:flex-end;justify-content:center;z-index:70;
     opacity:1;visibility:visible;transition:opacity .18s ease, visibility .18s ease;
   }
-  #membro-modal.hidden, #ajuda-modal.hidden, #cats-modal.hidden, #metas-modal.hidden, #future-modal.hidden{opacity:0;visibility:hidden;pointer-events:none;}
+  #membro-modal.hidden, #ajuda-modal.hidden, #cats-modal.hidden, #metas-modal.hidden, #future-modal.hidden, #apps-modal.hidden{opacity:0;visibility:hidden;pointer-events:none;}
+  #apps-modal.hidden #apps-panel{ transform:translateY(24px); }
   #membro-modal.hidden #membro-panel{ transform:translateY(24px); }
   #ajuda-modal.hidden #ajuda-panel{ transform:translateY(24px); }
   #cats-modal.hidden #cats-panel{ transform:translateY(24px); }
   #future-modal.hidden #future-panel{ transform:translateY(24px); }
   #metas-modal.hidden #metas-panel{ transform:translateY(24px); }
-  #membro-panel, #ajuda-panel, #cats-panel, #metas-panel, #future-panel{
+  #membro-panel, #ajuda-panel, #cats-panel, #metas-panel, #future-panel, #apps-panel{
     background:var(--paper-raised);width:100%;max-width:480px;
     border-radius:18px 18px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));
     max-height:85vh;overflow-y:auto;box-shadow:var(--shadow-lg);
     transform:translateY(0);transition:transform .2s ease;
   }
-  #membro-panel h2, #ajuda-panel h2, #cats-panel h2, #metas-panel h2, #future-panel h2{font-size:17px;margin:0 0 6px;}
+  #membro-panel h2, #ajuda-panel h2, #cats-panel h2, #metas-panel h2, #future-panel h2, #apps-panel h2{font-size:17px;margin:0 0 6px;}
   #membro-panel .field{ margin-bottom:14px; }
   #membro-panel label.rot{ display:block; font-size:12px; color:var(--ink-soft); margin-bottom:6px; }
   #membro-panel input[type="text"], #membro-panel select{
@@ -1312,8 +1377,8 @@
 
   /* ---------- Tablet ---------- */
   @media (min-width:640px){
-    #settings-modal, #items-modal, #reset-modal, #future-modal, #metas-modal, #cats-modal, #ajuda-modal, #membro-modal{ align-items:center; }
-    #settings-panel, #items-panel, #reset-panel, #future-panel, #metas-panel, #cats-panel, #ajuda-panel, #membro-panel{ border-radius:16px; max-height:80vh; }
+    #settings-modal, #items-modal, #reset-modal, #future-modal, #metas-modal, #cats-modal, #ajuda-modal, #membro-modal, #apps-modal{ align-items:center; }
+    #settings-panel, #items-panel, #reset-panel, #future-panel, #metas-panel, #cats-panel, #ajuda-panel, #membro-panel, #apps-panel{ border-radius:16px; max-height:80vh; }
     #ajuda-panel{ max-width:560px; }
     .row2, .row2.installment-fields{ gap:14px; }
   }
@@ -1532,6 +1597,24 @@
   <div id="membro-panel"></div>
 </div>
 
+<div id="apps-modal" class="hidden">
+  <div id="apps-panel"></div>
+</div>
+
+<!--
+  Janela cheia dos apps extras. Cada app roda dentro do iframe abaixo, com o
+  HTML vindo de um bloco <script type="text/html"> lá embaixo. O iframe isola
+  o CSS e o JS do app extra do resto do Gestor, então um não quebra o outro.
+-->
+<div id="appfull" class="hidden">
+  <div id="appfull-bar">
+    <button type="button" id="appfull-voltar">← Voltar</button>
+    <span id="appfull-nome"></span>
+    <span id="appfull-acoes"></span>
+  </div>
+  <iframe id="appfull-frame" title="App extra"></iframe>
+</div>
+
 <!--
   Tesseract.js faz a leitura automática (OCR) das notas fiscais direto no
   navegador da pessoa, sem precisar de servidor nem de chave de API.
@@ -1654,6 +1737,23 @@
   var ajudaModalEl, ajudaPanelEl;
   var membroModalEl, membroPanelEl;
   var resetModalEl, resetPanelEl;
+  var appsModalEl, appsPanelEl, appfullEl, appfullFrameEl, appfullNomeEl, appfullAcoesEl;
+
+  /* ---------- Apps extras ----------
+     Cada app extra é uma página HTML completa guardada num bloco
+     <script type="text/html"> no fim do arquivo. Pra somar um app novo:
+     1) cole o HTML dele num bloco desses com um id novo;
+     2) acrescente uma linha aqui embaixo apontando pra esse id.
+     Nada mais precisa mudar. */
+  var APPS_EXTRAS = [
+    {
+      id: 'rachafacil',
+      nome: 'RachaFácil',
+      icone: '🤝',
+      fonte: 'src-rachafacil',
+      desc: 'Divide a conta de um rolê entre várias pessoas e diz quem paga quanto pra quem. Bom pra viagem, churrasco e república.'
+    }
+  ];
 
   function ensureSubTabDefaults(){
     state.settings.members.forEach(function(m){
@@ -3253,6 +3353,10 @@
         + '<span class="ic member-badge" style="background:' + m.color + ';">' + escapeHTML((m.name||'?').charAt(0).toUpperCase()) + '</span>'
         + '<span>' + escapeHTML(m.name) + '</span></button>';
     });
+    // Apps extras não é uma aba de conteúdo: ela abre uma janela e a aba que
+    // estava aberta continua onde estava.
+    html += '<button data-apps="1" class="tab-btn">'
+      + '<span class="ic">🧩</span><span>Apps extras</span></button>';
     tabbarEl.innerHTML = html;
   }
 
@@ -5512,7 +5616,9 @@
     ['Preciso de internet?',
      'Pra ver, não. Pra o outro celular receber o que você lançou, sim: o app guarda e envia sozinho assim que a internet voltar.'],
     ['Quero um atalho na tela de início',
-     'No menu do navegador, toque em <b>Adicionar à tela de início</b>. Vira um ícone igual a um aplicativo, sem precisar baixar nada.']
+     'No menu do navegador, toque em <b>Adicionar à tela de início</b>. Vira um ícone igual a um aplicativo, sem precisar baixar nada.'],
+    ['Pra que serve a aba Apps extras?',
+     'São ferramentas que vêm junto com o Gestor, sem custo a mais. Hoje tem o <b>RachaFácil</b>, pra dividir a conta de um rolê entre várias pessoas (viagem, churrasco, república). Elas abrem numa tela própria e <b>não mexem nas contas da casa</b> — o que você lança lá não entra no acerto do casal.']
   ];
 
   function openAjudaModal(){
@@ -5539,6 +5645,97 @@
     ajudaPanelEl.scrollTop = 0;
   }
   function closeAjudaModal(){ ajudaModalEl.classList.add('hidden'); }
+
+  /* ---------- Janela dos apps extras ---------- */
+
+  function openAppsModal(){
+    appsPanelEl.innerHTML = ''
+      + '<h2>🧩 Apps extras</h2>'
+      + '<div class="note" style="margin:6px 0 14px;">Ferramentas que vêm junto com o Gestor, sem custo nenhum a mais. '
+        + 'Abrem aqui dentro e não mexem nas contas da casa.</div>'
+      + APPS_EXTRAS.map(function(app){
+          return '<div class="app-card">'
+            + '<span class="app-card-ic">' + escapeHTML(app.icone) + '</span>'
+            + '<span class="app-card-txt">'
+              + '<span class="app-card-nome">' + escapeHTML(app.nome) + '</span>'
+              + '<span class="app-card-desc">' + escapeHTML(app.desc) + '</span>'
+            + '</span>'
+            + '<button type="button" class="app-card-abrir" data-abrir-app="' + escapeHTML(app.id) + '">Abrir</button>'
+            + '</div>';
+        }).join('')
+      + '<div class="apps-vazio">Mais apps aparecem aqui conforme forem saindo.<br>Não precisa atualizar nada: eles chegam junto com o Gestor.</div>'
+      + '<div class="settings-actions" style="margin-top:18px;">'
+        + '<button type="button" class="secondary-btn" data-action="fechar-apps">Fechar</button>'
+      + '</div>';
+    appsModalEl.classList.remove('hidden');
+    appsPanelEl.scrollTop = 0;
+  }
+  function closeAppsModal(){ appsModalEl.classList.add('hidden'); }
+
+  function appExtraPorId(id){
+    return APPS_EXTRAS.filter(function(a){ return a.id === id; })[0] || null;
+  }
+
+  // O HTML do app fica guardado como texto puro, e a tag de fim de script
+  // dele está escapada com uma barra a mais. Aqui a barra sai e o HTML volta
+  // ao normal, pronto pra virar página dentro do iframe.
+  function fonteDoApp(app){
+    var bloco = document.getElementById(app.fonte);
+    if (!bloco) return null;
+    return String(bloco.textContent || '').replace(/<\\\//g, '</');
+  }
+
+  function abrirAppExtra(id){
+    var app = appExtraPorId(id);
+    if (!app) return;
+    var html = fonteDoApp(app);
+    if (!html){
+      alert('Não consegui abrir o ' + app.nome + ' agora. Recarregue a página e tente de novo.');
+      return;
+    }
+    closeAppsModal();
+    appfullNomeEl.textContent = app.icone + ' ' + app.nome;
+    appfullAcoesEl.innerHTML = '';
+    // srcdoc mantém o app no mesmo endereço do Gestor, então o que ele salva
+    // no navegador continua salvo quando a pessoa voltar depois.
+    appfullFrameEl.setAttribute('srcdoc', html);
+    appfullEl.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function fecharAppExtra(){
+    appfullEl.classList.add('hidden');
+    // Descarrega o app ao sair: sem isso ele fica rodando escondido.
+    appfullFrameEl.removeAttribute('srcdoc');
+    appfullFrameEl.removeAttribute('src');
+    appfullNomeEl.textContent = '';
+    appfullAcoesEl.innerHTML = '';
+    document.body.style.overflow = '';
+  }
+
+  /* O app extra pode pedir botões próprios na barra de cima (o RachaFácil pede
+     a ajuda e o zerar). Ele manda a lista assim que abre; o clique volta pra
+     ele. Só escutamos o iframe que está aberto agora. */
+  function ouvirAppExtra(){
+    window.addEventListener('message', function(e){
+      if (!appfullFrameEl || e.source !== appfullFrameEl.contentWindow) return;
+      var d = e.data;
+      if (!d || d.tipo !== 'app-acoes' || !Array.isArray(d.acoes)) return;
+      appfullAcoesEl.innerHTML = d.acoes.slice(0, 4).map(function(a){
+        return '<button type="button" data-app-acao="' + escapeHTML(String(a.id || '')) + '"'
+          + ' title="' + escapeHTML(String(a.titulo || '')) + '"'
+          + ' aria-label="' + escapeHTML(String(a.titulo || '')) + '">'
+          + escapeHTML(String(a.rotulo || '•')) + '</button>';
+      }).join('');
+    });
+
+    appfullAcoesEl.addEventListener('click', function(e){
+      var btn = e.target.closest('[data-app-acao]');
+      if (!btn || !appfullFrameEl.contentWindow) return;
+      appfullFrameEl.contentWindow.postMessage(
+        {tipo:'app-acao', id: btn.getAttribute('data-app-acao')}, '*');
+    });
+  }
 
   /* ---------- Janela das categorias ---------- */
 
@@ -7052,6 +7249,7 @@
 
   function wireEvents(){
     tabbarEl.addEventListener('click', function(e){
+      if (e.target.closest('[data-apps]')){ openAppsModal(); return; }
       var btn = e.target.closest('[data-tab]');
       if (!btn) return;
       state.currentTab = btn.getAttribute('data-tab');
@@ -7474,6 +7672,15 @@
       if (e.target.closest('[data-action="fechar-ajuda"]')) closeAjudaModal();
     });
 
+    appsModalEl.addEventListener('click', function(e){ if (e.target === appsModalEl) closeAppsModal(); });
+    appsPanelEl.addEventListener('click', function(e){
+      if (e.target.closest('[data-action="fechar-apps"]')){ closeAppsModal(); return; }
+      var abrir = e.target.closest('[data-abrir-app]');
+      if (abrir) abrirAppExtra(abrir.getAttribute('data-abrir-app'));
+    });
+    document.getElementById('appfull-voltar').addEventListener('click', fecharAppExtra);
+    ouvirAppExtra();
+
     catsModalEl.addEventListener('click', function(e){ if (e.target === catsModalEl) closeCatsModal(); });
     catsPanelEl.addEventListener('click', function(e){
       if (e.target.closest('[data-action="fechar-categorias"]')){ closeCatsModal(); return; }
@@ -7644,6 +7851,12 @@
     metasPanelEl = document.getElementById('metas-panel');
     futureModalEl = document.getElementById('future-modal');
     futurePanelEl = document.getElementById('future-panel');
+    appsModalEl = document.getElementById('apps-modal');
+    appsPanelEl = document.getElementById('apps-panel');
+    appfullEl = document.getElementById('appfull');
+    appfullFrameEl = document.getElementById('appfull-frame');
+    appfullNomeEl = document.getElementById('appfull-nome');
+    appfullAcoesEl = document.getElementById('appfull-acoes');
     authScreenEl = document.getElementById('auth-screen');
     authCardEl = document.getElementById('auth-card');
     syncBarEl = document.getElementById('sync-bar');
@@ -7704,6 +7917,1014 @@
 
   init();
 })();
+
+</script>
+<!--
+  RachaFacil - primeiro app extra. Fica guardado aqui como texto puro
+  (type="text/html" nao executa nada) e so vira pagina quando a pessoa abre
+  o app, dentro do iframe. O "<\/script>" escapado no fim eh de proposito:
+  sem a barra, o navegador acharia que o bloco terminou ali.
+-->
+<script type="text/html" id="src-rachafacil">
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>RachaFácil</title>
+<style>
+  :root{
+    /* Mesmos tokens do Gastos da Casa: o color-scheme avisa o navegador que
+       a tela é escura, senão ele desenha os seletores e o calendário com
+       fundo branco e o texto claro some em cima. */
+    color-scheme:dark;
+    --paper:#0A0C10;
+    --paper-raised:#161A21;
+    --input-bg:#1F2530;
+    --ink:#EAF2EF;
+    --ink-soft:#8B96A5;
+    --line:#2A313D;
+    --positive:#39FF88;
+    --positive-soft:rgba(57,255,136,0.15);
+    --alert:#FF4D6D;
+    --alert-soft:rgba(255,77,109,0.15);
+    --neon2:#4FE0FF;
+    --hover:rgba(255,255,255,0.06);
+    --hover-soft:rgba(255,255,255,0.04);
+    --backdrop:rgba(0,0,0,0.68);
+    --focus-ring:rgba(57,255,136,0.30);
+    --radius:14px;
+    --shadow-sm:0 1px 2px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04);
+    --shadow-lg:0 16px 40px rgba(0,0,0,0.65), 0 0 24px rgba(57,255,136,0.08);
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+
+  /* A tela é pra tocar, não pra selecionar: encostar num número não abre mais
+     a barra de "pesquisar" do navegador. Campo de digitar volta ao normal. */
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+    display:flex; justify-content:center;
+    -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;
+  }
+  input, textarea, [contenteditable]{
+    -webkit-user-select:text; user-select:text;
+  }
+  button,input,select{
+    font:inherit;
+    transition:background-color .15s ease, border-color .15s ease, box-shadow .15s ease, color .15s ease;
+  }
+  button{ cursor:pointer; border:none; -webkit-tap-highlight-color:transparent; }
+  :focus-visible{ outline:2px solid var(--neon2); outline-offset:2px; border-radius:6px; }
+
+  #shell{
+    width:100%; max-width:520px; min-height:100vh;
+    display:flex; flex-direction:column;
+    background:var(--paper);
+    border-left:1px solid var(--line); border-right:1px solid var(--line);
+  }
+
+  header{
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    padding:16px 16px 14px; border-bottom:1px solid var(--line);
+    position:sticky; top:0; z-index:5;
+    background:rgba(10,12,16,.94); backdrop-filter:blur(8px);
+  }
+  .marca{ display:flex; align-items:center; gap:11px; min-width:0; }
+  .logo{
+    width:40px; height:40px; border-radius:12px; flex:0 0 auto;
+    display:grid; place-items:center;
+    font-weight:800; font-size:15px; letter-spacing:-0.02em; color:#06222c;
+    background:linear-gradient(140deg, var(--neon2), #2FB6D6);
+    box-shadow:0 0 22px -6px rgba(79,224,255,.9);
+  }
+  header h1{ font-size:18px; margin:0; letter-spacing:-0.01em; }
+  header .sub{ font-size:11.5px; color:var(--ink-soft); margin-top:1px; }
+  .header-acoes{ display:flex; align-items:center; gap:5px; flex:0 0 auto; }
+
+  /* Rodando dentro do Gestor de Gastos: a barra de cima já traz o nome e os
+     botões, então o cabeçalho daqui sai de cena pra não repetir tudo. */
+  body.embutido header{ display:none; }
+  .icone-btn{
+    width:30px; height:30px; border-radius:50%;
+    border:1px solid var(--line); background:transparent; color:var(--ink-soft);
+    font-size:14px; font-weight:800; display:grid; place-items:center; padding:0; line-height:1;
+  }
+  .icone-btn:hover{ border-color:var(--neon2); color:var(--neon2); }
+
+  main{ flex:1; padding:16px 16px 40px; }
+
+  /* ---------- Caixas neon (as mesmas do app) ---------- */
+
+  .neon-box{
+    position:relative;
+    background:var(--paper-raised);
+    border:1px solid var(--accent-line, var(--line));
+    border-radius:var(--radius);
+    padding:15px 16px 16px;
+    box-shadow:
+      0 0 0 1px var(--accent-halo, transparent),
+      0 0 26px -4px var(--accent-glow, transparent),
+      inset 0 0 24px -18px var(--accent, transparent),
+      var(--shadow-sm);
+  }
+  /* Fio de luz no topo — é o detalhe que dá o ar de neon sem colorir o fundo. */
+  .neon-box::before{
+    content:''; position:absolute; left:16px; right:16px; top:-1px; height:1px;
+    background:linear-gradient(90deg, transparent, var(--accent, transparent), transparent);
+    opacity:.9;
+  }
+  .acc-cyan   { --accent:#4FE0FF; --accent-line:rgba(79,224,255,0.48); --accent-halo:rgba(79,224,255,0.10); --accent-glow:rgba(79,224,255,0.62); }
+  .acc-green  { --accent:#39FF88; --accent-line:rgba(57,255,136,0.44); --accent-halo:rgba(57,255,136,0.10); --accent-glow:rgba(57,255,136,0.56); }
+  .acc-pink   { --accent:#FF4D6D; --accent-line:rgba(255,77,109,0.46); --accent-halo:rgba(255,77,109,0.10); --accent-glow:rgba(255,77,109,0.58); }
+  .acc-purple { --accent:#B18CFF; --accent-line:rgba(177,140,255,0.46); --accent-halo:rgba(177,140,255,0.10); --accent-glow:rgba(177,140,255,0.58); }
+  .acc-amber  { --accent:#FFC24F; --accent-line:rgba(255,194,79,0.44); --accent-halo:rgba(255,194,79,0.10); --accent-glow:rgba(255,194,79,0.56); }
+  .acc-blue   { --accent:#4FA8FF; --accent-line:rgba(79,168,255,0.46); --accent-halo:rgba(79,168,255,0.10); --accent-glow:rgba(79,168,255,0.58); }
+
+  .bloco{ margin-bottom:16px; }
+  .section-title{
+    display:flex; align-items:center; gap:8px;
+    font-size:13px; font-weight:700; color:var(--ink-soft);
+    margin:0 0 10px;
+  }
+  .section-title::before{
+    content:''; width:3px; height:13px; border-radius:2px;
+    background:var(--accent, var(--ink-soft));
+    box-shadow:0 0 8px var(--accent, transparent);
+  }
+  .section-title .acao{
+    margin-left:auto; background:transparent; border:none; padding:0;
+    font-family:inherit; font-size:11.5px; font-weight:700; color:var(--ink-soft);
+    text-decoration:underline;
+  }
+  .section-title .acao:hover{ color:var(--neon2); }
+
+  /* ---------- Indicadores ---------- */
+
+  .kpi-row{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-bottom:16px; }
+  .kpi-tile{ padding:11px 13px 12px; border-radius:12px; min-width:0; }
+  .kpi-tile::before{ left:12px; right:12px; }
+  .kpi-label{
+    font-size:10.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--accent, var(--ink-soft));
+    display:flex; align-items:center; gap:6px;
+  }
+  .kpi-label::before{
+    content:''; width:5px; height:5px; border-radius:50%;
+    background:var(--accent, var(--ink-soft)); box-shadow:0 0 6px var(--accent, transparent);
+  }
+  .kpi-value{
+    font-size:20px; font-weight:800; margin-top:5px;
+    font-variant-numeric:tabular-nums; letter-spacing:-0.02em;
+  }
+  .kpi-hint{ font-size:11px; color:var(--ink-soft); margin-top:3px; }
+
+  /* ---------- Acerto (o resultado) ---------- */
+
+  .acerto-linha{
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    padding:11px 0; border-bottom:1px solid var(--line);
+  }
+  .acerto-linha:last-child{ border-bottom:none; }
+  .acerto-quem{ display:flex; align-items:center; gap:8px; font-size:14px; font-weight:600; min-width:0; }
+  .acerto-seta{ color:var(--alert); font-weight:800; }
+  .acerto-valor{
+    font-weight:800; font-size:16px; color:var(--alert);
+    font-variant-numeric:tabular-nums; white-space:nowrap;
+  }
+  .acerto-unico{
+    text-align:center; padding:6px 0 2px;
+  }
+  .acerto-unico .quem{ font-size:15px; font-weight:700; margin-bottom:6px; }
+  .acerto-unico .valor{
+    font-size:34px; font-weight:800; color:var(--alert);
+    font-variant-numeric:tabular-nums; letter-spacing:-0.02em;
+    text-shadow:0 0 28px rgba(255,77,109,.5);
+  }
+  .tudo-certo{
+    text-align:center; padding:10px 0 4px;
+    font-size:15px; font-weight:700; color:var(--positive);
+    text-shadow:0 0 18px rgba(57,255,136,.4);
+  }
+
+  /* ---------- Pessoas ---------- */
+
+  .pessoa-linha{
+    display:flex; align-items:center; gap:10px;
+    padding:10px 0; border-bottom:1px solid var(--line);
+  }
+  .pessoa-linha:last-of-type{ border-bottom:none; }
+  .avatar{
+    width:30px; height:30px; border-radius:50%; flex:0 0 auto;
+    display:grid; place-items:center;
+    font-size:12.5px; font-weight:800; color:#0A0C10;
+  }
+  .pessoa-nome{ flex:1; min-width:0; font-size:14px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .pessoa-eu{
+    font-size:10px; font-weight:800; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--neon2); border:1px solid rgba(79,224,255,.4);
+    padding:2px 7px; border-radius:999px; margin-left:7px;
+  }
+  .pessoa-saldo{ font-size:13.5px; font-weight:800; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .saldo-recebe{ color:var(--positive); }
+  .saldo-deve{ color:var(--alert); }
+  .saldo-zero{ color:var(--ink-soft); }
+  .linha-acao{
+    background:transparent; border:none; font-size:14px; padding:5px 3px;
+    border-radius:6px; flex:0 0 auto; line-height:1;
+  }
+  .linha-acao:hover{ background:var(--hover); }
+
+  /* ---------- Despesas ---------- */
+
+  .despesa{
+    display:flex; align-items:center; gap:11px;
+    padding:11px 0; border-bottom:1px solid var(--line);
+  }
+  .despesa:last-of-type{ border-bottom:none; }
+  .despesa-ic{
+    width:34px; height:34px; border-radius:10px; flex:0 0 auto;
+    display:grid; place-items:center; font-size:15px;
+    background:var(--hover-soft); border:1px solid var(--line);
+  }
+  .despesa-info{ flex:1; min-width:0; }
+  .despesa-desc{ display:block; font-size:14px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .despesa-meta{ display:block; font-size:11.5px; color:var(--ink-soft); margin-top:2px; }
+  .despesa-valor{ font-size:14px; font-weight:800; font-variant-numeric:tabular-nums; white-space:nowrap; }
+
+  .empty-state{
+    text-align:center; color:var(--ink-soft); font-size:13.5px; line-height:1.55;
+    padding:22px 12px; border:1px dashed var(--line); border-radius:12px;
+  }
+
+  /* ---------- Botões ---------- */
+
+  .btn-principal{
+    width:100%; padding:14px; border-radius:12px;
+    background:var(--neon2); color:#06222c;
+    font-weight:800; font-size:15px; font-family:inherit;
+    box-shadow:0 0 22px -8px var(--neon2);
+  }
+  .btn-principal:hover{ filter:brightness(1.08); }
+  .btn-secundario{
+    width:100%; padding:11px; border-radius:10px;
+    background:transparent; border:1px solid var(--line); color:var(--ink);
+    font-weight:700; font-size:14px; font-family:inherit;
+  }
+  .btn-secundario:hover{ border-color:var(--neon2); color:var(--neon2); }
+  .btn-perigo{ border-color:rgba(255,77,109,.5); color:var(--alert); }
+  .btn-perigo:hover{ border-color:var(--alert); color:var(--alert); background:var(--alert-soft); }
+  .btn-perigo.btn-principal{ background:var(--alert); color:#2A0710; box-shadow:0 0 22px -8px var(--alert); }
+  .btn-linha{ display:flex; gap:9px; margin-top:12px; }
+  .btn-linha > *{ flex:1; }
+
+  /* ---------- Campos ---------- */
+
+  .field{ margin-bottom:14px; }
+  .field label{ display:block; font-size:12px; color:var(--ink-soft); margin-bottom:6px; }
+  .field input[type="text"], .field input[type="number"], .field input[type="date"], .field select{
+    width:100%; padding:11px 12px;
+    border:1px solid var(--line); border-radius:9px;
+    font-size:16px; font-family:inherit;
+    background:var(--input-bg); color:var(--ink);
+  }
+  .field input:focus, .field select:focus{
+    outline:none; border-color:var(--positive); box-shadow:0 0 0 3px var(--focus-ring);
+  }
+  .row2{ display:flex; gap:10px; }
+  .row2 > *{ flex:1; min-width:0; }
+  .nota{ font-size:11.5px; color:var(--ink-soft); margin-top:6px; line-height:1.5; }
+  select option{ background:var(--paper-raised); color:var(--ink); }
+
+  /* Quem dividiu: caixinhas de marcar, não uma lista de checkbox nu */
+  .divide-grade{ display:flex; flex-wrap:wrap; gap:7px; }
+  .divide-op{
+    display:inline-flex; align-items:center; gap:7px;
+    border:1px solid var(--line); background:transparent; color:var(--ink-soft);
+    padding:8px 12px; border-radius:999px;
+    font-size:13px; font-weight:600; font-family:inherit;
+  }
+  .divide-op.is-on{
+    border-color:var(--cor, var(--neon2)); color:var(--cor, var(--neon2));
+    box-shadow:0 0 13px -3px var(--cor, var(--neon2));
+  }
+  .divide-ponto{ width:9px; height:9px; border-radius:50%; background:var(--cor, var(--ink-soft)); flex:0 0 auto; }
+  .divide-resumo{ font-size:12px; color:var(--ink-soft); margin-top:9px; }
+  .divide-resumo b{ color:var(--ink); font-variant-numeric:tabular-nums; }
+
+  /* ---------- Janelas ---------- */
+
+  .modal{
+    position:fixed; inset:0; background:var(--backdrop);
+    display:flex; align-items:flex-end; justify-content:center; z-index:60;
+    opacity:1; visibility:visible; transition:opacity .18s ease, visibility .18s ease;
+  }
+  .modal.hidden{ opacity:0; visibility:hidden; pointer-events:none; }
+  .modal.hidden .modal-caixa{ transform:translateY(24px); }
+  .modal-caixa{
+    background:var(--paper-raised); width:100%; max-width:520px;
+    border-radius:18px 18px 0 0;
+    padding:20px 18px calc(20px + env(safe-area-inset-bottom));
+    max-height:88vh; overflow-y:auto; box-shadow:var(--shadow-lg);
+    transform:translateY(0); transition:transform .2s ease;
+  }
+  .modal-caixa h2{ font-size:17px; margin:0 0 6px; }
+  .modal-nota{ font-size:12.5px; color:var(--ink-soft); margin:0 0 16px; line-height:1.5; }
+  .aviso-perigo{
+    padding:12px 14px; border-left:2px solid var(--alert);
+    background:var(--alert-soft); border-radius:0 9px 9px 0;
+    font-size:13.5px; margin:0 0 16px; line-height:1.5;
+  }
+
+  /* Passo a passo da ajuda */
+  .ajuda-passo{ display:flex; gap:12px; padding:12px 0; border-bottom:1px solid var(--line); }
+  .ajuda-passo:last-of-type{ border-bottom:none; }
+  .ajuda-num{
+    flex:0 0 25px; height:25px; border-radius:50%;
+    background:var(--hover-soft); border:1px solid var(--line);
+    display:grid; place-items:center; font-size:11.5px; font-weight:800; color:var(--neon2);
+  }
+  .ajuda-txt h3{ margin:1px 0 4px; font-size:14px; font-weight:700; }
+  .ajuda-txt p{ margin:0; font-size:13px; color:var(--ink-soft); line-height:1.5; }
+  .ajuda-txt b{ color:var(--ink); font-weight:600; }
+
+  .aviso{
+    position:fixed; left:50%; transform:translateX(-50%);
+    bottom:22px; z-index:80;
+    background:var(--paper-raised); color:var(--ink);
+    border:1px solid var(--neon2);
+    box-shadow:0 0 26px -6px var(--neon2), var(--shadow-lg);
+    padding:12px 18px; border-radius:12px;
+    font-size:13.5px; font-weight:600;
+    opacity:1; transition:opacity .2s ease;
+  }
+  .aviso.hidden{ opacity:0; pointer-events:none; }
+
+  @media (min-width:560px){
+    #shell{ max-width:640px; }
+    .modal{ align-items:center; }
+    .modal-caixa{ border-radius:16px; max-width:520px; max-height:82vh; }
+    .kpi-row{ grid-template-columns:repeat(4,minmax(0,1fr)); }
+  }
+</style>
+</head>
+<body>
+
+<div id="shell">
+  <header>
+    <div class="marca">
+      <div class="logo">RF</div>
+      <div>
+        <h1>RachaFácil</h1>
+        <div class="sub">Divida contas sem dor de cabeça</div>
+      </div>
+    </div>
+    <div class="header-acoes">
+      <button class="icone-btn" id="btn-ajuda" title="Como usar" aria-label="Como usar">?</button>
+      <button class="icone-btn" id="btn-zerar" title="Zerar tudo" aria-label="Zerar tudo">🗑️</button>
+    </div>
+  </header>
+
+  <main id="conteudo"></main>
+</div>
+
+<div class="modal hidden" id="modal-despesa"><div class="modal-caixa" id="painel-despesa"></div></div>
+<div class="modal hidden" id="modal-pessoa"><div class="modal-caixa" id="painel-pessoa"></div></div>
+<div class="modal hidden" id="modal-confirma"><div class="modal-caixa" id="painel-confirma"></div></div>
+<div class="modal hidden" id="modal-ajuda"><div class="modal-caixa" id="painel-ajuda"></div></div>
+<div class="aviso hidden" id="aviso"></div>
+
+<script>
+(function(){
+  'use strict';
+
+  var CHAVE = 'rachafacil_v2';
+
+  // Mesma paleta de pessoas do Gastos da Casa.
+  var CORES = ['#4FA8FF','#FF5D8F','#39FF88','#FFC24F','#B18CFF','#4FE0FF','#FF8A4F','#35D6C4'];
+
+  var ICONES = ['🍽️','🛒','🚗','🏠','🍺','🎬','✈️','🎁','💊','⛽','🏨','🎉','☕','🧾'];
+
+  /* ---------------- Estado ---------------- */
+
+  var state = carregar();
+
+  function novoId(pre){
+    return pre + '_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,7);
+  }
+
+  function estadoInicial(){
+    // Duas pessoas já criadas: dá pra lançar a primeira despesa sem
+    // configurar nada. "Você" é quem abriu o app.
+    var eu = {id:novoId('p'), nome:'Você', cor:CORES[0]};
+    var outra = {id:novoId('p'), nome:'Amigo', cor:CORES[1]};
+    return {pessoas:[eu, outra], despesas:[], euId:eu.id};
+  }
+
+  function carregar(){
+    try {
+      var cru = JSON.parse(localStorage.getItem(CHAVE) || 'null');
+      if (cru && Array.isArray(cru.pessoas) && cru.pessoas.length) return cru;
+    } catch(e){}
+    return estadoInicial();
+  }
+
+  function salvar(){
+    try { localStorage.setItem(CHAVE, JSON.stringify(state)); }
+    catch(e){ avisar('Não consegui salvar neste navegador.'); }
+    render();
+  }
+
+  /* ---------------- Ajudantes ---------------- */
+
+  function esc(s){
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function(m){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];
+    });
+  }
+  function dinheiro(centavos){
+    return (Number(centavos||0)/100).toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
+  }
+  function pessoaPor(id){
+    return state.pessoas.filter(function(p){ return p.id === id; })[0] || null;
+  }
+  function nomeDe(id){
+    var p = pessoaPor(id);
+    return p ? p.nome : 'alguém que saiu';
+  }
+  function corDe(id){
+    var p = pessoaPor(id);
+    return p ? p.cor : '#8B96A5';
+  }
+  function inicial(nome){
+    return (String(nome || '?').trim().charAt(0) || '?').toUpperCase();
+  }
+
+  /* Rateio em centavos: o que não divide certinho vira 1 centavo a mais pros
+     primeiros da lista. Dividir com float perde centavo e o acerto nunca
+     fecha exatamente com o total. */
+  function ratear(totalCent, quantos){
+    var base = Math.floor(totalCent / quantos);
+    var resto = totalCent - base * quantos;
+    var partes = [];
+    for (var i = 0; i < quantos; i++) partes.push(base + (i < resto ? 1 : 0));
+    return partes;
+  }
+
+  function saldos(){
+    var b = {};
+    state.pessoas.forEach(function(p){ b[p.id] = 0; });
+    state.despesas.forEach(function(d){
+      var entre = d.entre.filter(function(id){ return pessoaPor(id); });
+      if (!entre.length) return;
+      var partes = ratear(d.centavos, entre.length);
+      if (b[d.pagouId] !== undefined) b[d.pagouId] += d.centavos;
+      entre.forEach(function(id, i){ if (b[id] !== undefined) b[id] -= partes[i]; });
+    });
+    return b;
+  }
+
+  /* Menor número de transferências: o que mais deve paga pro que mais tem a
+     receber, até zerar. É o mesmo acerto do Gastos da Casa. */
+  function acertos(b){
+    var recebem = [], devem = [];
+    Object.keys(b).forEach(function(id){
+      if (b[id] > 0) recebem.push({id:id, v:b[id]});
+      if (b[id] < 0) devem.push({id:id, v:-b[id]});
+    });
+    recebem.sort(function(x,y){ return y.v - x.v; });
+    devem.sort(function(x,y){ return y.v - x.v; });
+
+    var saida = [], i = 0, j = 0;
+    while (i < devem.length && j < recebem.length){
+      var quanto = Math.min(devem[i].v, recebem[j].v);
+      if (quanto > 0) saida.push({de:devem[i].id, para:recebem[j].id, centavos:quanto});
+      devem[i].v -= quanto;
+      recebem[j].v -= quanto;
+      if (devem[i].v === 0) i++;
+      if (recebem[j].v === 0) j++;
+    }
+    return saida;
+  }
+
+  /* ---------------- Tela ---------------- */
+
+  var conteudoEl = document.getElementById('conteudo');
+
+  function render(){
+    var b = saldos();
+    var totalCent = state.despesas.reduce(function(s,d){ return s + d.centavos; }, 0);
+    var meu = b[state.euId] || 0;
+    var lista = acertos(b);
+
+    conteudoEl.innerHTML = ''
+      + kpisHTML(totalCent, meu)
+      + acertoHTML(lista)
+      + pessoasHTML(b)
+      + despesasHTML();
+  }
+
+  function kpisHTML(totalCent, meu){
+    var qtd = state.despesas.length;
+    return '<div class="kpi-row">'
+      + kpi('Total do rachão', dinheiro(totalCent), qtd + (qtd === 1 ? ' despesa' : ' despesas'), 'acc-cyan')
+      + kpi('Você deve', dinheiro(Math.max(0, -meu)), meu < 0 ? 'Pra acertar' : 'Nada pendente', meu < 0 ? 'acc-pink' : 'acc-green')
+      + kpi('Você recebe', dinheiro(Math.max(0, meu)), meu > 0 ? 'Te devem' : 'Nada a receber', meu > 0 ? 'acc-green' : 'acc-purple')
+      + kpi('No grupo', String(state.pessoas.length), state.pessoas.length === 1 ? 'pessoa' : 'pessoas', 'acc-amber')
+      + '</div>';
+  }
+  function kpi(rot, valor, dica, acc){
+    return '<div class="kpi-tile neon-box ' + acc + '">'
+      + '<div class="kpi-label">' + esc(rot) + '</div>'
+      + '<div class="kpi-value">' + valor + '</div>'
+      + '<div class="kpi-hint">' + esc(dica) + '</div>'
+      + '</div>';
+  }
+
+  function acertoHTML(lista){
+    var corpo;
+    if (!state.despesas.length){
+      corpo = '<div class="empty-state">Assim que a primeira despesa entrar, o acerto aparece aqui.</div>';
+    } else if (!lista.length){
+      corpo = '<div class="tudo-certo">Tudo certo — ninguém deve nada ✓</div>';
+    } else if (lista.length === 1){
+      // Um pagamento só: vira o número grande, que é a resposta do rachão.
+      corpo = '<div class="acerto-unico">'
+        + '<div class="quem">' + esc(nomeDe(lista[0].de)) + ' <span class="acerto-seta">→</span> ' + esc(nomeDe(lista[0].para)) + '</div>'
+        + '<div class="valor">' + dinheiro(lista[0].centavos) + '</div>'
+        + '</div>';
+    } else {
+      corpo = lista.map(function(t){
+        return '<div class="acerto-linha">'
+          + '<span class="acerto-quem">'
+            + '<span class="avatar" style="background:' + corDe(t.de) + ';">' + esc(inicial(nomeDe(t.de))) + '</span>'
+            + esc(nomeDe(t.de)) + ' <span class="acerto-seta">→</span> ' + esc(nomeDe(t.para))
+          + '</span>'
+          + '<span class="acerto-valor">' + dinheiro(t.centavos) + '</span>'
+          + '</div>';
+      }).join('');
+    }
+    return '<section class="bloco neon-box acc-pink">'
+      + '<div class="section-title">🤝 Acerto sugerido</div>'
+      + corpo
+      + (lista.length > 1 ? '<div class="nota">Menor número de transferências possível pra todo mundo ficar quite.</div>' : '')
+      + '</section>';
+  }
+
+  function pessoasHTML(b){
+    var linhas = state.pessoas.map(function(p){
+      var v = b[p.id] || 0;
+      var classe = v > 0 ? 'saldo-recebe' : (v < 0 ? 'saldo-deve' : 'saldo-zero');
+      var texto = v > 0 ? '+' + dinheiro(v) : (v < 0 ? '−' + dinheiro(-v) : dinheiro(0));
+      var souEu = p.id === state.euId;
+      return '<div class="pessoa-linha">'
+        + '<span class="avatar" style="background:' + p.cor + ';">' + esc(inicial(p.nome)) + '</span>'
+        + '<span class="pessoa-nome">' + esc(p.nome) + (souEu ? '<span class="pessoa-eu">você</span>' : '') + '</span>'
+        + '<span class="pessoa-saldo ' + classe + '">' + texto + '</span>'
+        + '<button class="linha-acao" data-acao="editar-pessoa" data-id="' + p.id + '" title="Editar">✏️</button>'
+        + (state.pessoas.length > 1
+            ? '<button class="linha-acao" data-acao="apagar-pessoa" data-id="' + p.id + '" title="Tirar do grupo">🗑️</button>'
+            : '<span style="width:22px;"></span>')
+        + '</div>';
+    }).join('');
+
+    return '<section class="bloco neon-box acc-blue">'
+      + '<div class="section-title">👥 Quem está no rachão</div>'
+      + linhas
+      + '<div class="nota">Verde é quem tem a receber, vermelho é quem deve.</div>'
+      + '<div class="btn-linha"><button class="btn-secundario" data-acao="nova-pessoa">+ Adicionar pessoa</button></div>'
+      + '</section>';
+  }
+
+  function despesasHTML(){
+    var corpo;
+    if (!state.despesas.length){
+      corpo = '<div class="empty-state">Nenhuma despesa ainda.<br>Lance a primeira conta aí embaixo.</div>';
+    } else {
+      // Mais recente em cima: é o que a pessoa acabou de lançar.
+      corpo = state.despesas.slice().reverse().map(function(d){
+        var quantos = d.entre.filter(function(id){ return pessoaPor(id); }).length;
+        var cada = quantos ? ratear(d.centavos, quantos)[0] : 0;
+        return '<div class="despesa">'
+          + '<span class="despesa-ic">' + esc(d.icone || '🧾') + '</span>'
+          + '<span class="despesa-info">'
+            + '<span class="despesa-desc">' + esc(d.desc) + '</span>'
+            + '<span class="despesa-meta">' + esc(nomeDe(d.pagouId)) + ' pagou · '
+              + dinheiro(cada) + ' × ' + quantos + '</span>'
+          + '</span>'
+          + '<span class="despesa-valor">' + dinheiro(d.centavos) + '</span>'
+          + '<button class="linha-acao" data-acao="editar-despesa" data-id="' + d.id + '" title="Editar">✏️</button>'
+          + '<button class="linha-acao" data-acao="apagar-despesa" data-id="' + d.id + '" title="Apagar">🗑️</button>'
+          + '</div>';
+      }).join('');
+    }
+
+    return '<section class="bloco neon-box acc-green">'
+      + '<div class="section-title">🧾 Despesas</div>'
+      + corpo
+      + '<div class="btn-linha"><button class="btn-principal" data-acao="nova-despesa">+ Nova despesa</button></div>'
+      + '</section>';
+  }
+
+  /* ---------------- Janela de despesa ---------------- */
+
+  var despesaEditando = null;
+  var painelDespesa = document.getElementById('painel-despesa');
+
+  function abrirDespesa(id){
+    if (state.pessoas.length < 2){
+      avisar('Adicione pelo menos 2 pessoas antes.');
+      return;
+    }
+    despesaEditando = id || null;
+    var d = id ? state.despesas.filter(function(x){ return x.id === id; })[0] : null;
+    var entre = d ? d.entre.slice() : state.pessoas.map(function(p){ return p.id; });
+    var pagou = d ? d.pagouId : state.euId;
+    if (!pessoaPor(pagou)) pagou = state.pessoas[0].id;
+
+    painelDespesa.innerHTML = ''
+      + '<h2>' + (d ? 'Editar despesa' : 'Nova despesa') + '</h2>'
+      + '<p class="modal-nota">Quem pagou entra no acerto como crédito; quem dividiu entra como parte a pagar.</p>'
+      + '<div class="field"><label>O que foi?</label>'
+        + '<input type="text" id="d-desc" placeholder="Ex.: Jantar de sábado" value="' + esc(d ? d.desc : '') + '" autocomplete="off"></div>'
+      + '<div class="row2">'
+        + '<div class="field"><label>Valor total (R$)</label>'
+          + '<input type="number" id="d-valor" inputmode="decimal" step="0.01" min="0" placeholder="0,00" value="' + (d ? (d.centavos/100) : '') + '"></div>'
+        + '<div class="field"><label>Quem pagou?</label><select id="d-pagou">'
+          + state.pessoas.map(function(p){
+              return '<option value="' + p.id + '"' + (p.id === pagou ? ' selected' : '') + '>' + esc(p.nome) + '</option>';
+            }).join('')
+          + '</select></div>'
+      + '</div>'
+      + '<div class="field"><label>Ícone</label>'
+        + '<select id="d-icone">' + ICONES.map(function(ic){
+            return '<option value="' + ic + '"' + ((d && d.icone === ic) ? ' selected' : '') + '>' + ic + '</option>';
+          }).join('') + '</select></div>'
+      + '<div class="field"><label>Dividir entre quem?</label>'
+        + '<div class="divide-grade" id="d-entre">'
+          + state.pessoas.map(function(p){
+              var on = entre.indexOf(p.id) !== -1;
+              return '<button type="button" class="divide-op' + (on ? ' is-on' : '') + '" style="--cor:' + p.cor + ';" data-pessoa="' + p.id + '">'
+                + '<span class="divide-ponto"></span>' + esc(p.nome) + '</button>';
+            }).join('')
+        + '</div>'
+        + '<div class="divide-resumo" id="d-resumo"></div></div>'
+      + '<div class="btn-linha">'
+        + '<button class="btn-secundario" data-acao="fechar-despesa">Cancelar</button>'
+        + '<button class="btn-principal" id="d-salvar">' + (d ? 'Salvar' : 'Adicionar') + '</button>'
+      + '</div>';
+
+    atualizarResumoDivisao();
+    document.getElementById('modal-despesa').classList.remove('hidden');
+    var campo = document.getElementById('d-desc');
+    if (campo) campo.focus();
+  }
+
+  function fecharDespesa(){
+    document.getElementById('modal-despesa').classList.add('hidden');
+    despesaEditando = null;
+  }
+
+  // Mostra quanto cai pra cada um enquanto a pessoa digita — assim ela vê o
+  // resultado antes de salvar, em vez de descobrir depois.
+  function atualizarResumoDivisao(){
+    var resumo = document.getElementById('d-resumo');
+    if (!resumo) return;
+    var marcados = painelDespesa.querySelectorAll('.divide-op.is-on');
+    var valor = parseFloat((document.getElementById('d-valor') || {}).value) || 0;
+    var cent = Math.round(valor * 100);
+    if (!marcados.length){
+      resumo.innerHTML = 'Escolha pelo menos uma pessoa.';
+      return;
+    }
+    if (!cent){
+      resumo.innerHTML = marcados.length + (marcados.length === 1 ? ' pessoa marcada.' : ' pessoas marcadas.');
+      return;
+    }
+    var partes = ratear(cent, marcados.length);
+    var iguais = partes[0] === partes[partes.length - 1];
+    resumo.innerHTML = 'Dá <b>' + dinheiro(partes[0]) + '</b> pra cada'
+      + (iguais ? '' : ' (e <b>' + dinheiro(partes[partes.length-1]) + '</b> pra ' + (partes.filter(function(x){ return x === partes[partes.length-1]; }).length) + ' deles, pra fechar o centavo)')
+      + '.';
+  }
+
+  function salvarDespesa(){
+    var desc = (document.getElementById('d-desc').value || '').trim() || 'Despesa';
+    var valor = parseFloat(document.getElementById('d-valor').value);
+    var cent = Math.round((valor || 0) * 100);
+    var pagouId = document.getElementById('d-pagou').value;
+    var icone = document.getElementById('d-icone').value;
+    var entre = [].slice.call(painelDespesa.querySelectorAll('.divide-op.is-on')).map(function(b){
+      return b.getAttribute('data-pessoa');
+    });
+
+    if (!cent || cent <= 0){ avisar('Informe um valor maior que zero.'); return; }
+    if (!entre.length){ avisar('Escolha quem participou.'); return; }
+
+    if (despesaEditando){
+      state.despesas.forEach(function(d){
+        if (d.id === despesaEditando){
+          d.desc = desc; d.centavos = cent; d.pagouId = pagouId; d.entre = entre; d.icone = icone;
+        }
+      });
+    } else {
+      state.despesas.push({
+        id: novoId('d'), desc:desc, centavos:cent, pagouId:pagouId,
+        entre:entre, icone:icone, quando:new Date().toISOString()
+      });
+    }
+    fecharDespesa();
+    salvar();
+    avisar(despesaEditando ? 'Despesa atualizada.' : 'Despesa adicionada.');
+  }
+
+  /* ---------------- Janela de pessoa ---------------- */
+
+  var pessoaEditando = null;
+  var painelPessoa = document.getElementById('painel-pessoa');
+
+  function abrirPessoa(id){
+    pessoaEditando = id || null;
+    var p = id ? pessoaPor(id) : null;
+    painelPessoa.innerHTML = ''
+      + '<h2>' + (p ? 'Editar ' + esc(p.nome) : 'Adicionar pessoa') + '</h2>'
+      + '<div class="field"><label>Nome</label>'
+        + '<input type="text" id="p-nome" placeholder="Ex.: João" value="' + esc(p ? p.nome : '') + '" autocomplete="off"></div>'
+      + (p
+          ? '<div class="field"><label>Marcar como você</label>'
+            + '<button type="button" class="btn-secundario" id="p-sou-eu"' + (p.id === state.euId ? ' disabled style="opacity:.5;"' : '') + '>'
+            + (p.id === state.euId ? 'Este já é você' : 'Sou eu') + '</button>'
+            + '<div class="nota">Os indicadores "Você deve" e "Você recebe" usam essa escolha.</div></div>'
+          : '')
+      + '<div class="btn-linha">'
+        + '<button class="btn-secundario" data-acao="fechar-pessoa">Cancelar</button>'
+        + '<button class="btn-principal" id="p-salvar">' + (p ? 'Salvar' : 'Adicionar') + '</button>'
+      + '</div>';
+    document.getElementById('modal-pessoa').classList.remove('hidden');
+    var campo = document.getElementById('p-nome');
+    if (campo){ campo.focus(); campo.select(); }
+  }
+  function fecharPessoa(){
+    document.getElementById('modal-pessoa').classList.add('hidden');
+    pessoaEditando = null;
+  }
+
+  function salvarPessoa(){
+    var nome = (document.getElementById('p-nome').value || '').trim();
+    if (!nome){ avisar('Digite um nome.'); return; }
+
+    if (pessoaEditando){
+      state.pessoas.forEach(function(p){ if (p.id === pessoaEditando) p.nome = nome; });
+    } else {
+      var usadas = state.pessoas.map(function(p){ return p.cor; });
+      var cor = CORES.filter(function(c){ return usadas.indexOf(c) === -1; })[0] || CORES[state.pessoas.length % CORES.length];
+      state.pessoas.push({id:novoId('p'), nome:nome, cor:cor});
+    }
+    fecharPessoa();
+    salvar();
+    avisar(pessoaEditando ? 'Nome atualizado.' : nome + ' entrou no rachão.');
+  }
+
+  /* ---------------- Confirmações ---------------- */
+
+  var painelConfirma = document.getElementById('painel-confirma');
+  var confirmaAcao = null;
+
+  function pedirConfirmacao(opcoes){
+    confirmaAcao = opcoes.aoConfirmar;
+    painelConfirma.innerHTML = ''
+      + '<h2>' + esc(opcoes.titulo) + '</h2>'
+      + '<div class="aviso-perigo">' + opcoes.aviso + '</div>'
+      + (opcoes.exigePalavra
+          ? '<div class="field"><label>Pra confirmar, digite <b>excluir</b> abaixo</label>'
+            + '<input type="text" id="c-palavra" placeholder="excluir" autocomplete="off"></div>'
+          : '')
+      + '<div class="btn-linha">'
+        + '<button class="btn-secundario" data-acao="fechar-confirma">Cancelar</button>'
+        + '<button class="btn-principal btn-perigo" id="c-confirmar"' + (opcoes.exigePalavra ? ' disabled' : '') + '>'
+          + esc(opcoes.botao || 'Excluir') + '</button>'
+      + '</div>';
+    document.getElementById('modal-confirma').classList.remove('hidden');
+    var campo = document.getElementById('c-palavra');
+    if (campo) campo.focus();
+  }
+  function fecharConfirma(){
+    document.getElementById('modal-confirma').classList.add('hidden');
+    confirmaAcao = null;
+  }
+
+  function apagarPessoa(id){
+    var p = pessoaPor(id);
+    if (!p) return;
+    var pagou = state.despesas.filter(function(d){ return d.pagouId === id; }).length;
+    var dividiu = state.despesas.filter(function(d){ return d.entre.indexOf(id) !== -1; }).length;
+
+    pedirConfirmacao({
+      titulo: 'Tirar ' + p.nome + ' do rachão?',
+      // Quem pagou uma conta não pode sumir: a despesa ficaria sem dono e o
+      // acerto pararia de fechar. Nesse caso o app manda editar antes.
+      aviso: pagou
+        ? '<b>' + esc(p.nome) + ' pagou ' + pagou + (pagou === 1 ? ' despesa' : ' despesas') + '.</b> '
+          + 'Apagar agora deixaria essas contas sem dono e o acerto sairia errado. '
+          + 'Troque quem pagou nessas despesas primeiro (no lápis da lista).'
+        : (dividiu
+            ? '<b>' + esc(p.nome) + ' está em ' + dividiu + (dividiu === 1 ? ' despesa' : ' despesas') + '.</b> '
+              + 'Ela sai da divisão dessas contas, e o valor passa a ser rachado só entre quem sobrar. Isso muda o acerto.'
+            : esc(p.nome) + ' não participa de nenhuma despesa. Tirar não muda número nenhum.'),
+      botao: pagou ? 'Entendi' : 'Tirar do rachão',
+      exigePalavra: dividiu > 0 && !pagou,
+      aoConfirmar: pagou ? null : function(){
+        state.pessoas = state.pessoas.filter(function(x){ return x.id !== id; });
+        state.despesas.forEach(function(d){
+          d.entre = d.entre.filter(function(x){ return x !== id; });
+        });
+        // Despesa que ficou sem ninguém dividindo não faz sentido: sai junto.
+        state.despesas = state.despesas.filter(function(d){ return d.entre.length > 0; });
+        if (state.euId === id) state.euId = state.pessoas[0].id;
+        fecharConfirma();
+        salvar();
+        avisar(p.nome + ' saiu do rachão.');
+      }
+    });
+
+    if (pagou){
+      // Não é uma exclusão: é um aviso. O botão só fecha.
+      var btn = document.getElementById('c-confirmar');
+      btn.classList.remove('btn-perigo');
+      confirmaAcao = fecharConfirma;
+    }
+  }
+
+  function apagarDespesa(id){
+    var d = state.despesas.filter(function(x){ return x.id === id; })[0];
+    if (!d) return;
+    pedirConfirmacao({
+      titulo: 'Apagar "' + d.desc + '"?',
+      aviso: 'A despesa de <b>' + dinheiro(d.centavos) + '</b> sai da conta e o acerto é refeito na hora. Isso não tem como desfazer.',
+      botao: 'Apagar',
+      aoConfirmar: function(){
+        state.despesas = state.despesas.filter(function(x){ return x.id !== id; });
+        fecharConfirma();
+        salvar();
+        avisar('Despesa apagada.');
+      }
+    });
+  }
+
+  function zerarTudo(){
+    pedirConfirmacao({
+      titulo: 'Zerar tudo?',
+      aviso: 'Apaga <b>todas as pessoas e todas as despesas</b> deste navegador. Isso não tem como desfazer.',
+      botao: 'Zerar tudo',
+      exigePalavra: true,
+      aoConfirmar: function(){
+        state = estadoInicial();
+        fecharConfirma();
+        salvar();
+        avisar('Tudo zerado.');
+      }
+    });
+  }
+
+  /* ---------------- Ajuda ---------------- */
+
+  var PASSOS = [
+    ['Monte o grupo', 'Em <b>Quem está no rachão</b>, adicione as pessoas. Toque no lápis pra renomear ou pra marcar qual delas é você.'],
+    ['Lance as despesas', 'Em <b>Nova despesa</b>, diga o que foi, quanto custou, <b>quem pagou</b> e entre quem divide. Não precisa ser todo mundo — desmarque quem não participou daquela conta.'],
+    ['Veja quanto cai pra cada um', 'Enquanto você digita o valor, o app já mostra quanto sobra pra cada pessoa. Quando o valor não divide certinho, ele distribui o centavo que sobra em vez de sumir com ele.'],
+    ['Leia o acerto', 'O bloco de cima mostra <b>quem paga pra quem</b>, no menor número de transferências possível. Verde na lista de pessoas é quem tem a receber; vermelho é quem deve.'],
+    ['Corrigiu algo?', 'Lápis edita e lixeira apaga, tanto em pessoa quanto em despesa. O acerto é refeito na hora.']
+  ];
+
+  function abrirAjuda(){
+    document.getElementById('painel-ajuda').innerHTML = ''
+      + '<h2>❓ Como usar</h2>'
+      + '<p class="modal-nota">Leva um minuto. Tudo fica salvo neste navegador — não precisa criar conta.</p>'
+      + PASSOS.map(function(p, i){
+          return '<div class="ajuda-passo">'
+            + '<span class="ajuda-num">' + (i+1) + '</span>'
+            + '<div class="ajuda-txt"><h3>' + esc(p[0]) + '</h3><p>' + p[1] + '</p></div>'
+            + '</div>';
+        }).join('')
+      + '<div class="btn-linha"><button class="btn-secundario" data-acao="fechar-ajuda">Entendi</button></div>';
+    document.getElementById('modal-ajuda').classList.remove('hidden');
+  }
+
+  /* ---------------- Aviso rápido ---------------- */
+
+  var avisoEl = document.getElementById('aviso');
+  var avisoTimer = null;
+  function avisar(texto){
+    avisoEl.textContent = texto;
+    avisoEl.classList.remove('hidden');
+    clearTimeout(avisoTimer);
+    avisoTimer = setTimeout(function(){ avisoEl.classList.add('hidden'); }, 2400);
+  }
+
+  /* ---------------- Eventos ---------------- */
+
+  conteudoEl.addEventListener('click', function(e){
+    var alvo = e.target.closest('[data-acao]');
+    if (!alvo) return;
+    var acao = alvo.getAttribute('data-acao');
+    var id = alvo.getAttribute('data-id');
+    if (acao === 'nova-despesa') abrirDespesa(null);
+    else if (acao === 'editar-despesa') abrirDespesa(id);
+    else if (acao === 'apagar-despesa') apagarDespesa(id);
+    else if (acao === 'nova-pessoa') abrirPessoa(null);
+    else if (acao === 'editar-pessoa') abrirPessoa(id);
+    else if (acao === 'apagar-pessoa') apagarPessoa(id);
+  });
+
+  painelDespesa.addEventListener('click', function(e){
+    if (e.target.closest('[data-acao="fechar-despesa"]')){ fecharDespesa(); return; }
+    if (e.target.closest('#d-salvar')){ salvarDespesa(); return; }
+    var op = e.target.closest('.divide-op');
+    if (op){ op.classList.toggle('is-on'); atualizarResumoDivisao(); return; }
+  });
+  painelDespesa.addEventListener('input', function(e){
+    if (e.target.matches('#d-valor')) atualizarResumoDivisao();
+  });
+
+  painelPessoa.addEventListener('click', function(e){
+    if (e.target.closest('[data-acao="fechar-pessoa"]')){ fecharPessoa(); return; }
+    if (e.target.closest('#p-salvar')){ salvarPessoa(); return; }
+    if (e.target.closest('#p-sou-eu')){
+      state.euId = pessoaEditando;
+      fecharPessoa();
+      salvar();
+      avisar('Pronto, agora é você.');
+      return;
+    }
+  });
+
+  painelConfirma.addEventListener('click', function(e){
+    if (e.target.closest('[data-acao="fechar-confirma"]')){ fecharConfirma(); return; }
+    if (e.target.closest('#c-confirmar')){ if (confirmaAcao) confirmaAcao(); return; }
+  });
+  painelConfirma.addEventListener('input', function(e){
+    if (!e.target.matches('#c-palavra')) return;
+    var btn = document.getElementById('c-confirmar');
+    if (btn) btn.disabled = e.target.value.trim().toLowerCase() !== 'excluir';
+  });
+
+  document.getElementById('painel-ajuda').addEventListener('click', function(e){
+    if (e.target.closest('[data-acao="fechar-ajuda"]')) document.getElementById('modal-ajuda').classList.add('hidden');
+  });
+
+  // Tocar fora fecha a janela — o gesto que todo mundo tenta primeiro.
+  ['modal-despesa','modal-pessoa','modal-confirma','modal-ajuda'].forEach(function(idM){
+    var el = document.getElementById(idM);
+    el.addEventListener('click', function(e){ if (e.target === el) el.classList.add('hidden'); });
+  });
+
+  document.addEventListener('keydown', function(e){
+    if (e.key !== 'Escape') return;
+    ['modal-despesa','modal-pessoa','modal-confirma','modal-ajuda'].forEach(function(idM){
+      document.getElementById(idM).classList.add('hidden');
+    });
+  });
+
+  document.getElementById('btn-ajuda').addEventListener('click', abrirAjuda);
+  document.getElementById('btn-zerar').addEventListener('click', zerarTudo);
+
+  /* ---------- Rodando dentro do Gestor ----------
+     Quando o RachaFácil abre dentro do Gestor de Gastos, o cabeçalho daqui
+     sai e os dois botões (ajuda e zerar) passam a viver na barra de cima do
+     Gestor. O combinado entre os dois é só isto: mandamos a lista de botões
+     e ficamos ouvindo o clique. Qualquer app extra futuro pode fazer igual. */
+  var embutido = false;
+  try { embutido = (window.parent !== window); } catch(e){ embutido = true; }
+
+  if (embutido){
+    document.body.classList.add('embutido');
+    window.addEventListener('message', function(e){
+      var d = e.data;
+      if (!d || d.tipo !== 'app-acao') return;
+      if (d.id === 'ajuda') abrirAjuda();
+      else if (d.id === 'zerar') zerarTudo();
+    });
+    try {
+      window.parent.postMessage({
+        tipo: 'app-acoes',
+        acoes: [
+          {id:'ajuda', rotulo:'?', titulo:'Como usar'},
+          {id:'zerar', rotulo:'\uD83D\uDDD1\uFE0F', titulo:'Zerar tudo'}
+        ]
+      }, '*');
+    } catch(e){}
+  }
+
+  render();
+})();
+<\/script>
+</body>
+</html>
 
 </script>
 </body>
