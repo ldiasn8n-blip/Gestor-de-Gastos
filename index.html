@@ -6,30 +6,33 @@
 <title>Gastos da Casa</title>
 <style>
   :root{
-    /* Avisa o navegador que o app é escuro. Sem isso ele desenha as partes
-       nativas — a listinha que abre no seletor de mês, o calendário do campo
-       de data, a barra de rolagem — com fundo branco, e o texto claro do app
-       fica ilegível em cima. */
-    color-scheme:dark;
-    --paper:#0A0C10;
-    --paper-raised:#161A21;
-    --input-bg:#1F2530;
-    --ink:#EAF2EF;
-    --ink-soft:#8B96A5;
-    --line:#2A313D;
-    --positive:#39FF88;
-    --positive-soft:rgba(57,255,136,0.15);
-    --alert:#FF4D6D;
-    --alert-soft:rgba(255,77,109,0.15);
-    --neon2:#4FE0FF;
-    --hover:rgba(255,255,255,0.06);
-    --hover-soft:rgba(255,255,255,0.04);
-    --backdrop:rgba(0,0,0,0.68);
-    --focus-ring:rgba(57,255,136,0.30);
-    --radius:14px;
-    --shadow-sm:0 1px 2px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04);
-    --shadow-md:0 4px 16px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.05);
-    --shadow-lg:0 16px 40px rgba(0,0,0,0.65), 0 0 24px rgba(57,255,136,0.08);
+    /* Tema claro, no estilo "app de finanças" amarelo/preto: fundo claro,
+       texto quase preto, amarelo como cor de destaque em botões, abas e
+       ícone ativo — igual às telas de referência. */
+    color-scheme:light;
+    --paper:#FAF9F4;
+    --paper-raised:#FFFFFF;
+    --input-bg:#F3F1E8;
+    --ink:#181712;
+    --ink-soft:#82806F;
+    --line:#ECE9DC;
+    --positive:#1EA85C;
+    --positive-soft:rgba(30,168,92,0.12);
+    --alert:#E5484D;
+    --alert-soft:rgba(229,72,77,0.12);
+    --neon2:#FFC61A;
+    --accent-text:#8A6412;
+    --accent-ink:#181712;
+    --header-bg:#FFC61A;
+    --tab-active-bg:#181712;
+    --hover:rgba(24,23,18,0.05);
+    --hover-soft:rgba(24,23,18,0.035);
+    --backdrop:rgba(24,22,12,0.55);
+    --focus-ring:rgba(255,198,26,0.35);
+    --radius:16px;
+    --shadow-sm:0 1px 2px rgba(24,23,18,0.06), 0 0 0 1px rgba(24,23,18,0.04);
+    --shadow-md:0 4px 16px rgba(24,23,18,0.09), 0 0 0 1px rgba(24,23,18,0.04);
+    --shadow-lg:0 16px 40px rgba(24,23,18,0.18), 0 0 0 1px rgba(24,23,18,0.05);
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
@@ -68,40 +71,42 @@
   }
   #shell.hidden{ display:none; }
   header{
-    padding:18px 20px 14px;
+    padding:20px 20px 18px;
     display:flex;
     align-items:center;
     justify-content:space-between;
-    background:var(--paper);
+    background:var(--header-bg);
     position:sticky;
     top:0;
     z-index:5;
     gap:10px;
-    box-shadow:0 1px 0 var(--line), 0 2px 12px rgba(0,0,0,0.35);
+    box-shadow:0 2px 14px rgba(24,23,18,0.12);
   }
   header h1{
-    font-size:19px;
-    font-weight:700;
+    font-size:21px;
+    font-weight:800;
     margin:0;
     letter-spacing:-0.01em;
+    color:var(--header-ink, var(--accent-ink));
   }
   header .sub{
-    font-size:12px;
-    color:var(--ink-soft);
+    font-size:12.5px;
+    color:rgba(24,23,18,0.62);
+    font-weight:600;
   }
   .gear-btn{
-    border:none;background:none;font-size:19px;cursor:pointer;padding:4px 2px;color:var(--ink-soft);flex-shrink:0;
+    border:none;background:none;font-size:19px;cursor:pointer;padding:4px 2px;color:var(--header-ink, var(--accent-ink));flex-shrink:0;
   }
   .header-acoes{ display:flex; align-items:center; gap:4px; flex-shrink:0; }
   /* O "?" é uma letra, não um emoji: precisa do próprio contorno pra parecer
      um botão e não um texto solto ao lado da engrenagem. */
   .ajuda-btn{
     width:26px; height:26px; border-radius:50%;
-    border:1px solid var(--line); color:var(--ink-soft);
+    border:1.5px solid rgba(24,23,18,0.35); color:var(--header-ink, var(--accent-ink));
     font-size:14px; font-weight:800; font-family:inherit;
     display:grid; place-items:center; padding:0; line-height:1;
   }
-  .ajuda-btn:hover{ border-color:var(--neon2); color:var(--neon2); }
+  .ajuda-btn:hover{ border-color:var(--header-ink, var(--accent-ink)); background:rgba(24,23,18,0.08); }
 
   #ajuda-modal{ z-index:85; }
   #membro-modal{ z-index:90; }
@@ -116,7 +121,7 @@
     font-size:14px; cursor:pointer; line-height:1.45;
   }
   .membro-escolha input{ margin-right:9px; accent-color:var(--neon2); }
-  .membro-escolha.is-on{ border-color:var(--neon2); background:rgba(79,224,255,.06); }
+  .membro-escolha.is-on{ border-color:var(--neon2); background:rgba(255,198,26,.06); }
   .membro-escolha small{ display:block; color:var(--ink-soft); font-size:12px; margin:3px 0 0 24px; }
   .membro-escolha select{ margin:8px 0 0 24px; width:calc(100% - 24px); }
   .membro-aviso{
@@ -133,7 +138,7 @@
     flex:0 0 26px; height:26px; border-radius:50%;
     background:var(--hover-soft); border:1px solid var(--line);
     display:grid; place-items:center;
-    font-size:12px; font-weight:800; color:var(--neon2);
+    font-size:12px; font-weight:800; color:var(--accent-text);
     font-variant-numeric:tabular-nums;
   }
   .ajuda-txt h3{ margin:1px 0 4px; font-size:14.5px; font-weight:700; color:var(--ink); }
@@ -165,7 +170,7 @@
     padding-bottom:env(safe-area-inset-bottom);
     z-index:10;
     overflow-x:auto;
-    box-shadow:0 -1px 0 var(--line), 0 -2px 12px rgba(0,0,0,0.35);
+    box-shadow:0 -1px 0 var(--line), 0 -6px 18px rgba(24,23,18,0.06);
   }
   nav.tabbar button{
     flex:1;
@@ -173,19 +178,31 @@
     border:none;
     background:none;
     border-radius:10px;
-    padding:10px 4px 8px;
+    padding:8px 4px 8px;
     font-size:11px;
     color:var(--ink-soft);
     display:flex;
     flex-direction:column;
     align-items:center;
-    gap:3px;
+    gap:4px;
     cursor:pointer;
     font-family:inherit;
     white-space:nowrap;
   }
-  nav.tabbar button .ic{font-size:19px;}
+  nav.tabbar button .ic{
+    font-size:17px;
+    line-height:1;
+    display:grid; place-items:center;
+    width:34px; height:34px;
+    border-radius:50%;
+    transition:background-color .15s ease, color .15s ease;
+  }
   nav.tabbar button.active{font-weight:700;color:var(--ink);}
+  nav.tabbar button.active .ic{
+    background:var(--neon2);
+    color:var(--accent-ink);
+    box-shadow:0 4px 10px rgba(255,198,26,0.45);
+  }
   nav.tabbar button:active{ transform:scale(0.94); }
 
   .member-badge{
@@ -197,22 +214,29 @@
   .segmented{
     display:flex;
     border:1px solid var(--line);
-    border-radius:var(--radius);
+    border-radius:999px;
     overflow:hidden;
     margin-bottom:16px;
-    background:var(--paper-raised);
+    background:var(--input-bg);
     box-shadow:var(--shadow-sm);
+    padding:4px;
+    gap:4px;
   }
   .segmented button{
     flex:1;
     padding:9px 6px;
     border:none;
+    border-radius:999px;
     background:none;
     font-size:13.5px;
-    font-weight:600;
+    font-weight:700;
     color:var(--ink-soft);
     cursor:pointer;
     font-family:inherit;
+  }
+  .segmented button.active{
+    background:var(--tab-active-bg);
+    color:#fff;
   }
   .segmented button:active{ transform:scale(0.97); }
 
@@ -603,8 +627,8 @@
   }
   .meta-btn:hover{ border-color:var(--positive); color:var(--ink); }
   .meta-btn.is-on{
-    border-color:rgba(57,255,136,0.5); color:var(--positive);
-    box-shadow:0 0 14px -4px rgba(57,255,136,0.6);
+    border-color:rgba(30,168,92,0.5); color:var(--positive);
+    box-shadow:0 0 14px -4px rgba(30,168,92,0.6);
   }
   .meta-btn-icone{ font-size:14px; }
   .meta-editar{
@@ -654,7 +678,7 @@
     font-family:inherit; font-size:12px; font-weight:600; color:var(--ink-soft);
     text-decoration:underline; cursor:pointer;
   }
-  .link-gerenciar:hover{ color:var(--neon2); }
+  .link-gerenciar:hover{ color:var(--accent-text); }
 
   .cat-linha{
     display:flex; align-items:center; gap:8px;
@@ -668,7 +692,7 @@
     border-radius:5px; width:24px; height:17px; line-height:1;
     font-size:8px; cursor:pointer; padding:0; font-family:inherit;
   }
-  .cat-seta:hover:not(:disabled){ border-color:var(--neon2); color:var(--neon2); }
+  .cat-seta:hover:not(:disabled){ border-color:var(--neon2); color:var(--accent-text); }
   .cat-seta:disabled{ opacity:.25; cursor:default; }
   .cat-icone-btn{
     background:transparent; border:1px dashed var(--line); border-radius:9px;
@@ -694,8 +718,8 @@
   }
   .icone-op:hover{ border-color:var(--neon2); }
   .icone-op.is-on{
-    border-color:var(--neon2); background:rgba(79,224,255,0.12);
-    box-shadow:0 0 12px -3px rgba(79,224,255,0.7);
+    border-color:var(--neon2); background:rgba(255,198,26,0.12);
+    box-shadow:0 0 12px -3px rgba(255,198,26,0.7);
   }
   .cat-linha:last-of-type{ border-bottom:none; }
   .cat-linha-nome{ flex:1; min-width:0; display:flex; align-items:center; gap:9px; font-size:14px; font-weight:600; }
@@ -732,7 +756,7 @@
     font-size:15px; font-family:inherit; cursor:pointer;
     display:grid; place-items:center;
   }
-  .ag-nav:hover{ border-color:var(--neon2); color:var(--neon2); }
+  .ag-nav:hover{ border-color:var(--neon2); color:var(--accent-text); }
   .ag-semana{
     display:grid; grid-template-columns:repeat(7,1fr); gap:4px;
     font-size:11px; font-weight:700; color:var(--ink-soft); text-align:center;
@@ -749,8 +773,8 @@
   .ag-dia.fora{ color:var(--ink-soft); opacity:.42; }
   .ag-dia.hoje{ border-color:var(--line-strong, var(--line)); box-shadow:inset 0 0 0 1px var(--line); }
   .ag-dia.is-on{
-    background:var(--neon2); color:#06222c; font-weight:800;
-    box-shadow:0 0 16px -3px rgba(79,224,255,.9);
+    background:var(--neon2); color:#181712; font-weight:800;
+    box-shadow:0 0 16px -3px rgba(255,198,26,.9);
   }
   .ag-dia:disabled{ opacity:.22; cursor:default; }
   .ag-dia:disabled:hover{ background:transparent; }
@@ -760,7 +784,7 @@
     border:1px solid var(--line); background:transparent; color:var(--ink-soft);
     font-size:12.5px; font-weight:600; font-family:inherit; cursor:pointer;
   }
-  .ag-atalho:hover{ border-color:var(--neon2); color:var(--neon2); }
+  .ag-atalho:hover{ border-color:var(--neon2); color:var(--accent-text); }
 
   .cartao-linha{
     display:flex; align-items:center; gap:9px;
@@ -772,7 +796,7 @@
     border:1px solid var(--line); background:transparent; color:var(--ink-soft);
     font-size:12px; font-weight:700; font-family:inherit; cursor:pointer;
   }
-  .cartao-editar:hover{ border-color:var(--neon2); color:var(--neon2); }
+  .cartao-editar:hover{ border-color:var(--neon2); color:var(--accent-text); }
 
   .cartao-previa{
     display:flex; align-items:center; gap:12px;
@@ -795,7 +819,7 @@
     font-size:15px; font-family:inherit; cursor:pointer;
     display:inline-flex; align-items:center; justify-content:center;
   }
-  .escolha-ic.is-on{ border-color:var(--neon2); box-shadow:0 0 0 2px rgba(79,224,255,.22); }
+  .escolha-ic.is-on{ border-color:var(--neon2); box-shadow:0 0 0 2px rgba(255,198,26,.22); }
 
   /* ---------- Apps extras ---------- */
 
@@ -817,7 +841,7 @@
   .app-card-desc{ display:block; font-size:12px; color:var(--ink-soft); margin-top:2px; line-height:1.45; }
   .app-card-abrir{
     flex:0 0 auto; padding:9px 15px; border-radius:9px; border:none;
-    background:var(--neon2); color:#06222c;
+    background:var(--neon2); color:#181712;
     font-size:13px; font-weight:800; font-family:inherit; cursor:pointer;
   }
   .app-card-abrir:active{ transform:scale(0.96); }
@@ -846,7 +870,7 @@
     border:1px solid var(--line); background:transparent; color:var(--ink);
     font-size:13px; font-weight:700; font-family:inherit; cursor:pointer;
   }
-  #appfull-voltar:hover{ border-color:var(--neon2); color:var(--neon2); }
+  #appfull-voltar:hover{ border-color:var(--neon2); color:var(--accent-text); }
   #appfull-nome{ font-size:14px; font-weight:700; flex:1; min-width:0;
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   /* Botões que o próprio app extra pede pra colocar aqui (ajuda, zerar…). */
@@ -857,15 +881,15 @@
     font-size:14px; font-weight:800; font-family:inherit;
     display:grid; place-items:center; cursor:pointer;
   }
-  #appfull-acoes button:hover{ border-color:var(--neon2); color:var(--neon2); }
+  #appfull-acoes button:hover{ border-color:var(--neon2); color:var(--accent-text); }
   #appfull-frame{ flex:1; width:100%; border:none; background:var(--paper); }
 
-  #membro-modal, #ajuda-modal, #cats-modal, #metas-modal, #future-modal, #apps-modal, #cartao-modal, #agenda-modal{
+  #membro-modal, #ajuda-modal, #cats-modal, #metas-modal, #future-modal, #apps-modal, #cartao-modal, #agenda-modal, #tema-modal{
     position:fixed;inset:0;background:var(--backdrop);
     display:flex;align-items:flex-end;justify-content:center;z-index:70;
     opacity:1;visibility:visible;transition:opacity .18s ease, visibility .18s ease;
   }
-  #membro-modal.hidden, #ajuda-modal.hidden, #cats-modal.hidden, #metas-modal.hidden, #future-modal.hidden, #apps-modal.hidden, #cartao-modal.hidden, #agenda-modal.hidden{opacity:0;visibility:hidden;pointer-events:none;}
+  #membro-modal.hidden, #ajuda-modal.hidden, #cats-modal.hidden, #metas-modal.hidden, #future-modal.hidden, #apps-modal.hidden, #cartao-modal.hidden, #agenda-modal.hidden, #tema-modal.hidden{opacity:0;visibility:hidden;pointer-events:none;}
   #agenda-modal.hidden #agenda-panel{ transform:translateY(24px); }
   #cartao-modal.hidden #cartao-panel{ transform:translateY(24px); }
   #apps-modal.hidden #apps-panel{ transform:translateY(24px); }
@@ -874,13 +898,78 @@
   #cats-modal.hidden #cats-panel{ transform:translateY(24px); }
   #future-modal.hidden #future-panel{ transform:translateY(24px); }
   #metas-modal.hidden #metas-panel{ transform:translateY(24px); }
-  #membro-panel, #ajuda-panel, #cats-panel, #metas-panel, #future-panel, #apps-panel, #cartao-panel, #agenda-panel{
+  #tema-modal.hidden #tema-panel{ transform:translateY(24px); }
+  #membro-panel, #ajuda-panel, #cats-panel, #metas-panel, #future-panel, #apps-panel, #cartao-panel, #agenda-panel, #tema-panel{
     background:var(--paper-raised);width:100%;max-width:480px;
     border-radius:18px 18px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));
     max-height:85vh;overflow-y:auto;box-shadow:var(--shadow-lg);
     transform:translateY(0);transition:transform .2s ease;
   }
-  #membro-panel h2, #ajuda-panel h2, #cats-panel h2, #metas-panel h2, #future-panel h2, #apps-panel h2, #cartao-panel h2, #agenda-panel h2{font-size:17px;margin:0 0 6px;}
+  #membro-panel h2, #ajuda-panel h2, #cats-panel h2, #metas-panel h2, #future-panel h2, #apps-panel h2, #cartao-panel h2, #agenda-panel h2, #tema-panel h2{font-size:17px;margin:0 0 6px;}
+
+  /* ---------- Tema (cor e estilo escolhidos pela pessoa) ---------- */
+  .tema-secao{ margin-top:18px; }
+  .tema-secao:first-of-type{ margin-top:4px; }
+  .tema-secao-titulo{
+    font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--ink-soft); margin:0 0 10px;
+  }
+  .tema-cores{ display:flex; flex-wrap:wrap; gap:10px; }
+  .tema-cor{
+    width:42px; height:42px; border-radius:50%; padding:0;
+    border:2px solid transparent; cursor:pointer; position:relative;
+    box-shadow:0 1px 3px rgba(24,23,18,0.18);
+  }
+  .tema-cor.is-on{ border-color:var(--ink); box-shadow:0 0 0 3px var(--paper-raised), 0 0 0 5px var(--ink); }
+  .tema-cor.is-on::after{
+    content:'✓'; position:absolute; inset:0; display:grid; place-items:center;
+    color:#fff; font-size:16px; font-weight:800; text-shadow:0 1px 2px rgba(0,0,0,.35);
+  }
+  .tema-custom-linha{ display:flex; align-items:center; gap:12px; margin-top:12px; }
+  .tema-custom-swatch{
+    width:42px; height:42px; border-radius:50%; flex:0 0 auto; padding:0; cursor:pointer;
+    border:2px dashed var(--line); position:relative; overflow:hidden;
+    background:conic-gradient(from 0deg, #FF5D8F, #FFC24F, #39FF88, #4FE0FF, #4FA8FF, #B18CFF, #FF5D8F);
+  }
+  .tema-custom-swatch input[type="color"]{
+    position:absolute; inset:-4px; width:calc(100% + 8px); height:calc(100% + 8px);
+    border:none; padding:0; cursor:pointer; opacity:0;
+  }
+  .tema-custom-txt{ font-size:13px; color:var(--ink-soft); line-height:1.4; }
+  .tema-custom-txt b{ color:var(--ink); }
+  /* Botão "auto/padrão" das seções novas (cabeçalho, fundo, gráficos):
+     mesmo tamanho dos círculos de cor, mas com um ícone em vez de cor sólida. */
+  .tema-cor-auto{
+    display:grid; place-items:center; font-size:16px;
+    background:var(--input-bg); border:2px dashed var(--line); color:var(--ink-soft);
+  }
+  .tema-cor-auto.is-on{ border-style:solid; border-color:var(--ink); }
+  .tema-cor-auto.is-on::after{ display:none; }
+  .tema-opcoes{ display:flex; gap:8px; }
+  .tema-opcao{
+    flex:1; display:flex; flex-direction:column; align-items:center; gap:6px;
+    padding:12px 8px; border-radius:12px; border:1.5px solid var(--line);
+    background:var(--input-bg); cursor:pointer; font-family:inherit;
+  }
+  .tema-opcao.is-on{ border-color:var(--ink); background:var(--paper-raised); box-shadow:var(--shadow-sm); }
+  .tema-opcao-prev{ width:100%; height:26px; border-radius:8px; }
+  .tema-opcao-lbl{ font-size:12px; font-weight:700; color:var(--ink); }
+  .tema-radius-prev{ background:var(--ink-soft); }
+  .tema-opcao[data-radius="16"] .tema-radius-prev{ border-radius:9px; }
+  .tema-opcao[data-radius="6"] .tema-radius-prev{ border-radius:3px; }
+  .tema-modo-prev.claro{ background:#FAF9F4; border:1px solid #ECE9DC; }
+  .tema-modo-prev.escuro{ background:#15171B; border:1px solid #2A2D33; }
+  .tema-neon-prev.on{
+    background:var(--paper-raised); border:1px solid var(--neon2);
+    box-shadow:0 0 10px -1px var(--neon2), inset 0 0 8px -4px var(--neon2);
+  }
+  .tema-neon-prev.off{ background:var(--paper-raised); border:1px solid var(--line); }
+  .tema-restaurar{
+    width:100%; margin-top:18px; padding:11px; border-radius:9px;
+    border:1px solid var(--line); background:transparent; color:var(--ink-soft);
+    font-size:13px; font-weight:700; font-family:inherit; cursor:pointer;
+  }
+  .tema-restaurar:hover{ border-color:var(--alert); color:var(--alert); }
   #membro-panel .field{ margin-bottom:14px; }
   #membro-panel label.rot{ display:block; font-size:12px; color:var(--ink-soft); margin-bottom:6px; }
   #membro-panel input[type="text"], #membro-panel select{
@@ -932,7 +1021,7 @@
     margin-top:14px;padding-top:12px;border-top:1px solid var(--line);
     font-size:15px;font-weight:700;
   }
-  .future-total .v{ color:var(--neon2);text-shadow:0 0 14px rgba(79,224,255,0.5); }
+  .future-total .v{ color:var(--accent-text);text-shadow:0 0 14px rgba(255,198,26,0.5); }
   /* ---------- Entrar / criar conta ---------- */
   #auth-screen{
     position:fixed; inset:0; z-index:200; background:var(--paper);
@@ -943,9 +1032,9 @@
   #auth-card{
     width:100%; max-width:400px;
     background:var(--paper-raised);
-    border:1px solid rgba(79,224,255,0.4);
+    border:1px solid rgba(255,198,26,0.4);
     border-radius:var(--radius); padding:26px 22px;
-    box-shadow:0 0 0 1px rgba(79,224,255,0.08), 0 0 40px -10px rgba(79,224,255,0.5), var(--shadow-lg);
+    box-shadow:0 0 0 1px rgba(255,198,26,0.08), 0 0 40px -10px rgba(255,198,26,0.5), var(--shadow-lg);
   }
   #auth-card h1{ font-size:22px; margin:0 0 4px; }
   #auth-card .sub{ font-size:13px; color:var(--ink-soft); margin-bottom:20px; line-height:1.5; }
@@ -965,8 +1054,8 @@
     background:var(--input-bg); color:var(--ink); font-family:inherit;
   }
   #auth-card input:focus{
-    outline:none; border-color:rgba(79,224,255,0.6);
-    box-shadow:0 0 0 3px rgba(79,224,255,0.14);
+    outline:none; border-color:rgba(255,198,26,0.6);
+    box-shadow:0 0 0 3px rgba(255,198,26,0.14);
   }
   #auth-card .submit-btn,
   #auth-card .secondary-btn{ width:100%; }
@@ -995,7 +1084,7 @@
     margin-top:16px; text-align:center; font-size:13px; color:var(--ink-soft);
   }
   .auth-link{
-    background:none; border:none; color:var(--neon2); font-weight:700;
+    background:none; border:none; color:var(--accent-text); font-weight:700;
     font-family:inherit; font-size:13px; cursor:pointer; padding:2px 4px;
     text-decoration:underline;
   }
@@ -1020,15 +1109,15 @@
     border:1px solid var(--line); border-radius:10px; padding:11px 12px;
     background:var(--input-bg);
   }
-  .lic-livre{ border-color:rgba(57,255,136,0.4); }
-  .lic-usado{ border-color:rgba(79,224,255,0.35); }
+  .lic-livre{ border-color:rgba(30,168,92,0.4); }
+  .lic-usado{ border-color:rgba(255,198,26,0.35); }
   .lic-desligado{ border-color:rgba(255,77,109,0.45); opacity:.75; }
   .lic-vencido{ border-color:rgba(255,194,79,0.5); }
   .lic-topo{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
   .lic-codigo{ -webkit-user-select:text; user-select:text; font-weight:800; letter-spacing:.08em; font-size:14px; color:var(--ink); }
   .lic-tag{ font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; }
   .lic-livre .lic-tag{ color:var(--positive); }
-  .lic-usado .lic-tag{ color:var(--neon2); }
+  .lic-usado .lic-tag{ color:var(--accent-text); }
   .lic-desligado .lic-tag{ color:var(--alert); }
   .lic-vencido .lic-tag{ color:#FFC24F; }
   .lic-plano{ font-size:11.5px; font-weight:700; color:var(--ink-soft); margin-top:4px; }
@@ -1050,13 +1139,13 @@
   .lic-contagem b{ color:var(--ink); }
   .lic-limpar{
     background:transparent; border:none; padding:0 0 0 8px; cursor:pointer;
-    font-family:inherit; font-size:12px; font-weight:600; color:var(--neon2);
+    font-family:inherit; font-size:12px; font-weight:600; color:var(--accent-text);
     text-decoration:underline;
   }
-  .lic-btn-renovar{ border-color:rgba(57,255,136,0.45); color:var(--positive); }
-  .lic-btn-editar{ border-color:rgba(79,224,255,0.45); color:var(--neon2); }
-  .lic-btn-salvar{ border-color:rgba(57,255,136,0.6); color:var(--positive); font-weight:800; }
-  .lic-editando{ border-color:rgba(79,224,255,0.6); box-shadow:0 0 18px -6px rgba(79,224,255,0.6); }
+  .lic-btn-renovar{ border-color:rgba(30,168,92,0.45); color:var(--positive); }
+  .lic-btn-editar{ border-color:rgba(255,198,26,0.45); color:var(--accent-text); }
+  .lic-btn-salvar{ border-color:rgba(30,168,92,0.6); color:var(--positive); font-weight:800; }
+  .lic-editando{ border-color:rgba(255,198,26,0.6); box-shadow:0 0 18px -6px rgba(255,198,26,0.6); }
   .lic-editor{
     margin-top:10px; padding:12px 12px 4px;
     border-top:1px solid var(--line);
@@ -1078,8 +1167,8 @@
   .lic-btn{ width:auto; flex:1; min-width:130px; padding:8px 10px; font-size:12.5px; }
   .lic-novo-caixa{
     margin-top:10px; padding:12px; border-radius:10px;
-    border:1px solid rgba(57,255,136,0.45); background:var(--input-bg);
-    box-shadow:0 0 18px -8px rgba(57,255,136,0.6);
+    border:1px solid rgba(30,168,92,0.45); background:var(--input-bg);
+    box-shadow:0 0 18px -8px rgba(30,168,92,0.6);
   }
   .lic-link{
     font-size:12px; color:var(--positive); word-break:break-all; line-height:1.5;
@@ -1088,13 +1177,13 @@
 
   .convite-caixa{
     display:flex; align-items:center; gap:10px;
-    background:var(--input-bg); border:1px solid rgba(79,224,255,0.35);
+    background:var(--input-bg); border:1px solid rgba(255,198,26,0.35);
     border-radius:10px; padding:10px 10px 10px 14px;
-    box-shadow:0 0 16px -6px rgba(79,224,255,0.55);
+    box-shadow:0 0 16px -6px rgba(255,198,26,0.55);
   }
   .convite-codigo{
     flex:1; font-size:20px; font-weight:800; letter-spacing:.18em;
-    color:var(--neon2); text-shadow:0 0 14px rgba(79,224,255,0.5);
+    color:var(--accent-text); text-shadow:0 0 14px rgba(255,198,26,0.5);
     font-variant-numeric:tabular-nums;
   }
 
@@ -1146,13 +1235,13 @@
   .cat-group.future-month{ opacity:0.82; }
   .installment-badge{ font-size:11px;font-weight:600;white-space:nowrap; }
   .prazo-selo{
-    color:var(--neon2); font-weight:600;
+    color:var(--accent-text); font-weight:600;
   }
   .prazo-selo.prazo-fim{ color:var(--ink-soft); }
   .fixed-tag.fixo-fim{ opacity:.6; }
   .fixed-tag{
-    color:var(--neon2); font-weight:700;
-    text-shadow:0 0 10px rgba(79,224,255,0.55);
+    color:var(--accent-text); font-weight:700;
+    text-shadow:0 0 10px rgba(255,198,26,0.55);
   }
   .entry.month-item.pending-item .value{ color:var(--ink-soft); }
 
@@ -1246,13 +1335,28 @@
   }
   .neon-box > .section-title{ color:var(--ink); letter-spacing:.01em; }
 
-  /* Paleta das caixas. Cada área do app tem a sua cor fixa. */
-  .acc-cyan   { --accent:#4FE0FF; --accent-line:rgba(79,224,255,0.48); --accent-halo:rgba(79,224,255,0.10); --accent-glow:rgba(79,224,255,0.62); }
-  .acc-green  { --accent:#39FF88; --accent-line:rgba(57,255,136,0.44); --accent-halo:rgba(57,255,136,0.10); --accent-glow:rgba(57,255,136,0.56); }
-  .acc-pink   { --accent:#FF4D6D; --accent-line:rgba(255,77,109,0.46); --accent-halo:rgba(255,77,109,0.10); --accent-glow:rgba(255,77,109,0.58); }
-  .acc-purple { --accent:#B18CFF; --accent-line:rgba(177,140,255,0.46); --accent-halo:rgba(177,140,255,0.10); --accent-glow:rgba(177,140,255,0.58); }
-  .acc-amber  { --accent:#FFC24F; --accent-line:rgba(255,194,79,0.44); --accent-halo:rgba(255,194,79,0.10); --accent-glow:rgba(255,194,79,0.56); }
-  .acc-blue   { --accent:#4FA8FF; --accent-line:rgba(79,168,255,0.46); --accent-halo:rgba(79,168,255,0.10); --accent-glow:rgba(79,168,255,0.58); }
+  /* Paleta das caixas. Cada área do app tem a sua cor — por padrão fixa,
+     mas se a pessoa escolher uma "cor dos gráficos" em Cor e estilo, o
+     JS manda 6 variações dela nas variáveis --chart-1..--chart-6 e estas
+     regras passam a usar essa cor em vez da fixa (o valor depois da
+     vírgula é só o reserva, pro caso de nada ter sido definido ainda). */
+  .acc-cyan   { --accent:var(--chart-1, #FFC61A); --accent-line:var(--chart-1-line, rgba(255,198,26,0.48)); --accent-halo:var(--chart-1-halo, rgba(255,198,26,0.10)); --accent-glow:var(--chart-1-glow, rgba(255,198,26,0.62)); }
+  .acc-green  { --accent:var(--chart-2, #39FF88); --accent-line:var(--chart-2-line, rgba(30,168,92,0.44)); --accent-halo:var(--chart-2-halo, rgba(30,168,92,0.10)); --accent-glow:var(--chart-2-glow, rgba(30,168,92,0.56)); }
+  .acc-pink   { --accent:var(--chart-3, #FF4D6D); --accent-line:var(--chart-3-line, rgba(255,77,109,0.46)); --accent-halo:var(--chart-3-halo, rgba(255,77,109,0.10)); --accent-glow:var(--chart-3-glow, rgba(255,77,109,0.58)); }
+  .acc-purple { --accent:var(--chart-4, #B18CFF); --accent-line:var(--chart-4-line, rgba(177,140,255,0.46)); --accent-halo:var(--chart-4-halo, rgba(177,140,255,0.10)); --accent-glow:var(--chart-4-glow, rgba(177,140,255,0.58)); }
+  .acc-amber  { --accent:var(--chart-5, #FFC24F); --accent-line:var(--chart-5-line, rgba(255,194,79,0.44)); --accent-halo:var(--chart-5-halo, rgba(255,194,79,0.10)); --accent-glow:var(--chart-5-glow, rgba(255,194,79,0.56)); }
+  .acc-blue   { --accent:var(--chart-6, #4FA8FF); --accent-line:var(--chart-6-line, rgba(79,168,255,0.46)); --accent-halo:var(--chart-6-halo, rgba(79,168,255,0.10)); --accent-glow:var(--chart-6-glow, rgba(79,168,255,0.58)); }
+
+  /* Bordas neon desligadas (escolha em Cor e estilo): tira o brilho
+     colorido das caixas e chips, deixando só um contorno discreto. */
+  html.sem-neon .neon-box{ box-shadow:var(--shadow-sm); border-color:var(--line); }
+  html.sem-neon .neon-box::before{ display:none; }
+  html.sem-neon .neon-box > .section-title::before{ box-shadow:none; }
+  html.sem-neon .kpi-label::before{ box-shadow:none; }
+  html.sem-neon .pessoa-chip.is-on{ box-shadow:none; }
+  html.sem-neon .chip-modo.is-on{ box-shadow:none; }
+  html.sem-neon .card-chip.is-on{ box-shadow:none; }
+  html.sem-neon .card-open{ border-left-color:var(--line); }
 
   /* Ajustes pra nada virar caixa dentro de caixa */
   .hero-settlement.neon-box{ padding:20px 18px; margin-bottom:0; }
@@ -1275,7 +1379,7 @@
   .cat-head .name{ color:var(--ink); }
   .cat-head .total{ text-shadow:0 0 14px var(--accent-glow, transparent); }
 
-  .segmented{ border-color:rgba(79,224,255,0.22); }
+  .segmented{ border-color:rgba(255,198,26,0.22); }
 
   /* As duas metades do formulário viram caixas rotuladas, em qualquer tela:
      à esquerda os dados da conta, à direita os itens da nota. */
@@ -1319,10 +1423,10 @@
   /* Reforço pros navegadores que ignoram o color-scheme nas opções. */
   select option{ background:var(--paper-raised); color:var(--ink); }
   select option:disabled{ color:var(--ink-soft); }
-  select option.mes-atual{ color:var(--neon2); font-weight:700; }
+  select option.mes-atual{ color:var(--accent-text); font-weight:700; }
   /* Quando o mês corrente é o que está selecionado, o próprio campo acende. */
-  .resumo-month.is-current{ border-color:rgba(79,224,255,0.5); box-shadow:0 0 16px -4px rgba(79,224,255,0.55); }
-  .resumo-month.is-current .resumo-month-select{ color:var(--neon2); }
+  .resumo-month.is-current{ border-color:rgba(255,198,26,0.5); box-shadow:0 0 16px -4px rgba(255,198,26,0.55); }
+  .resumo-month.is-current .resumo-month-select{ color:var(--accent-text); }
   .resumo-scope{ font-size:12px; color:var(--ink-soft); }
   /* No celular o seletor de mês já diz qual mês está na tela, então este
      texto repetido sai pra caber o botão de metas na mesma linha. */
@@ -1390,7 +1494,7 @@
   .pessoa-chip.is-on b{ color:var(--cor-pessoa, var(--neon2)); }
   .pessoa-ponto{ width:9px; height:9px; border-radius:50%; flex:0 0 auto; }
   .chip-modo{ margin-left:auto; }
-  .chip-modo.is-on{ border-color:var(--neon2); color:var(--neon2); box-shadow:0 0 13px -3px var(--neon2); }
+  .chip-modo.is-on{ border-color:var(--neon2); color:var(--accent-text); box-shadow:0 0 13px -3px var(--neon2); }
 
   .pessoa-bloco{
     border-left:2px solid var(--cor-pessoa, var(--line));
@@ -1422,7 +1526,7 @@
   .card-mark-lg{ width:40px; height:40px; border-radius:12px; font-size:18px; }
   .card-caret{ margin-left:8px; color:var(--ink-soft); font-weight:700; }
   .card-row.is-open{ background:var(--hover-soft); }
-  .card-row.is-open .card-caret{ color:var(--neon2); }
+  .card-row.is-open .card-caret{ color:var(--accent-text); }
   .card-open{
     margin:2px 0 10px; padding:11px 12px 12px;
     border:1px solid var(--line); border-left:2px solid var(--neon2);
@@ -1437,10 +1541,10 @@
   .card-chip b{ color:var(--ink); font-weight:800; margin-left:2px; }
   .card-chip:hover{ border-color:var(--neon2); }
   .card-chip.is-on{
-    border-color:var(--neon2); color:var(--neon2);
-    box-shadow:0 0 12px -2px rgba(79,224,255,0.55);
+    border-color:var(--neon2); color:var(--accent-text);
+    box-shadow:0 0 12px -2px rgba(255,198,26,0.55);
   }
-  .card-chip.is-on b{ color:var(--neon2); }
+  .card-chip.is-on b{ color:var(--accent-text); }
   .cat-bar-fill{ display:block; height:100%; border-radius:3px; min-width:3px; }
 
   /* Evolução mensal — barras em HTML/CSS.
@@ -1471,8 +1575,8 @@
   .trend-bar:hover .trend-cap{ opacity:.8; }
   .trend-bar.is-future .trend-cap{ opacity:.28; }
   .trend-bar.is-selected .trend-cap{
-    opacity:1; color:var(--neon2);
-    text-shadow:0 0 10px rgba(79,224,255,0.55);
+    opacity:1; color:var(--accent-text);
+    text-shadow:0 0 10px rgba(255,198,26,0.55);
   }
   .trend-plot{ flex:1; width:100%; display:flex; align-items:flex-end; justify-content:center; padding:0 2px; }
   .trend-mark{
@@ -1480,7 +1584,7 @@
     background:var(--neon2); opacity:.42; transition:opacity .12s ease;
   }
   .trend-bar.is-selected .trend-mark{
-    opacity:1; box-shadow:0 0 12px -1px rgba(79,224,255,0.85);
+    opacity:1; box-shadow:0 0 12px -1px rgba(255,198,26,0.85);
   }
   .trend-bar:hover .trend-mark{ opacity:.72; }
   .trend-bar.is-future .trend-mark{ opacity:.2; }
@@ -1491,7 +1595,7 @@
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;
   }
   /* O mês de hoje fica sempre identificável, mesmo olhando outro mês. */
-  .trend-bar.is-current .trend-month{ color:var(--neon2); font-weight:700; }
+  .trend-bar.is-current .trend-month{ color:var(--accent-text); font-weight:700; }
   .trend-bar.is-future .trend-month{ opacity:.72; }
   .trend-legend{ font-size:11px; color:var(--ink-soft); margin-top:8px; line-height:1.45; }
 
@@ -1670,6 +1774,7 @@
       <div class="sub" id="header-sub">Gastos da casa</div>
     </div>
     <div class="header-acoes">
+      <button id="tema-btn" class="gear-btn" aria-label="Cor e estilo" title="Cor e estilo">🎨</button>
       <button id="ajuda-btn" class="gear-btn ajuda-btn" aria-label="Como usar o app" title="Como usar">?</button>
       <button id="settings-btn" class="gear-btn" aria-label="Configurações">⚙️</button>
     </div>
@@ -1735,6 +1840,10 @@
   <div id="agenda-panel"></div>
 </div>
 
+<div id="tema-modal" class="hidden">
+  <div id="tema-panel"></div>
+</div>
+
 <!--
   Janela cheia dos apps extras. Cada app roda dentro do iframe abaixo, com o
   HTML vindo de um bloco <script type="text/html"> lá embaixo. O iframe isola
@@ -1762,10 +1871,10 @@
 (function(){
   "use strict";
 
-  var PALETTE = ['#4FA8FF','#FF5D8F','#39FF88','#FFC24F','#B18CFF','#4FE0FF','#FF8A4F','#7CE05A'];
+  var PALETTE = ['#4FA8FF','#FF5D8F','#39FF88','#FFC24F','#B18CFF','#FFC61A','#FF8A4F','#7CE05A'];
 
   var CATEGORIES = [
-    {id:'Mercado', icon:'🛒', color:'#4FE0FF'},
+    {id:'Mercado', icon:'🛒', color:'#FFC61A'},
     {id:'Aluguel/Financiamento', icon:'🏠', color:'#FF8A4F'},
     {id:'Água', icon:'💧', color:'#4FA8FF'},
     {id:'Luz', icon:'⚡', color:'#FFC24F'},
@@ -1783,6 +1892,281 @@
   var DEFAULT_CATEGORY_COLOR = '#8B93A1';
 
   var DEFAULT_CARDS = ['Nubank','Inter','Itaú','Santander'];
+
+  /* ================= Tema: a pessoa escolhe a cor e o estilo =================
+     A ideia: a pessoa escolhe só duas coisas — uma cor de destaque (de uma
+     grade pronta ou totalmente livre, num seletor de cor) e se prefere claro
+     ou escuro. A partir disso este código monta a paleta inteira (fundo,
+     texto, bordas, verde/vermelho de saldo…) sempre com contraste garantido,
+     em vez de pedir pra pessoa escolher variável por variável. Também dá pra
+     trocar o estilo dos cantos (arredondado ou reto). Tudo fica salvo neste
+     navegador e é reaplicado na hora, sem precisar recarregar a página. */
+
+  var TEMA_PADRAO = {
+    cor:'#FFC61A', headerCor:null, fundoCor:null, graficoCor:null,
+    escuro:false, raio:16, neon:true
+  };
+  var TEMA_STORAGE_KEY = 'gestorGastos.tema.v1';
+
+  var TEMA_CORES_PRONTAS = [
+    {nome:'Amarelo', cor:'#FFC61A'},
+    {nome:'Verde',   cor:'#1EA85C'},
+    {nome:'Azul',    cor:'#3E7BFA'},
+    {nome:'Roxo',    cor:'#8B5CF6'},
+    {nome:'Rosa',    cor:'#FF4D8D'},
+    {nome:'Laranja', cor:'#FF7A33'},
+    {nome:'Vermelho',cor:'#E5484D'},
+    {nome:'Ciano',   cor:'#17B7C7'}
+  ];
+
+  function hexParaRgb(hex){
+    hex = String(hex||'').replace('#','');
+    if (hex.length === 3) hex = hex.split('').map(function(c){ return c+c; }).join('');
+    var n = parseInt(hex, 16);
+    return { r:(n>>16)&255, g:(n>>8)&255, b:n&255 };
+  }
+  function rgbParaHex(r,g,b){
+    function h(v){ v = Math.max(0,Math.min(255,Math.round(v))); var s=v.toString(16); return s.length<2?'0'+s:s; }
+    return '#'+h(r)+h(g)+h(b);
+  }
+  function rgbParaHsl(r,g,b){
+    r/=255; g/=255; b/=255;
+    var max=Math.max(r,g,b), min=Math.min(r,g,b), h,s,l=(max+min)/2;
+    if (max===min){ h=s=0; }
+    else{
+      var d=max-min;
+      s = l>0.5 ? d/(2-max-min) : d/(max+min);
+      if (max===r) h=(g-b)/d+(g<b?6:0);
+      else if (max===g) h=(b-r)/d+2;
+      else h=(r-g)/d+4;
+      h/=6;
+    }
+    return { h:h*360, s:s*100, l:l*100 };
+  }
+  function hslParaRgb(h,s,l){
+    h/=360; s/=100; l/=100;
+    var r,g,b;
+    if (s===0){ r=g=b=l; }
+    else{
+      function hue2rgb(p,q,t){
+        if (t<0) t+=1; if (t>1) t-=1;
+        if (t<1/6) return p+(q-p)*6*t;
+        if (t<1/2) return q;
+        if (t<2/3) return p+(q-p)*(2/3-t)*6;
+        return p;
+      }
+      var q = l<0.5 ? l*(1+s) : l+s-l*s;
+      var p = 2*l-q;
+      r = hue2rgb(p,q,h+1/3); g = hue2rgb(p,q,h); b = hue2rgb(p,q,h-1/3);
+    }
+    return { r:r*255, g:g*255, b:b*255 };
+  }
+  // Luminância relativa (padrão WCAG) pra decidir se o texto em cima da cor
+  // escolhida deve ser preto ou branco.
+  function luminanciaRelativa(hex){
+    var c = hexParaRgb(hex);
+    function lin(v){ v/=255; return v<=0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055, 2.4); }
+    return 0.2126*lin(c.r) + 0.7152*lin(c.g) + 0.0722*lin(c.b);
+  }
+  function hexParaRgba(hex, alpha){
+    var c = hexParaRgb(hex);
+    return 'rgba('+c.r+','+c.g+','+c.b+','+alpha+')';
+  }
+
+  // As 6 cores "de fábrica" usadas nos gráficos/indicadores, na mesma ordem
+  // das classes .acc-cyan/.acc-green/.acc-pink/.acc-purple/.acc-amber/.acc-blue.
+  var CHART_PADRAO = ['#FFC61A','#39FF88','#FF4D6D','#B18CFF','#FFC24F','#4FA8FF'];
+
+  // Só aceita string no formato #rrggbb; qualquer outra coisa vira null
+  // (= "usar o padrão"), pra nunca gravar lixo vindo do localStorage.
+  function corValidaOuNull(v){
+    return (typeof v === 'string' && /^#[0-9a-fA-F]{6}$/.test(v)) ? v : null;
+  }
+
+  // Tons do fundo (papel, cartão, campo e linha) a partir de uma cor-base.
+  // Sem cor-base, usa os tons neutros de sempre. Com cor-base, gera uma
+  // versão bem clara dela (modo claro) ou bem escura (modo escuro) — dá um
+  // "tingimento" sutil sem comprometer a leitura do texto por cima.
+  function tonsFundo(baseHex, escuro){
+    if (!baseHex){
+      return !escuro
+        ? { paper:'#FAF9F4', 'paper-raised':'#FFFFFF', 'input-bg':'#F3F1E8', line:'#ECE9DC' }
+        : { paper:'#111318', 'paper-raised':'#1A1D23', 'input-bg':'#232630', line:'#2C2F38' };
+    }
+    var rgb = hexParaRgb(baseHex);
+    var hsl = rgbParaHsl(rgb.r, rgb.g, rgb.b);
+    function tom(sat, l){
+      var c = hslParaRgb(hsl.h, Math.min(hsl.s, sat), l);
+      return rgbParaHex(c.r, c.g, c.b);
+    }
+    if (!escuro){
+      return {
+        paper: tom(55, 97), 'paper-raised': tom(45, 99.3),
+        'input-bg': tom(50, 94.5), line: tom(40, 89)
+      };
+    }
+    return {
+      paper: tom(35, 9), 'paper-raised': tom(32, 13),
+      'input-bg': tom(30, 17), line: tom(28, 22)
+    };
+  }
+
+  // As 6 cores dos gráficos. Sem cor-base, usa a paleta colorida de sempre.
+  // Com cor-base, gera 6 variações (mais clara, mais escura, mais ou menos
+  // saturada) da MESMA cor, pra manter um visual combinando em vez do
+  // arco-íris padrão.
+  function coresGrafico(baseHex, escuro){
+    var hexes;
+    if (!baseHex){
+      hexes = CHART_PADRAO.slice();
+    } else {
+      var rgb = hexParaRgb(baseHex);
+      var hsl = rgbParaHsl(rgb.r, rgb.g, rgb.b);
+      var Ls = escuro ? [64,54,72,60,68,56] : [50,42,58,46,54,40];
+      var Ss = [hsl.s, hsl.s+8, Math.max(20,hsl.s-10), hsl.s, hsl.s+5, Math.max(18,hsl.s-14)];
+      hexes = Ls.map(function(l, i){
+        var c = hslParaRgb(hsl.h, Math.max(20,Math.min(100,Ss[i])), l);
+        return rgbParaHex(c.r, c.g, c.b);
+      });
+    }
+    var out = {};
+    hexes.forEach(function(hex, i){
+      var n = i + 1;
+      out['chart-'+n] = hex;
+      out['chart-'+n+'-line'] = hexParaRgba(hex, 0.46);
+      out['chart-'+n+'-halo'] = hexParaRgba(hex, 0.10);
+      out['chart-'+n+'-glow'] = hexParaRgba(hex, 0.58);
+    });
+    return out;
+  }
+
+  // Monta a paleta inteira a partir da configuração completa escolhida pela
+  // pessoa: cor de destaque, cor do cabeçalho, cor de fundo, cor dos
+  // gráficos e modo claro/escuro.
+  function montarPaleta(cfg){
+    var corHex = cfg.cor;
+    var escuro = !!cfg.escuro;
+    var rgb = hexParaRgb(corHex);
+    var hsl = rgbParaHsl(rgb.r, rgb.g, rgb.b);
+    var corEscolhida = corHex;
+
+    var corInk = luminanciaRelativa(corHex) > 0.5 ? '#181712' : '#FFFFFF';
+
+    // Versão da cor legível como TEXTO sobre o fundo (nunca amarelo puro em
+    // cima de branco, nem uma cor escura demais sumindo no fundo escuro).
+    var lTexto = escuro ? Math.max(hsl.l, 64) : Math.min(hsl.l, 40);
+    var sTexto = Math.max(hsl.s, 45);
+    var rgbTexto = hslParaRgb(hsl.h, sTexto, lTexto);
+    var corTexto = rgbParaHex(rgbTexto.r, rgbTexto.g, rgbTexto.b);
+
+    // Cabeçalho: usa a cor de destaque se a pessoa não escolheu uma cor
+    // própria pra ele. O texto do cabeçalho é calculado em cima da cor QUE
+    // DE FATO vai pro fundo dele, não da cor de destaque — senão o texto
+    // pode ficar ilegível quando as duas cores são bem diferentes.
+    var headerBg = cfg.headerCor || corEscolhida;
+    var headerInk = luminanciaRelativa(headerBg) > 0.5 ? '#181712' : '#FFFFFF';
+
+    var fundo = tonsFundo(cfg.fundoCor, escuro);
+    var grafico = coresGrafico(cfg.graficoCor, escuro);
+
+    var base = !escuro ? {
+      ink:'#181712', 'ink-soft':'#82806F',
+      positive:'#1EA85C', 'positive-soft':'rgba(30,168,92,0.12)',
+      alert:'#E5484D', 'alert-soft':'rgba(229,72,77,0.12)',
+      'tab-active-bg':'#181712',
+      hover:'rgba(24,23,18,0.05)', 'hover-soft':'rgba(24,23,18,0.035)',
+      backdrop:'rgba(24,22,12,0.55)',
+      'shadow-sm':'0 1px 2px rgba(24,23,18,0.06), 0 0 0 1px rgba(24,23,18,0.04)',
+      'shadow-md':'0 4px 16px rgba(24,23,18,0.09), 0 0 0 1px rgba(24,23,18,0.04)',
+      'shadow-lg':'0 16px 40px rgba(24,23,18,0.18), 0 0 0 1px rgba(24,23,18,0.05)'
+    } : {
+      ink:'#F1F0E9', 'ink-soft':'#9A9C9F',
+      positive:'#3BCB80', 'positive-soft':'rgba(59,203,128,0.16)',
+      alert:'#FF6B72', 'alert-soft':'rgba(255,107,114,0.16)',
+      'tab-active-bg':'#F1F0E9',
+      hover:'rgba(255,255,255,0.06)', 'hover-soft':'rgba(255,255,255,0.04)',
+      backdrop:'rgba(0,0,0,0.68)',
+      'shadow-sm':'0 1px 2px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04)',
+      'shadow-md':'0 4px 16px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05)',
+      'shadow-lg':'0 16px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.06)'
+    };
+
+    return Object.assign({}, base, fundo, grafico, {
+      neon2:corEscolhida, 'accent-text':corTexto, 'accent-ink':corInk,
+      'header-bg':headerBg, 'header-ink':headerInk,
+      'focus-ring':hexParaRgba(corEscolhida,0.35)
+    });
+  }
+
+  var temaAtual = null;
+
+  function carregarTemaSalvo(){
+    try{
+      var bruto = localStorage.getItem(TEMA_STORAGE_KEY);
+      if (!bruto) return Object.assign({}, TEMA_PADRAO);
+      var salvo = JSON.parse(bruto);
+      return {
+        cor: (salvo && typeof salvo.cor === 'string') ? salvo.cor : TEMA_PADRAO.cor,
+        headerCor: corValidaOuNull(salvo && salvo.headerCor),
+        fundoCor: corValidaOuNull(salvo && salvo.fundoCor),
+        graficoCor: corValidaOuNull(salvo && salvo.graficoCor),
+        escuro: !!(salvo && salvo.escuro),
+        raio: (salvo && (salvo.raio === 6 || salvo.raio === 16)) ? salvo.raio : TEMA_PADRAO.raio,
+        neon: (salvo && typeof salvo.neon === 'boolean') ? salvo.neon : TEMA_PADRAO.neon
+      };
+    } catch(e){ return Object.assign({}, TEMA_PADRAO); }
+  }
+
+  // Aplica a cor/estilo na hora, sem precisar recarregar: troca só as
+  // variáveis CSS no elemento raiz, e como o app inteiro já é construído em
+  // cima delas, tudo — cabeçalho, fundo, botões, listas, gráficos — se
+  // atualiza junto.
+  function aplicarTema(cfg, opcoes){
+    opcoes = opcoes || {};
+    temaAtual = {
+      cor: cfg.cor,
+      headerCor: cfg.headerCor || null,
+      fundoCor: cfg.fundoCor || null,
+      graficoCor: cfg.graficoCor || null,
+      escuro: !!cfg.escuro,
+      raio: cfg.raio,
+      neon: cfg.neon !== undefined ? !!cfg.neon : true
+    };
+    var paleta = montarPaleta(temaAtual);
+    var raiz = document.documentElement.style;
+    Object.keys(paleta).forEach(function(chave){
+      raiz.setProperty('--'+chave, paleta[chave]);
+    });
+    raiz.setProperty('--radius', temaAtual.raio + 'px');
+    document.documentElement.style.colorScheme = temaAtual.escuro ? 'dark' : 'light';
+    document.documentElement.classList.toggle('sem-neon', !temaAtual.neon);
+
+    if (!opcoes.semSalvar){
+      try{ localStorage.setItem(TEMA_STORAGE_KEY, JSON.stringify(temaAtual)); } catch(e){}
+    }
+    // O RachaFácil roda isolado dentro de um iframe: manda a mesma paleta pra
+    // ele também, pra combinar com o resto do app.
+    if (!opcoes.semPropagar) propagarTemaParaAppExtra();
+  }
+
+  function propagarTemaParaAppExtra(){
+    try{
+      if (appfullFrameEl && appfullFrameEl.contentWindow && temaAtual){
+        // Manda a paleta já pronta (não só a cor escolhida): assim o app
+        // extra só aplica as variáveis, sem precisar repetir a conta de cor.
+        var paleta = montarPaleta(temaAtual);
+        appfullFrameEl.contentWindow.postMessage({
+          tipo:'app-tema', paleta:paleta, raio:temaAtual.raio,
+          escuro:temaAtual.escuro, neon:temaAtual.neon
+        }, '*');
+      }
+    } catch(e){}
+  }
+
+  // Aplica o tema salvo assim que o script roda, antes de qualquer coisa
+  // aparecer na tela — evita o "pisca" de mostrar a cor padrão por um
+  // instante e trocar pra cor escolhida logo em seguida.
+  aplicarTema(carregarTemaSalvo(), { semSalvar:true, semPropagar:true });
 
   function defaultSettings(){
     return {
@@ -1874,6 +2258,7 @@
   var appsModalEl, appsPanelEl, appfullEl, appfullFrameEl, appfullNomeEl, appfullAcoesEl;
   var cartaoModalEl, cartaoPanelEl;
   var agendaModalEl, agendaPanelEl;
+  var temaModalEl, temaPanelEl, temaBtn;
 
   /* ---------- Apps extras ----------
      Cada app extra é uma página HTML completa guardada num bloco
@@ -2701,7 +3086,7 @@
         + aviso
         + '<div class="field"><label>Código do convite</label><input type="text" id="lic-codigo" placeholder="GC-XXXX-XXXX" autocapitalize="characters" value="' + escapeHTML(conviteDoLink || '') + '"></div>'
         + '<div class="field"><label>Nome da casa</label><input type="text" id="casa-nome" placeholder="Ex: Nossa Casa" value="Gastos da Casa"></div>'
-        + '<button type="button" class="submit-btn" id="btn-resgatar" style="background:var(--neon2);color:#06222c;">Ativar minha casa</button>'
+        + '<button type="button" class="submit-btn" id="btn-resgatar" style="background:var(--neon2);color:#181712;">Ativar minha casa</button>'
         + '<div class="auth-ou">ou</div>'
         + '<div class="sub" style="margin-bottom:10px;">Alguém da sua casa já usa o app? Entre na casa dela — vocês passam a ver os mesmos lançamentos.</div>'
         + '<div class="field"><label>Código da casa</label><input type="text" id="casa-codigo" placeholder="Ex: A1B2C3" autocapitalize="characters"></div>'
@@ -2725,7 +3110,7 @@
       + '<label class="auth-lembrar"><input type="checkbox" id="auth-lembrar"' + (lembrarLigado() ? ' checked' : '') + '>'
         + '<span><b>Continuar conectado neste aparelho</b>'
         + '<small>Deixe desmarcado em computador emprestado: aí a sessão acaba quando você fechar o navegador.</small></span></label>'
-      + '<button type="button" class="submit-btn" id="btn-auth" style="background:var(--neon2);color:#06222c;">' + (cadastro ? 'Criar conta' : 'Entrar') + '</button>'
+      + '<button type="button" class="submit-btn" id="btn-auth" style="background:var(--neon2);color:#181712;">' + (cadastro ? 'Criar conta' : 'Entrar') + '</button>'
       + '<div class="auth-troca">' + (cadastro
           ? 'Já tem conta? <button type="button" class="auth-link" id="btn-troca">Entrar</button>'
           : 'Ainda não tem conta? <button type="button" class="auth-link" id="btn-troca">Criar agora</button>') + '</div>';
@@ -4529,7 +4914,7 @@
      O que não passou por cartão nenhum (pix, dinheiro, boleto) não some — vai
      pra uma linha própria no fim, senão a soma do painel não bateria com o mês. */
 
-  var CARD_COLORS = ['#8B5CF6','#4FE0FF','#FF9F43','#35D6C4','#FF5D8F','#9BE564'];
+  var CARD_COLORS = ['#8B5CF6','#FFC61A','#FF9F43','#35D6C4','#FF5D8F','#9BE564'];
   var CARTAO_OUTRO = '__outro__';
 
   /* Aparência dos cartões conhecidos: a cor da marca e um símbolo. Não são as
@@ -4573,7 +4958,7 @@
 
   // Cores boas em cima do fundo escuro do app.
   var CORES_CARTAO = ['#820AD1','#FF7A00','#EC7000','#EC0000','#0070AF','#F9DD16',
-                      '#21C25E','#00B1EA','#8B5CF6','#4FE0FF','#FF9F43','#35D6C4',
+                      '#21C25E','#00B1EA','#8B5CF6','#FFC61A','#FF9F43','#35D6C4',
                       '#FF5D8F','#9BE564','#B18CFF','#7C8A97'];
 
   function chaveCartao(nome){ return String(nome || '').trim().toLowerCase(); }
@@ -5070,7 +5455,7 @@
           + '<div class="items-hint" style="margin:6px 0 0;">A conta passa a aparecer deste mês em diante. Se ela já vem sendo paga há um tempo, coloque a data do primeiro mês.</div></div>'
         + prazoFixoHTML(null, true, true)
       + '</div>'
-      + '<div class="form-submit-area"><button type="submit" class="submit-btn" style="background:var(--neon2);color:#06222c;">Adicionar conta fixa</button></div>'
+      + '<div class="form-submit-area"><button type="submit" class="submit-btn" style="background:var(--neon2);color:#181712;">Adicionar conta fixa</button></div>'
       + '</form>';
   }
 
@@ -5291,7 +5676,7 @@
         + '<button type="button" id="remove-demo-btn" class="secondary-btn" style="margin-top:8px;">Remover os dados de exemplo</button>'
       + '</div>'
       + '<div class="field" style="margin-top:22px;"><label style="color:var(--alert);">Zona de risco</label><button type="button" id="open-reset-btn" class="secondary-btn" style="border-color:var(--alert);color:var(--alert);">🗑️ Zerar dados</button></div>'
-      + '<div class="settings-actions"><button type="button" id="cancel-settings-btn" class="secondary-btn">Cancelar</button><button type="button" id="save-settings-btn" class="submit-btn" style="background:var(--neon2);color:#06222c;">Salvar</button></div>';
+      + '<div class="settings-actions"><button type="button" id="cancel-settings-btn" class="secondary-btn">Cancelar</button><button type="button" id="save-settings-btn" class="submit-btn" style="background:var(--neon2);color:#181712;">Salvar</button></div>';
   }
 
   /* ---------- Dados de exemplo (pra testar a visualização) ----------
@@ -6130,6 +6515,129 @@
   }
   function closeAjudaModal(){ ajudaModalEl.classList.add('hidden'); }
 
+  /* ---------- Cor e estilo (tema escolhido pela pessoa) ---------- */
+
+  // Monta uma fileira de círculos de cor reutilizável, usada nas 4 seções
+  // de cor (destaque, cabeçalho, fundo, gráficos). "atributo" é o nome do
+  // data-* que os botões usam (ex.: "tema-header-cor"). Quando a seção
+  // aceita "seguir o padrão" (valorAtual pode ser null), passa autoRotulo e
+  // autoIcone pra desenhar o primeiro círculo como essa opção.
+  function renderFileiraCores(atributo, valorAtual, autoRotulo, autoIcone){
+    var autoBtn = '';
+    if (autoRotulo){
+      var ativoAuto = !valorAtual;
+      autoBtn = '<button type="button" class="tema-cor tema-cor-auto' + (ativoAuto?' is-on':'') + '" '
+        + 'data-' + atributo + '="" title="' + escapeHTML(autoRotulo) + '" aria-label="' + escapeHTML(autoRotulo) + '">'
+        + autoIcone + '</button>';
+    }
+    var presets = TEMA_CORES_PRONTAS.map(function(c){
+      var ativo = !!valorAtual && valorAtual.toLowerCase() === c.cor.toLowerCase();
+      return '<button type="button" class="tema-cor' + (ativo?' is-on':'') + '" '
+        + 'style="background:' + c.cor + ';" data-' + atributo + '="' + c.cor + '" '
+        + 'title="' + escapeHTML(c.nome) + '" aria-label="' + escapeHTML(c.nome) + '"></button>';
+    }).join('');
+    var corPersonalizada = !!valorAtual && !TEMA_CORES_PRONTAS.some(function(c){
+      return c.cor.toLowerCase() === valorAtual.toLowerCase();
+    });
+    var custom = '<label class="tema-custom-swatch" title="Escolher qualquer cor" '
+      + (corPersonalizada ? 'style="border-style:solid;border-color:'+valorAtual+';"' : '')
+      + '><input type="color" id="' + atributo + '-custom" value="' + (valorAtual || '#FFC61A') + '"></label>';
+    return autoBtn + presets + custom;
+  }
+
+  function renderTemaPanel(){
+    var t = temaAtual || carregarTemaSalvo();
+
+    temaPanelEl.innerHTML = ''
+      + '<h2>🎨 Cor e estilo</h2>'
+      + '<div class="note" style="margin:2px 0 4px;">Escolha do seu jeito — cabeçalho, fundo e gráficos, cada um com a sua cor. Muda na hora e fica salvo só neste navegador.</div>'
+
+      + '<div class="tema-secao">'
+        + '<div class="tema-secao-titulo">Cor de destaque</div>'
+        + '<div class="tema-cores">' + renderFileiraCores('tema-cor', t.cor, null, '') + '</div>'
+        + '<div class="tema-custom-linha"><span class="tema-custom-txt">Usada em botões, abas e nos detalhes do app. Toque no círculo tracejado pra abrir a paleta livre e escolher <b>qualquer cor</b>.</span></div>'
+      + '</div>'
+
+      + '<div class="tema-secao">'
+        + '<div class="tema-secao-titulo">Cor do cabeçalho</div>'
+        + '<div class="tema-cores">' + renderFileiraCores('tema-header-cor', t.headerCor, 'Igual à cor de destaque', '🔗') + '</div>'
+      + '</div>'
+
+      + '<div class="tema-secao">'
+        + '<div class="tema-secao-titulo">Cor de fundo</div>'
+        + '<div class="tema-cores">' + renderFileiraCores('tema-fundo-cor', t.fundoCor, 'Padrão', '⚪') + '</div>'
+        + '<div class="tema-custom-linha"><span class="tema-custom-txt">A cor escolhida vira um tom bem suave, só um tingimento — o texto continua legível.</span></div>'
+      + '</div>'
+
+      + '<div class="tema-secao">'
+        + '<div class="tema-secao-titulo">Cor dos gráficos</div>'
+        + '<div class="tema-cores">' + renderFileiraCores('tema-grafico-cor', t.graficoCor, 'Colorido (padrão)', '🌈') + '</div>'
+        + '<div class="tema-custom-linha"><span class="tema-custom-txt">Escolhendo uma cor, os gráficos e indicadores do app passam a usar variações dela em vez do arco-íris padrão.</span></div>'
+      + '</div>'
+
+      + '<div class="tema-secao">'
+        + '<div class="tema-secao-titulo">Modo</div>'
+        + '<div class="tema-opcoes">'
+          + '<button type="button" class="tema-opcao' + (!t.escuro?' is-on':'') + '" data-tema-modo="claro">'
+            + '<span class="tema-opcao-prev tema-modo-prev claro"></span><span class="tema-opcao-lbl">☀️ Claro</span></button>'
+          + '<button type="button" class="tema-opcao' + (t.escuro?' is-on':'') + '" data-tema-modo="escuro">'
+            + '<span class="tema-opcao-prev tema-modo-prev escuro"></span><span class="tema-opcao-lbl">🌙 Escuro</span></button>'
+        + '</div>'
+      + '</div>'
+
+      + '<div class="tema-secao">'
+        + '<div class="tema-secao-titulo">Cantos</div>'
+        + '<div class="tema-opcoes">'
+          + '<button type="button" class="tema-opcao" data-radius="16" data-tema-raio="16">'
+            + '<span class="tema-opcao-prev tema-radius-prev" style="border-radius:9px;"></span><span class="tema-opcao-lbl">Arredondado</span></button>'
+          + '<button type="button" class="tema-opcao" data-radius="6" data-tema-raio="6">'
+            + '<span class="tema-opcao-prev tema-radius-prev" style="border-radius:3px;"></span><span class="tema-opcao-lbl">Reto</span></button>'
+        + '</div>'
+      + '</div>'
+
+      + '<div class="tema-secao">'
+        + '<div class="tema-secao-titulo">Bordas neon</div>'
+        + '<div class="tema-opcoes">'
+          + '<button type="button" class="tema-opcao' + (t.neon?' is-on':'') + '" data-tema-neon="on">'
+            + '<span class="tema-opcao-prev tema-neon-prev on"></span><span class="tema-opcao-lbl">✨ Neon</span></button>'
+          + '<button type="button" class="tema-opcao' + (!t.neon?' is-on':'') + '" data-tema-neon="off">'
+            + '<span class="tema-opcao-prev tema-neon-prev off"></span><span class="tema-opcao-lbl">◻️ Sem brilho</span></button>'
+        + '</div>'
+      + '</div>'
+
+      + '<button type="button" class="tema-restaurar" data-action="restaurar-tema">Restaurar cor e estilo padrão</button>'
+      + '<div class="settings-actions" style="margin-top:10px;">'
+        + '<button type="button" class="secondary-btn" data-action="fechar-tema">Pronto</button>'
+      + '</div>';
+
+    // Marca qual botão de cantos está ativo (feito depois pra não repetir a
+    // comparação de número dentro do template acima).
+    var btnRaio = temaPanelEl.querySelector('[data-tema-raio="' + t.raio + '"]');
+    if (btnRaio) btnRaio.classList.add('is-on');
+  }
+
+  function openTemaModal(){
+    renderTemaPanel();
+    temaModalEl.classList.remove('hidden');
+    temaPanelEl.scrollTop = 0;
+  }
+  function closeTemaModal(){ temaModalEl.classList.add('hidden'); }
+
+  function mudarTema(mudancas){
+    var base = temaAtual || carregarTemaSalvo();
+    var novo = {
+      cor: mudancas.cor !== undefined ? mudancas.cor : base.cor,
+      headerCor: mudancas.headerCor !== undefined ? mudancas.headerCor : base.headerCor,
+      fundoCor: mudancas.fundoCor !== undefined ? mudancas.fundoCor : base.fundoCor,
+      graficoCor: mudancas.graficoCor !== undefined ? mudancas.graficoCor : base.graficoCor,
+      escuro: mudancas.escuro !== undefined ? mudancas.escuro : base.escuro,
+      raio: mudancas.raio !== undefined ? mudancas.raio : base.raio,
+      neon: mudancas.neon !== undefined ? mudancas.neon : base.neon
+    };
+    aplicarTema(novo);
+    renderTemaPanel();
+  }
+
   /* ---------- Janela dos apps extras ---------- */
 
   function openAppsModal(){
@@ -6230,7 +6738,7 @@
       + (padrao ? '' : '<button type="button" class="secondary-btn" data-action="cartao-padrao" style="margin-top:6px;">Voltar ao padrão</button>')
       + '<div class="settings-actions" style="margin-top:18px;">'
         + '<button type="button" class="secondary-btn" data-action="fechar-cartao">Cancelar</button>'
-        + '<button type="button" class="submit-btn" data-action="salvar-cartao" style="background:var(--neon2);color:#06222c;">Usar este</button>'
+        + '<button type="button" class="submit-btn" data-action="salvar-cartao" style="background:var(--neon2);color:#181712;">Usar este</button>'
       + '</div>';
   }
 
@@ -6324,7 +6832,7 @@
         + '<button type="button" class="secondary-btn" data-action="fechar-agenda">Cancelar</button>'
         + '<button type="button" class="submit-btn" data-action="usar-agenda"'
           + (agendaEstado.escolhido ? '' : ' disabled')
-          + ' style="background:var(--neon2);color:#06222c;">Usar esta data</button>'
+          + ' style="background:var(--neon2);color:#181712;">Usar esta data</button>'
       + '</div>';
   }
 
@@ -6382,6 +6890,10 @@
     closeAppsModal();
     appfullNomeEl.textContent = app.icone + ' ' + app.nome;
     appfullAcoesEl.innerHTML = '';
+    // Assim que o app extra terminar de carregar, manda a cor/estilo
+    // escolhidos pra ele também aplicar — pra não abrir com a cor padrão
+    // dele e destoar do resto do Gestor.
+    appfullFrameEl.onload = function(){ propagarTemaParaAppExtra(); };
     // srcdoc mantém o app no mesmo endereço do Gestor, então o que ele salva
     // no navegador continua salvo quando a pessoa voltar depois.
     appfullFrameEl.setAttribute('srcdoc', html);
@@ -6696,7 +7208,7 @@
       + '</div>'
 
       + '<div class="settings-actions" style="margin-top:18px;">'
-        + '<button type="button" class="submit-btn" id="btn-salvar-metas" style="background:var(--positive);color:#04220f;">Salvar metas</button>'
+        + '<button type="button" class="submit-btn" id="btn-salvar-metas" style="background:var(--positive);color:#0F3320;">Salvar metas</button>'
         + '<button type="button" class="secondary-btn" data-action="close-metas">Cancelar</button>'
       + '</div>'
       + (metasAtivas() ? '<button type="button" class="secondary-btn" id="btn-limpar-metas" style="margin-top:8px;">Tirar todas as metas</button>' : '');
@@ -8574,6 +9086,50 @@
       if (e.target.closest('[data-action="fechar-ajuda"]')) closeAjudaModal();
     });
 
+    temaBtn.addEventListener('click', openTemaModal);
+    temaModalEl.addEventListener('click', function(e){ if (e.target === temaModalEl) closeTemaModal(); });
+    temaPanelEl.addEventListener('click', function(e){
+      if (e.target.closest('[data-action="fechar-tema"]')){ closeTemaModal(); return; }
+      if (e.target.closest('[data-action="restaurar-tema"]')){
+        try{ localStorage.removeItem(TEMA_STORAGE_KEY); } catch(err){}
+        aplicarTema(Object.assign({}, TEMA_PADRAO));
+        renderTemaPanel();
+        return;
+      }
+      var botaoCor = e.target.closest('[data-tema-cor]');
+      if (botaoCor){ mudarTema({ cor: botaoCor.getAttribute('data-tema-cor') }); return; }
+      var botaoHeaderCor = e.target.closest('[data-tema-header-cor]');
+      if (botaoHeaderCor){
+        var vh = botaoHeaderCor.getAttribute('data-tema-header-cor');
+        mudarTema({ headerCor: vh === '' ? null : vh });
+        return;
+      }
+      var botaoFundoCor = e.target.closest('[data-tema-fundo-cor]');
+      if (botaoFundoCor){
+        var vf = botaoFundoCor.getAttribute('data-tema-fundo-cor');
+        mudarTema({ fundoCor: vf === '' ? null : vf });
+        return;
+      }
+      var botaoGraficoCor = e.target.closest('[data-tema-grafico-cor]');
+      if (botaoGraficoCor){
+        var vg = botaoGraficoCor.getAttribute('data-tema-grafico-cor');
+        mudarTema({ graficoCor: vg === '' ? null : vg });
+        return;
+      }
+      var botaoModo = e.target.closest('[data-tema-modo]');
+      if (botaoModo){ mudarTema({ escuro: botaoModo.getAttribute('data-tema-modo') === 'escuro' }); return; }
+      var botaoRaio = e.target.closest('[data-tema-raio]');
+      if (botaoRaio){ mudarTema({ raio: Number(botaoRaio.getAttribute('data-tema-raio')) }); return; }
+      var botaoNeon = e.target.closest('[data-tema-neon]');
+      if (botaoNeon){ mudarTema({ neon: botaoNeon.getAttribute('data-tema-neon') === 'on' }); return; }
+    });
+    temaPanelEl.addEventListener('input', function(e){
+      if (e.target.id === 'tema-cor-custom') mudarTema({ cor: e.target.value });
+      else if (e.target.id === 'tema-header-cor-custom') mudarTema({ headerCor: e.target.value });
+      else if (e.target.id === 'tema-fundo-cor-custom') mudarTema({ fundoCor: e.target.value });
+      else if (e.target.id === 'tema-grafico-cor-custom') mudarTema({ graficoCor: e.target.value });
+    });
+
     appsModalEl.addEventListener('click', function(e){ if (e.target === appsModalEl) closeAppsModal(); });
     appsPanelEl.addEventListener('click', function(e){
       if (e.target.closest('[data-action="fechar-apps"]')){ closeAppsModal(); return; }
@@ -8803,6 +9359,9 @@
     cartaoPanelEl = document.getElementById('cartao-panel');
     agendaModalEl = document.getElementById('agenda-modal');
     agendaPanelEl = document.getElementById('agenda-panel');
+    temaModalEl = document.getElementById('tema-modal');
+    temaPanelEl = document.getElementById('tema-panel');
+    temaBtn = document.getElementById('tema-btn');
     authScreenEl = document.getElementById('auth-screen');
     authCardEl = document.getElementById('auth-card');
     syncBarEl = document.getElementById('sync-bar');
@@ -8880,28 +9439,30 @@
 <title>RachaFácil</title>
 <style>
   :root{
-    /* Mesmos tokens do Gastos da Casa: o color-scheme avisa o navegador que
-       a tela é escura, senão ele desenha os seletores e o calendário com
-       fundo branco e o texto claro some em cima. */
-    color-scheme:dark;
-    --paper:#0A0C10;
-    --paper-raised:#161A21;
-    --input-bg:#1F2530;
-    --ink:#EAF2EF;
-    --ink-soft:#8B96A5;
-    --line:#2A313D;
-    --positive:#39FF88;
-    --positive-soft:rgba(57,255,136,0.15);
-    --alert:#FF4D6D;
-    --alert-soft:rgba(255,77,109,0.15);
-    --neon2:#4FE0FF;
-    --hover:rgba(255,255,255,0.06);
-    --hover-soft:rgba(255,255,255,0.04);
-    --backdrop:rgba(0,0,0,0.68);
-    --focus-ring:rgba(57,255,136,0.30);
-    --radius:14px;
-    --shadow-sm:0 1px 2px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04);
-    --shadow-lg:0 16px 40px rgba(0,0,0,0.65), 0 0 24px rgba(57,255,136,0.08);
+    /* Mesmos tokens do Gastos da Casa: tema claro, amarelo como cor de
+       destaque, igual às telas de referência. */
+    color-scheme:light;
+    --paper:#FAF9F4;
+    --paper-raised:#FFFFFF;
+    --input-bg:#F3F1E8;
+    --ink:#181712;
+    --ink-soft:#82806F;
+    --line:#ECE9DC;
+    --positive:#1EA85C;
+    --positive-soft:rgba(30,168,92,0.12);
+    --alert:#E5484D;
+    --alert-soft:rgba(229,72,77,0.12);
+    --neon2:#FFC61A;
+    --accent-text:#8A6412;
+    --accent-ink:#181712;
+    --header-bg:#FFC61A;
+    --hover:rgba(24,23,18,0.05);
+    --hover-soft:rgba(24,23,18,0.035);
+    --backdrop:rgba(24,22,12,0.55);
+    --focus-ring:rgba(255,198,26,0.35);
+    --radius:16px;
+    --shadow-sm:0 1px 2px rgba(24,23,18,0.06), 0 0 0 1px rgba(24,23,18,0.04);
+    --shadow-lg:0 16px 40px rgba(24,23,18,0.18), 0 0 0 1px rgba(24,23,18,0.05);
   }
 
   *{ box-sizing:border-box; }
@@ -8937,20 +9498,20 @@
 
   header{
     display:flex; align-items:center; justify-content:space-between; gap:12px;
-    padding:16px 16px 14px; border-bottom:1px solid var(--line);
+    padding:18px 16px 16px;
     position:sticky; top:0; z-index:5;
-    background:rgba(10,12,16,.94); backdrop-filter:blur(8px);
+    background:var(--header-bg);
+    box-shadow:0 2px 14px rgba(24,23,18,0.12);
   }
   .marca{ display:flex; align-items:center; gap:11px; min-width:0; }
   .logo{
     width:40px; height:40px; border-radius:12px; flex:0 0 auto;
     display:grid; place-items:center;
-    font-weight:800; font-size:15px; letter-spacing:-0.02em; color:#06222c;
-    background:linear-gradient(140deg, var(--neon2), #2FB6D6);
-    box-shadow:0 0 22px -6px rgba(79,224,255,.9);
+    font-weight:800; font-size:15px; letter-spacing:-0.02em; color:#FFF6DC;
+    background:var(--accent-ink);
   }
-  header h1{ font-size:18px; margin:0; letter-spacing:-0.01em; }
-  header .sub{ font-size:11.5px; color:var(--ink-soft); margin-top:1px; }
+  header h1{ font-size:18px; margin:0; letter-spacing:-0.01em; color:var(--header-ink, var(--accent-ink)); font-weight:800; }
+  header .sub{ font-size:11.5px; color:rgba(24,23,18,0.62); margin-top:1px; font-weight:600; }
   .header-acoes{ display:flex; align-items:center; gap:5px; flex:0 0 auto; }
 
   /* Rodando dentro do Gestor de Gastos: a barra de cima já traz o nome e os
@@ -8958,10 +9519,10 @@
   body.embutido header{ display:none; }
   .icone-btn{
     width:30px; height:30px; border-radius:50%;
-    border:1px solid var(--line); background:transparent; color:var(--ink-soft);
+    border:1.5px solid rgba(24,23,18,0.35); background:transparent; color:var(--header-ink, var(--accent-ink));
     font-size:14px; font-weight:800; display:grid; place-items:center; padding:0; line-height:1;
   }
-  .icone-btn:hover{ border-color:var(--neon2); color:var(--neon2); }
+  .icone-btn:hover{ border-color:var(--header-ink, var(--accent-ink)); background:rgba(24,23,18,0.08); }
 
   main{ flex:1; padding:16px 16px 40px; }
 
@@ -8985,12 +9546,19 @@
     background:linear-gradient(90deg, transparent, var(--accent, transparent), transparent);
     opacity:.9;
   }
-  .acc-cyan   { --accent:#4FE0FF; --accent-line:rgba(79,224,255,0.48); --accent-halo:rgba(79,224,255,0.10); --accent-glow:rgba(79,224,255,0.62); }
-  .acc-green  { --accent:#39FF88; --accent-line:rgba(57,255,136,0.44); --accent-halo:rgba(57,255,136,0.10); --accent-glow:rgba(57,255,136,0.56); }
-  .acc-pink   { --accent:#FF4D6D; --accent-line:rgba(255,77,109,0.46); --accent-halo:rgba(255,77,109,0.10); --accent-glow:rgba(255,77,109,0.58); }
-  .acc-purple { --accent:#B18CFF; --accent-line:rgba(177,140,255,0.46); --accent-halo:rgba(177,140,255,0.10); --accent-glow:rgba(177,140,255,0.58); }
-  .acc-amber  { --accent:#FFC24F; --accent-line:rgba(255,194,79,0.44); --accent-halo:rgba(255,194,79,0.10); --accent-glow:rgba(255,194,79,0.56); }
-  .acc-blue   { --accent:#4FA8FF; --accent-line:rgba(79,168,255,0.46); --accent-halo:rgba(79,168,255,0.10); --accent-glow:rgba(79,168,255,0.58); }
+  .acc-cyan   { --accent:var(--chart-1, #FFC61A); --accent-line:var(--chart-1-line, rgba(255,198,26,0.48)); --accent-halo:var(--chart-1-halo, rgba(255,198,26,0.10)); --accent-glow:var(--chart-1-glow, rgba(255,198,26,0.62)); }
+  .acc-green  { --accent:var(--chart-2, #39FF88); --accent-line:var(--chart-2-line, rgba(30,168,92,0.44)); --accent-halo:var(--chart-2-halo, rgba(30,168,92,0.10)); --accent-glow:var(--chart-2-glow, rgba(30,168,92,0.56)); }
+  .acc-pink   { --accent:var(--chart-3, #FF4D6D); --accent-line:var(--chart-3-line, rgba(255,77,109,0.46)); --accent-halo:var(--chart-3-halo, rgba(255,77,109,0.10)); --accent-glow:var(--chart-3-glow, rgba(255,77,109,0.58)); }
+  .acc-purple { --accent:var(--chart-4, #B18CFF); --accent-line:var(--chart-4-line, rgba(177,140,255,0.46)); --accent-halo:var(--chart-4-halo, rgba(177,140,255,0.10)); --accent-glow:var(--chart-4-glow, rgba(177,140,255,0.58)); }
+  .acc-amber  { --accent:var(--chart-5, #FFC24F); --accent-line:var(--chart-5-line, rgba(255,194,79,0.44)); --accent-halo:var(--chart-5-halo, rgba(255,194,79,0.10)); --accent-glow:var(--chart-5-glow, rgba(255,194,79,0.56)); }
+  .acc-blue   { --accent:var(--chart-6, #4FA8FF); --accent-line:var(--chart-6-line, rgba(79,168,255,0.46)); --accent-halo:var(--chart-6-halo, rgba(79,168,255,0.10)); --accent-glow:var(--chart-6-glow, rgba(79,168,255,0.58)); }
+
+  /* Bordas neon desligadas (escolha feita no Gestor e repassada pra cá). */
+  html.sem-neon .neon-box{ box-shadow:var(--shadow-sm); border-color:var(--line); }
+  html.sem-neon .neon-box::before{ display:none; }
+  html.sem-neon .section-title::before{ box-shadow:none; }
+  html.sem-neon .kpi-label::before{ box-shadow:none; }
+  html.sem-neon .divide-op.is-on{ box-shadow:none; }
 
   .bloco{ margin-bottom:16px; }
   .section-title{
@@ -9008,7 +9576,7 @@
     font-family:inherit; font-size:11.5px; font-weight:700; color:var(--ink-soft);
     text-decoration:underline;
   }
-  .section-title .acao:hover{ color:var(--neon2); }
+  .section-title .acao:hover{ color:var(--accent-text); }
 
   /* ---------- Indicadores ---------- */
 
@@ -9055,7 +9623,7 @@
   .tudo-certo{
     text-align:center; padding:10px 0 4px;
     font-size:15px; font-weight:700; color:var(--positive);
-    text-shadow:0 0 18px rgba(57,255,136,.4);
+    text-shadow:0 0 18px rgba(30,168,92,.4);
   }
 
   /* ---------- Pessoas ---------- */
@@ -9073,7 +9641,7 @@
   .pessoa-nome{ flex:1; min-width:0; font-size:14px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .pessoa-eu{
     font-size:10px; font-weight:800; letter-spacing:.06em; text-transform:uppercase;
-    color:var(--neon2); border:1px solid rgba(79,224,255,.4);
+    color:var(--accent-text); border:1px solid rgba(255,198,26,.4);
     padding:2px 7px; border-radius:999px; margin-left:7px;
   }
   .pessoa-saldo{ font-size:13.5px; font-weight:800; font-variant-numeric:tabular-nums; white-space:nowrap; }
@@ -9112,7 +9680,7 @@
 
   .btn-principal{
     width:100%; padding:14px; border-radius:12px;
-    background:var(--neon2); color:#06222c;
+    background:var(--neon2); color:#181712;
     font-weight:800; font-size:15px; font-family:inherit;
     box-shadow:0 0 22px -8px var(--neon2);
   }
@@ -9122,7 +9690,7 @@
     background:transparent; border:1px solid var(--line); color:var(--ink);
     font-weight:700; font-size:14px; font-family:inherit;
   }
-  .btn-secundario:hover{ border-color:var(--neon2); color:var(--neon2); }
+  .btn-secundario:hover{ border-color:var(--neon2); color:var(--accent-text); }
   .btn-perigo{ border-color:rgba(255,77,109,.5); color:var(--alert); }
   .btn-perigo:hover{ border-color:var(--alert); color:var(--alert); background:var(--alert-soft); }
   .btn-perigo.btn-principal{ background:var(--alert); color:#2A0710; box-shadow:0 0 22px -8px var(--alert); }
@@ -9193,7 +9761,7 @@
   .ajuda-num{
     flex:0 0 25px; height:25px; border-radius:50%;
     background:var(--hover-soft); border:1px solid var(--line);
-    display:grid; place-items:center; font-size:11.5px; font-weight:800; color:var(--neon2);
+    display:grid; place-items:center; font-size:11.5px; font-weight:800; color:var(--accent-text);
   }
   .ajuda-txt h3{ margin:1px 0 4px; font-size:14px; font-weight:700; }
   .ajuda-txt p{ margin:0; font-size:13px; color:var(--ink-soft); line-height:1.5; }
@@ -9252,7 +9820,7 @@
   var CHAVE = 'rachafacil_v2';
 
   // Mesma paleta de pessoas do Gastos da Casa.
-  var CORES = ['#4FA8FF','#FF5D8F','#39FF88','#FFC24F','#B18CFF','#4FE0FF','#FF8A4F','#35D6C4'];
+  var CORES = ['#4FA8FF','#FF5D8F','#39FF88','#FFC24F','#B18CFF','#FFC61A','#FF8A4F','#35D6C4'];
 
   var ICONES = ['🍽️','🛒','🚗','🏠','🍺','🎬','✈️','🎁','💊','⛽','🏨','🎉','☕','🧾'];
 
@@ -9854,6 +10422,19 @@
       if (!d || d.tipo !== 'app-acao') return;
       if (d.id === 'ajuda') abrirAjuda();
       else if (d.id === 'zerar') zerarTudo();
+    });
+    // O Gestor manda a paleta que a pessoa escolheu (cor, cabeçalho, fundo,
+    // gráficos, claro/escuro, cantos, bordas neon) assim que este app abre e
+    // sempre que ela muda de ideia. Aqui só aplicamos as variáveis — a conta
+    // de cor já vem pronta.
+    window.addEventListener('message', function(e){
+      var d = e.data;
+      if (!d || d.tipo !== 'app-tema' || !d.paleta) return;
+      var raiz = document.documentElement.style;
+      Object.keys(d.paleta).forEach(function(chave){ raiz.setProperty('--'+chave, d.paleta[chave]); });
+      if (d.raio) raiz.setProperty('--radius', d.raio + 'px');
+      document.documentElement.style.colorScheme = d.escuro ? 'dark' : 'light';
+      document.documentElement.classList.toggle('sem-neon', d.neon === false);
     });
     try {
       window.parent.postMessage({
