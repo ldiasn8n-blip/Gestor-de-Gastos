@@ -914,37 +914,40 @@
     font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase;
     color:var(--ink-soft); margin:0 0 10px;
   }
-  .tema-cores{ display:flex; flex-wrap:wrap; gap:10px; }
-  .tema-cor{
-    width:42px; height:42px; border-radius:50%; padding:0;
-    border:2px solid transparent; cursor:pointer; position:relative;
-    box-shadow:0 1px 3px rgba(24,23,18,0.18);
+  .tema-cores{ display:flex; align-items:center; gap:12px; }
+  .tema-slider-wrap{ flex:1 1 auto; min-width:0; display:flex; align-items:center; }
+  /* Barrinha de matiz: uma faixa arco-íris única que a pessoa arrasta até
+     achar a cor — substitui a antiga fileira de bolinhas prontas. */
+  .tema-slider{
+    -webkit-appearance:none; appearance:none; width:100%; height:14px;
+    border-radius:999px; margin:0; outline:none; cursor:pointer; display:block;
+    background:linear-gradient(to right,
+      #FF3B3B, #FF9A3B, #FFE23B, #9CFF3B, #3BFFA0, #3BEFFF, #3B8CFF, #8B3BFF, #FF3BC4, #FF3B3B);
   }
-  .tema-cor.is-on{ border-color:var(--ink); box-shadow:0 0 0 3px var(--paper-raised), 0 0 0 5px var(--ink); }
-  .tema-cor.is-on::after{
-    content:'✓'; position:absolute; inset:0; display:grid; place-items:center;
-    color:#fff; font-size:16px; font-weight:800; text-shadow:0 1px 2px rgba(0,0,0,.35);
+  .tema-slider::-webkit-slider-thumb{
+    -webkit-appearance:none; appearance:none; width:26px; height:26px; border-radius:50%;
+    background:var(--thumb-cor,#fff); cursor:pointer;
+    border:3px solid var(--paper-raised);
+    box-shadow:0 0 0 1.5px var(--line), 0 1px 4px rgba(0,0,0,.35);
   }
+  .tema-slider::-moz-range-thumb{
+    width:26px; height:26px; border-radius:50%; background:var(--thumb-cor,#fff); cursor:pointer;
+    border:3px solid var(--paper-raised);
+    box-shadow:0 0 0 1.5px var(--line), 0 1px 4px rgba(0,0,0,.35);
+  }
+  .tema-slider::-moz-range-track{ height:14px; border-radius:999px; background:transparent; }
   .tema-custom-linha{ display:flex; align-items:center; gap:12px; margin-top:12px; }
-  .tema-custom-swatch{
-    width:42px; height:42px; border-radius:50%; flex:0 0 auto; padding:0; cursor:pointer;
-    border:2px dashed var(--line); position:relative; overflow:hidden;
-    background:conic-gradient(from 0deg, #FF5D8F, #FFC24F, #39FF88, #4FE0FF, #4FA8FF, #B18CFF, #FF5D8F);
-  }
-  .tema-custom-swatch input[type="color"]{
-    position:absolute; inset:-4px; width:calc(100% + 8px); height:calc(100% + 8px);
-    border:none; padding:0; cursor:pointer; opacity:0;
-  }
   .tema-custom-txt{ font-size:13px; color:var(--ink-soft); line-height:1.4; }
   .tema-custom-txt b{ color:var(--ink); }
-  /* Botão "auto/padrão" das seções novas (cabeçalho, fundo, gráficos):
-     mesmo tamanho dos círculos de cor, mas com um ícone em vez de cor sólida. */
+  /* Botão "auto/padrão" das seções que aceitam seguir outra cor (cabeçalho,
+     fundo, gráficos, neon): um círculo com ícone, ao lado da barrinha. */
   .tema-cor-auto{
-    display:grid; place-items:center; font-size:16px;
+    width:42px; height:42px; border-radius:50%; padding:0; flex:0 0 auto;
+    display:grid; place-items:center; font-size:16px; cursor:pointer; position:relative;
     background:var(--input-bg); border:2px dashed var(--line); color:var(--ink-soft);
+    box-shadow:0 1px 3px rgba(24,23,18,0.18);
   }
-  .tema-cor-auto.is-on{ border-style:solid; border-color:var(--ink); }
-  .tema-cor-auto.is-on::after{ display:none; }
+  .tema-cor-auto.is-on{ border-style:solid; border-color:var(--ink); color:var(--ink); }
   .tema-opcoes{ display:flex; gap:8px; }
   .tema-opcao{
     flex:1; display:flex; flex-direction:column; align-items:center; gap:6px;
@@ -1904,20 +1907,14 @@
 
   var TEMA_PADRAO = {
     cor:'#FFC61A', headerCor:null, fundoCor:null, graficoCor:null,
-    escuro:false, raio:16, neon:true
+    escuro:false, raio:16, neon:true, neonCor:null
   };
   var TEMA_STORAGE_KEY = 'gestorGastos.tema.v1';
 
-  var TEMA_CORES_PRONTAS = [
-    {nome:'Amarelo', cor:'#FFC61A'},
-    {nome:'Verde',   cor:'#1EA85C'},
-    {nome:'Azul',    cor:'#3E7BFA'},
-    {nome:'Roxo',    cor:'#8B5CF6'},
-    {nome:'Rosa',    cor:'#FF4D8D'},
-    {nome:'Laranja', cor:'#FF7A33'},
-    {nome:'Vermelho',cor:'#E5484D'},
-    {nome:'Ciano',   cor:'#17B7C7'}
-  ];
+  // Saturação/luminosidade fixas da barrinha de cor: só o matiz muda
+  // enquanto a pessoa arrasta, então cada ponto da barra já corresponde a
+  // uma cor pronta e legível, sem precisar de mais controles.
+  var TEMA_SLIDER_S = 78, TEMA_SLIDER_L = 54;
 
   function hexParaRgb(hex){
     hex = String(hex||'').replace('#','');
@@ -1971,6 +1968,18 @@
   function hexParaRgba(hex, alpha){
     var c = hexParaRgb(hex);
     return 'rgba('+c.r+','+c.g+','+c.b+','+alpha+')';
+  }
+  // Matiz (0-360) -> cor hex pronta, usada pela barrinha de cor: a posição
+  // do arrasto vira direto uma cor com a saturação/luminosidade fixas acima.
+  function hueParaHex(hue){
+    var c = hslParaRgb(hue, TEMA_SLIDER_S, TEMA_SLIDER_L);
+    return rgbParaHex(c.r, c.g, c.b);
+  }
+  // Caminho inverso: de uma cor hex já escolhida, descobre o matiz pra
+  // posicionar a bolinha da barrinha no lugar certo ao reabrir o painel.
+  function hexParaHue(hex){
+    var rgb = hexParaRgb(hex);
+    return Math.round(rgbParaHsl(rgb.r, rgb.g, rgb.b).h);
   }
 
   // As 6 cores "de fábrica" usadas nos gráficos/indicadores, na mesma ordem
@@ -2091,8 +2100,12 @@
       'shadow-lg':'0 16px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.06)'
     };
 
+    // Brilho/contorno neon: segue a cor de destaque por padrão, mas a
+    // pessoa pode escolher uma cor só pra ele em "Bordas neon".
+    var neonCor = cfg.neonCor || corEscolhida;
+
     return Object.assign({}, base, fundo, grafico, {
-      neon2:corEscolhida, 'accent-text':corTexto, 'accent-ink':corInk,
+      neon2:neonCor, 'accent-text':corTexto, 'accent-ink':corInk,
       'header-bg':headerBg, 'header-ink':headerInk,
       'focus-ring':hexParaRgba(corEscolhida,0.35)
     });
@@ -2112,7 +2125,8 @@
         graficoCor: corValidaOuNull(salvo && salvo.graficoCor),
         escuro: !!(salvo && salvo.escuro),
         raio: (salvo && (salvo.raio === 6 || salvo.raio === 16)) ? salvo.raio : TEMA_PADRAO.raio,
-        neon: (salvo && typeof salvo.neon === 'boolean') ? salvo.neon : TEMA_PADRAO.neon
+        neon: (salvo && typeof salvo.neon === 'boolean') ? salvo.neon : TEMA_PADRAO.neon,
+        neonCor: corValidaOuNull(salvo && salvo.neonCor)
       };
     } catch(e){ return Object.assign({}, TEMA_PADRAO); }
   }
@@ -2130,7 +2144,8 @@
       graficoCor: cfg.graficoCor || null,
       escuro: !!cfg.escuro,
       raio: cfg.raio,
-      neon: cfg.neon !== undefined ? !!cfg.neon : true
+      neon: cfg.neon !== undefined ? !!cfg.neon : true,
+      neonCor: cfg.neonCor || null
     };
     var paleta = montarPaleta(temaAtual);
     var raiz = document.documentElement.style;
@@ -4389,7 +4404,7 @@
         + '<div class="field card-field" style="display:'+(usaCartao?'block':'none')+';"><label>Cartão / conta</label>' + card.html + '</div>'
       + '</div>'
       + '<div class="field custom-card-field" style="display:'+((usaCartao&&card.customSelected)?'block':'none')+';"><label>Nome do cartão</label><input type="text" class="custom-card-input" placeholder="Ex: C6, PicPay..." value="'+(card.customSelected&&editingExpense?escapeHTML(editingExpense.card):'')+'"></div>'
-      + '<div class="field"><label>É um gasto fixo?</label><select class="fixed-toggle-select"><option value="nao"'+(!isFixed?' selected':'')+'>Não, só deste mês</option><option value="sim"'+(isFixed?' selected':'')+'>Sim, repete todo mês</option></select>'
+      + '<div class="field"><label>É um gasto fixo?</label><select class="fixed-toggle-select"><option value="nao"'+(!isFixed?' selected':'')+'>Não</option><option value="sim"'+(isFixed?' selected':'')+'>Sim</option></select>'
         + '<div class="items-hint" style="margin:6px 0 0;">Marcando como fixo, esse gasto aparece sozinho em todos os meses seguintes com o mesmo valor — você não precisa lançar de novo.</div></div>'
       + prazoFixoHTML(editingExpense, isFixed)
       + '<div class="field parcelavel-field" style="display:'+((isFixed||paymentMethod==='debito')?'none':'block')+';"><label>Foi parcelado?</label><select class="installment-toggle-select"><option value="nao"'+(!isInstallment?' selected':'')+'>Não</option><option value="sim"'+(isInstallment?' selected':'')+'>Sim</option></select></div>'
@@ -4442,7 +4457,7 @@
         + '<div class="field"><label>Valor total (R$)</label><input type="number" inputmode="decimal" class="value-input" step="0.01" min="0" placeholder="0,00" value="'+(editingExpense?editingExpense.value:'')+'"></div>'
         + '<div class="field"><label>Data da compra</label><input type="date" class="date-input" value="'+(editingExpense?editingExpense.date:todayISO())+'"></div>'
       + '</div>'
-      + '<div class="field"><label>É um gasto fixo?</label><select class="fixed-toggle-select"><option value="nao"'+(!isFixed?' selected':'')+'>Não, só deste mês</option><option value="sim"'+(isFixed?' selected':'')+'>Sim, repete todo mês</option></select>'
+      + '<div class="field"><label>É um gasto fixo?</label><select class="fixed-toggle-select"><option value="nao"'+(!isFixed?' selected':'')+'>Não</option><option value="sim"'+(isFixed?' selected':'')+'>Sim</option></select>'
         + '<div class="items-hint" style="margin:6px 0 0;">Academia, streaming, plano do celular — marcado como fixo, ele aparece sozinho todo mês.</div></div>'
       + prazoFixoHTML(editingExpense, isFixed)
       + '</div>'
@@ -6517,32 +6532,29 @@
 
   /* ---------- Cor e estilo (tema escolhido pela pessoa) ---------- */
 
-  // Monta uma fileira de círculos de cor reutilizável, usada nas 4 seções
-  // de cor (destaque, cabeçalho, fundo, gráficos). "atributo" é o nome do
-  // data-* que os botões usam (ex.: "tema-header-cor"). Quando a seção
-  // aceita "seguir o padrão" (valorAtual pode ser null), passa autoRotulo e
-  // autoIcone pra desenhar o primeiro círculo como essa opção.
-  function renderFileiraCores(atributo, valorAtual, autoRotulo, autoIcone){
+  // Monta a barrinha de matiz reutilizável, usada nas seções de cor
+  // (destaque, cabeçalho, fundo, gráficos, neon). "atributo" é o nome do
+  // data-* que o botão de "seguir padrão" usa (ex.: "tema-header-cor") e
+  // também a chave lida por SLIDER_ATRIBUTO_CHAVE ao ouvir o arrasto. Quando
+  // a seção aceita "seguir o padrão" (valorAtual pode ser null), passa
+  // autoRotulo e autoIcone pra desenhar o botão redondo dessa opção.
+  function renderSliderCor(atributo, valorAtual, autoRotulo, autoIcone){
     var autoBtn = '';
     if (autoRotulo){
       var ativoAuto = !valorAtual;
-      autoBtn = '<button type="button" class="tema-cor tema-cor-auto' + (ativoAuto?' is-on':'') + '" '
+      autoBtn = '<button type="button" class="tema-cor-auto' + (ativoAuto?' is-on':'') + '" '
         + 'data-' + atributo + '="" title="' + escapeHTML(autoRotulo) + '" aria-label="' + escapeHTML(autoRotulo) + '">'
         + autoIcone + '</button>';
     }
-    var presets = TEMA_CORES_PRONTAS.map(function(c){
-      var ativo = !!valorAtual && valorAtual.toLowerCase() === c.cor.toLowerCase();
-      return '<button type="button" class="tema-cor' + (ativo?' is-on':'') + '" '
-        + 'style="background:' + c.cor + ';" data-' + atributo + '="' + c.cor + '" '
-        + 'title="' + escapeHTML(c.nome) + '" aria-label="' + escapeHTML(c.nome) + '"></button>';
-    }).join('');
-    var corPersonalizada = !!valorAtual && !TEMA_CORES_PRONTAS.some(function(c){
-      return c.cor.toLowerCase() === valorAtual.toLowerCase();
-    });
-    var custom = '<label class="tema-custom-swatch" title="Escolher qualquer cor" '
-      + (corPersonalizada ? 'style="border-style:solid;border-color:'+valorAtual+';"' : '')
-      + '><input type="color" id="' + atributo + '-custom" value="' + (valorAtual || '#FFC61A') + '"></label>';
-    return autoBtn + presets + custom;
+    var corBase = (temaAtual || carregarTemaSalvo()).cor;
+    var hue = hexParaHue(valorAtual || corBase);
+    var hexAtual = valorAtual || hueParaHex(hue);
+    var slider = '<div class="tema-slider-wrap">'
+      + '<input type="range" min="0" max="359" value="' + hue + '" '
+      + 'class="tema-slider" data-slider-attr="' + atributo + '" '
+      + 'style="--thumb-cor:' + hexAtual + ';" aria-label="Arraste para escolher a cor">'
+      + '</div>';
+    return autoBtn + slider;
   }
 
   function renderTemaPanel(){
@@ -6550,28 +6562,28 @@
 
     temaPanelEl.innerHTML = ''
       + '<h2>🎨 Cor e estilo</h2>'
-      + '<div class="note" style="margin:2px 0 4px;">Escolha do seu jeito — cabeçalho, fundo e gráficos, cada um com a sua cor. Muda na hora e fica salvo só neste navegador.</div>'
+      + '<div class="note" style="margin:2px 0 4px;">Escolha do seu jeito — cabeçalho, fundo e gráficos, cada um com a sua cor. Arraste a barrinha até achar o tom. Muda na hora e fica salvo só neste navegador.</div>'
 
       + '<div class="tema-secao">'
         + '<div class="tema-secao-titulo">Cor de destaque</div>'
-        + '<div class="tema-cores">' + renderFileiraCores('tema-cor', t.cor, null, '') + '</div>'
-        + '<div class="tema-custom-linha"><span class="tema-custom-txt">Usada em botões, abas e nos detalhes do app. Toque no círculo tracejado pra abrir a paleta livre e escolher <b>qualquer cor</b>.</span></div>'
+        + '<div class="tema-cores">' + renderSliderCor('tema-cor', t.cor, null, '') + '</div>'
+        + '<div class="tema-custom-linha"><span class="tema-custom-txt">Usada em botões, abas e nos detalhes do app. Arraste a barrinha pra escolher <b>qualquer cor</b>.</span></div>'
       + '</div>'
 
       + '<div class="tema-secao">'
         + '<div class="tema-secao-titulo">Cor do cabeçalho</div>'
-        + '<div class="tema-cores">' + renderFileiraCores('tema-header-cor', t.headerCor, 'Igual à cor de destaque', '🔗') + '</div>'
+        + '<div class="tema-cores">' + renderSliderCor('tema-header-cor', t.headerCor, 'Igual à cor de destaque', '🔗') + '</div>'
       + '</div>'
 
       + '<div class="tema-secao">'
         + '<div class="tema-secao-titulo">Cor de fundo</div>'
-        + '<div class="tema-cores">' + renderFileiraCores('tema-fundo-cor', t.fundoCor, 'Padrão', '⚪') + '</div>'
+        + '<div class="tema-cores">' + renderSliderCor('tema-fundo-cor', t.fundoCor, 'Padrão', '⚪') + '</div>'
         + '<div class="tema-custom-linha"><span class="tema-custom-txt">A cor escolhida vira um tom bem suave, só um tingimento — o texto continua legível.</span></div>'
       + '</div>'
 
       + '<div class="tema-secao">'
         + '<div class="tema-secao-titulo">Cor dos gráficos</div>'
-        + '<div class="tema-cores">' + renderFileiraCores('tema-grafico-cor', t.graficoCor, 'Colorido (padrão)', '🌈') + '</div>'
+        + '<div class="tema-cores">' + renderSliderCor('tema-grafico-cor', t.graficoCor, 'Colorido (padrão)', '🌈') + '</div>'
         + '<div class="tema-custom-linha"><span class="tema-custom-txt">Escolhendo uma cor, os gráficos e indicadores do app passam a usar variações dela em vez do arco-íris padrão.</span></div>'
       + '</div>'
 
@@ -6603,6 +6615,10 @@
           + '<button type="button" class="tema-opcao' + (!t.neon?' is-on':'') + '" data-tema-neon="off">'
             + '<span class="tema-opcao-prev tema-neon-prev off"></span><span class="tema-opcao-lbl">◻️ Sem brilho</span></button>'
         + '</div>'
+        + (t.neon
+          ? '<div class="tema-cores" style="margin-top:12px;">' + renderSliderCor('tema-neon-cor', t.neonCor, 'Igual à cor de destaque', '🔗') + '</div>'
+            + '<div class="tema-custom-linha"><span class="tema-custom-txt">Cor do brilho e do contorno neon dos cartões, chips e botões em destaque.</span></div>'
+          : '')
       + '</div>'
 
       + '<button type="button" class="tema-restaurar" data-action="restaurar-tema">Restaurar cor e estilo padrão</button>'
@@ -6623,7 +6639,13 @@
   }
   function closeTemaModal(){ temaModalEl.classList.add('hidden'); }
 
-  function mudarTema(mudancas){
+  // "opcoes.semRerender" é usado enquanto a pessoa está arrastando a
+  // barrinha de cor: aplica a cor na hora (inclusive no app extra), mas sem
+  // redesenhar o painel a cada pixel — redesenhar destruiria o próprio
+  // slider no meio do arrasto e cortaria o gesto. O painel só é redesenhado
+  // de novo quando o arrasto termina (ver listener de "change" mais abaixo).
+  function mudarTema(mudancas, opcoes){
+    opcoes = opcoes || {};
     var base = temaAtual || carregarTemaSalvo();
     var novo = {
       cor: mudancas.cor !== undefined ? mudancas.cor : base.cor,
@@ -6632,10 +6654,11 @@
       graficoCor: mudancas.graficoCor !== undefined ? mudancas.graficoCor : base.graficoCor,
       escuro: mudancas.escuro !== undefined ? mudancas.escuro : base.escuro,
       raio: mudancas.raio !== undefined ? mudancas.raio : base.raio,
-      neon: mudancas.neon !== undefined ? mudancas.neon : base.neon
+      neon: mudancas.neon !== undefined ? mudancas.neon : base.neon,
+      neonCor: mudancas.neonCor !== undefined ? mudancas.neonCor : base.neonCor
     };
-    aplicarTema(novo);
-    renderTemaPanel();
+    aplicarTema(novo, { semSalvar: !!opcoes.semRerender });
+    if (!opcoes.semRerender) renderTemaPanel();
   }
 
   /* ---------- Janela dos apps extras ---------- */
@@ -9116,6 +9139,12 @@
         mudarTema({ graficoCor: vg === '' ? null : vg });
         return;
       }
+      var botaoNeonCor = e.target.closest('[data-tema-neon-cor]');
+      if (botaoNeonCor){
+        var vn = botaoNeonCor.getAttribute('data-tema-neon-cor');
+        mudarTema({ neonCor: vn === '' ? null : vn });
+        return;
+      }
       var botaoModo = e.target.closest('[data-tema-modo]');
       if (botaoModo){ mudarTema({ escuro: botaoModo.getAttribute('data-tema-modo') === 'escuro' }); return; }
       var botaoRaio = e.target.closest('[data-tema-raio]');
@@ -9123,11 +9152,37 @@
       var botaoNeon = e.target.closest('[data-tema-neon]');
       if (botaoNeon){ mudarTema({ neon: botaoNeon.getAttribute('data-tema-neon') === 'on' }); return; }
     });
+
+    // Chave de configuração que cada barrinha de cor controla, a partir do
+    // atributo data-slider-attr desenhado por renderSliderCor.
+    var SLIDER_ATRIBUTO_CHAVE = {
+      'tema-cor':'cor', 'tema-header-cor':'headerCor', 'tema-fundo-cor':'fundoCor',
+      'tema-grafico-cor':'graficoCor', 'tema-neon-cor':'neonCor'
+    };
+    // Enquanto arrasta: aplica a cor na hora (sem redesenhar o painel, pra
+    // não interromper o próprio arrasto) e desliga visualmente o botão
+    // "auto" da mesma seção, já que a pessoa escolheu uma cor manualmente.
     temaPanelEl.addEventListener('input', function(e){
-      if (e.target.id === 'tema-cor-custom') mudarTema({ cor: e.target.value });
-      else if (e.target.id === 'tema-header-cor-custom') mudarTema({ headerCor: e.target.value });
-      else if (e.target.id === 'tema-fundo-cor-custom') mudarTema({ fundoCor: e.target.value });
-      else if (e.target.id === 'tema-grafico-cor-custom') mudarTema({ graficoCor: e.target.value });
+      var slider = e.target.closest('.tema-slider');
+      if (!slider) return;
+      var chave = SLIDER_ATRIBUTO_CHAVE[slider.getAttribute('data-slider-attr')];
+      if (!chave) return;
+      var hex = hueParaHex(Number(slider.value));
+      slider.style.setProperty('--thumb-cor', hex);
+      var mudanca = {}; mudanca[chave] = hex;
+      mudarTema(mudanca, { semRerender:true });
+      var autoBtn = slider.closest('.tema-cores').querySelector('.tema-cor-auto');
+      if (autoBtn) autoBtn.classList.remove('is-on');
+    });
+    // Ao soltar: salva de vez e redesenha o painel, pra sincronizar o botão
+    // "auto" e o resto da tela com a cor final escolhida.
+    temaPanelEl.addEventListener('change', function(e){
+      var slider = e.target.closest('.tema-slider');
+      if (!slider) return;
+      var chave = SLIDER_ATRIBUTO_CHAVE[slider.getAttribute('data-slider-attr')];
+      if (!chave) return;
+      var mudanca = {}; mudanca[chave] = hueParaHex(Number(slider.value));
+      mudarTema(mudanca);
     });
 
     appsModalEl.addEventListener('click', function(e){ if (e.target === appsModalEl) closeAppsModal(); });
