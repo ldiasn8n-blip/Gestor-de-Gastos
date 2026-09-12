@@ -932,47 +932,6 @@
     background:rgba(0,0,0,.55); color:#fff; font-size:13px; text-align:center; line-height:1.4; min-height:18px;
   }
 
-  /* Corte de foto: aparece logo depois que a pessoa escolhe/tira a foto da
-     nota, antes de guardar e ler — assim ela decide o enquadramento exato
-     em vez de sempre usar a foto inteira. */
-  #crop-modal{
-    position:fixed; inset:0; z-index:130;
-    display:flex; flex-direction:column; background:#000;
-  }
-  #crop-modal.hidden{ display:none; }
-  #crop-bar{
-    display:flex; align-items:center; justify-content:space-between; gap:10px; flex:0 0 auto;
-    padding:10px 14px; padding-top:calc(10px + env(safe-area-inset-top));
-    background:rgba(0,0,0,.7);
-  }
-  #crop-cancelar, #crop-confirmar{
-    border:none; background:transparent; font-family:inherit; font-size:14px; font-weight:700; cursor:pointer; padding:6px 4px;
-  }
-  #crop-cancelar{ color:rgba(255,255,255,.75); }
-  #crop-confirmar{ color:#fff; }
-  #crop-titulo{ color:#fff; font-size:13px; font-weight:700; flex:1; text-align:center; }
-  #crop-area{
-    position:relative; flex:1; min-height:0; display:flex;
-    align-items:center; justify-content:center; overflow:hidden; touch-action:none;
-  }
-  #crop-img{ max-width:100%; max-height:100%; display:block; user-select:none; -webkit-user-drag:none; }
-  #crop-box{
-    position:absolute; border:2px solid #fff; box-shadow:0 0 0 999px rgba(0,0,0,.55);
-    cursor:move; touch-action:none;
-  }
-  .crop-handle{
-    position:absolute; width:26px; height:26px; margin:-13px; border-radius:50%;
-    background:#fff; box-shadow:0 1px 4px rgba(0,0,0,.4); touch-action:none;
-  }
-  .crop-handle[data-handle="nw"]{ left:0; top:0; cursor:nwse-resize; }
-  .crop-handle[data-handle="ne"]{ right:0; top:0; cursor:nesw-resize; }
-  .crop-handle[data-handle="sw"]{ left:0; bottom:0; cursor:nesw-resize; }
-  .crop-handle[data-handle="se"]{ right:0; bottom:0; cursor:nwse-resize; }
-  #crop-msg{
-    flex:0 0 auto; padding:10px 18px calc(10px + env(safe-area-inset-bottom));
-    background:rgba(0,0,0,.7); color:rgba(255,255,255,.75); font-size:12px; text-align:center;
-  }
-
   #membro-modal, #ajuda-modal, #cats-modal, #metas-modal, #future-modal, #apps-modal, #cartao-modal, #agenda-modal, #tema-modal{
     position:fixed;inset:0;background:var(--backdrop);
     display:flex;align-items:flex-end;justify-content:center;z-index:70;
@@ -1955,30 +1914,6 @@
 </div>
 
 <!--
-  Corte de foto: some para cima assim que a pessoa escolhe/tira uma foto da
-  nota, antes de guardar e ler — ela arrasta os cantos pra ajustar e toca
-  em "Usar foto". Se não mexer em nada, o corte cobre a foto inteira, então
-  o resultado é igual a hoje (não muda nada pra quem não quer cortar).
--->
-<div id="crop-modal" class="hidden">
-  <div id="crop-bar">
-    <button type="button" id="crop-cancelar">Cancelar</button>
-    <span id="crop-titulo">Ajustar a foto</span>
-    <button type="button" id="crop-confirmar">Usar foto</button>
-  </div>
-  <div id="crop-area">
-    <img id="crop-img" alt="">
-    <div id="crop-box">
-      <div class="crop-handle" data-handle="nw"></div>
-      <div class="crop-handle" data-handle="ne"></div>
-      <div class="crop-handle" data-handle="sw"></div>
-      <div class="crop-handle" data-handle="se"></div>
-    </div>
-  </div>
-  <div id="crop-msg">Arraste os cantos pra ajustar o corte</div>
-</div>
-
-<!--
   Janela cheia dos apps extras. Cada app roda dentro do iframe abaixo, com o
   HTML vindo de um bloco <script type="text/html"> lá embaixo. O iframe isola
   o CSS e o JS do app extra do resto do Gestor, então um não quebra o outro.
@@ -2412,7 +2347,6 @@
   var agendaModalEl, agendaPanelEl;
   var temaModalEl, temaPanelEl, temaBtn;
   var scannerModalEl, scannerVideoEl, scannerMiraEl, scannerTituloEl, scannerMsgEl, scannerFecharEl;
-  var cropModalEl, cropImgEl, cropAreaEl, cropBoxEl, cropTituloEl, cropCancelarEl, cropConfirmarEl;
 
   /* ---------- Apps extras ----------
      Cada app extra é uma página HTML completa guardada num bloco
@@ -9038,13 +8972,6 @@
     var file = input.files[0];
     if (!file) return;
     var formEl = input.closest('form');
-    abrirEditorDeFoto(file, formEl, input);
-  }
-
-  // O que antes rodava direto em handlePhotoChange: comprime pra guardar,
-  // prepara e roda o OCR, e tenta ler QR code/código de barras — agora só
-  // dispara depois que a pessoa confirma o corte no editor de foto.
-  async function processarFotoEscolhida(file, formEl){
     try {
       var results = await Promise.all([compressImage(file, 120, 0.5), compressImage(file, 1000, 0.75)]);
       state.pendingPhoto = {thumb:results[0], full:results[1]};
@@ -9064,144 +8991,6 @@
     // Roda em paralelo, na foto original (resolução cheia ajuda a achar QR
     // code/código de barras pequeno). Não trava nem atrasa o OCR acima.
     scanCodigoENota(file, formEl);
-  }
-
-  /* ---------- Editor de corte da foto ----------
-     Abre assim que a pessoa escolhe/tira a foto, antes de guardar e ler.
-     A caixa de corte começa cobrindo a foto inteira — quem não quiser
-     cortar nada só toca "Usar foto" e o resultado é igual a hoje. */
-  var cropState = null; // {file, formEl, inputEl, url, box:{x,y,w,h}, drag}
-  var CROP_MIN = 40;    // tamanho mínimo da caixa em pixels de tela, pra não desaparecer
-
-  function abrirEditorDeFoto(file, formEl, inputEl){
-    if (cropState) fecharEditorDeFoto();
-    cropState = { file: file, formEl: formEl, inputEl: inputEl, box: null, drag: null };
-    cropImgEl.onload = function(){
-      if (!cropState) return;
-      // Só dá pra medir o tamanho renderizado da imagem depois que o modal
-      // (e ela dentro dele) já ficou visível e o navegador desenhou o layout.
-      requestAnimationFrame(function(){
-        if (!cropState) return;
-        cropState.box = { x:0, y:0, w:cropImgEl.clientWidth, h:cropImgEl.clientHeight };
-        posicionarCropBox();
-      });
-    };
-    cropImgEl.onerror = function(){
-      // Não trava quem só queria anexar a foto: se o editor de corte não
-      // conseguir abrir essa imagem por algum motivo, segue com a foto
-      // inteira sem cortar, em vez de travar o anexo por causa disso.
-      avancarSemCortar();
-    };
-    // Usa FileReader (igual compressImage/prepareImageForOCR já fazem, e
-    // funciona bem em foto de câmera de verdade) em vez de createObjectURL:
-    // é o caminho já testado no resto do app pra abrir a mesma foto.
-    var reader = new FileReader();
-    reader.onload = function(e){
-      if (!cropState) return;
-      cropImgEl.src = e.target.result;
-    };
-    reader.onerror = function(){ avancarSemCortar(); };
-    reader.readAsDataURL(file);
-    cropModalEl.classList.remove('hidden');
-  }
-
-  // Fecha o editor e segue com a foto original, sem cortar — usado quando a
-  // pré-visualização não abre por algum motivo, pra nunca travar quem só
-  // queria anexar a foto da nota.
-  function avancarSemCortar(){
-    if (!cropState) return;
-    var file = cropState.file, formEl = cropState.formEl;
-    fecharEditorDeFoto();
-    processarFotoEscolhida(file, formEl);
-  }
-
-  function posicionarCropBox(){
-    if (!cropState || !cropState.box) return;
-    var b = cropState.box;
-    cropBoxEl.style.left = (cropImgEl.offsetLeft + b.x) + 'px';
-    cropBoxEl.style.top = (cropImgEl.offsetTop + b.y) + 'px';
-    cropBoxEl.style.width = b.w + 'px';
-    cropBoxEl.style.height = b.h + 'px';
-  }
-
-  function cropPointerDown(e){
-    if (!cropState || !cropState.box) return;
-    var handle = e.target.closest('.crop-handle');
-    if (!handle && !e.target.closest('#crop-box')) return;
-    e.preventDefault();
-    cropState.drag = {
-      type: handle ? handle.getAttribute('data-handle') : 'move',
-      startPX: e.clientX, startPY: e.clientY,
-      startBox: Object.assign({}, cropState.box)
-    };
-    try { (handle || cropBoxEl).setPointerCapture(e.pointerId); } catch(err){ /* ignora navegador sem suporte */ }
-  }
-
-  function cropPointerMove(e){
-    if (!cropState || !cropState.drag) return;
-    var d = cropState.drag;
-    var dx = e.clientX - d.startPX, dy = e.clientY - d.startPY;
-    var maxW = cropImgEl.clientWidth, maxH = cropImgEl.clientHeight;
-    var b;
-    if (d.type === 'move'){
-      b = Object.assign({}, d.startBox);
-      b.x = Math.min(Math.max(0, d.startBox.x + dx), maxW - b.w);
-      b.y = Math.min(Math.max(0, d.startBox.y + dy), maxH - b.h);
-    } else {
-      // Cada canto mexe em até duas bordas — as outras duas ficam fixas no lugar.
-      var left = d.startBox.x, top = d.startBox.y;
-      var right = d.startBox.x + d.startBox.w, bottom = d.startBox.y + d.startBox.h;
-      if (d.type === 'nw' || d.type === 'sw') left = Math.min(Math.max(0, d.startBox.x + dx), right - CROP_MIN);
-      if (d.type === 'ne' || d.type === 'se') right = Math.max(Math.min(maxW, right + dx), left + CROP_MIN);
-      if (d.type === 'nw' || d.type === 'ne') top = Math.min(Math.max(0, d.startBox.y + dy), bottom - CROP_MIN);
-      if (d.type === 'sw' || d.type === 'se') bottom = Math.max(Math.min(maxH, bottom + dy), top + CROP_MIN);
-      b = { x:left, y:top, w:right-left, h:bottom-top };
-    }
-    cropState.box = b;
-    posicionarCropBox();
-  }
-
-  function cropPointerUp(){
-    if (cropState) cropState.drag = null;
-  }
-
-  function fecharEditorDeFoto(){
-    // Limpa o <input> pra deixar escolher a mesma foto de novo depois, se
-    // quiser — sem isso o navegador não dispara "change" de novo.
-    if (cropState && cropState.inputEl) cropState.inputEl.value = '';
-    cropState = null;
-    cropModalEl.classList.add('hidden');
-    cropImgEl.onload = null;
-    cropImgEl.onerror = null;
-    cropImgEl.src = '';
-  }
-
-  function cancelarCorte(){
-    fecharEditorDeFoto();
-  }
-
-  function confirmarCorte(){
-    if (!cropState || !cropState.box){ fecharEditorDeFoto(); return; }
-    var b = cropState.box;
-    var scale = cropImgEl.naturalWidth / cropImgEl.clientWidth;
-    var sx = Math.round(b.x * scale), sy = Math.round(b.y * scale);
-    var sw = Math.round(b.w * scale), sh = Math.round(b.h * scale);
-    // Teto de resolução: evita canvas gigante em foto de câmera muito grande —
-    // 3000px de lado já sobra tanto pra leitura quanto pra guardar a foto.
-    var CROP_MAX = 3000;
-    var outW = sw, outH = sh;
-    if (outW > CROP_MAX){ outH = Math.round(outH * (CROP_MAX / outW)); outW = CROP_MAX; }
-    if (outH > CROP_MAX){ outW = Math.round(outW * (CROP_MAX / outH)); outH = CROP_MAX; }
-    var canvas = document.createElement('canvas');
-    canvas.width = Math.max(1, outW); canvas.height = Math.max(1, outH);
-    var ctx = canvas.getContext('2d');
-    ctx.drawImage(cropImgEl, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
-    var formEl = cropState.formEl;
-    canvas.toBlob(function(blob){
-      fecharEditorDeFoto();
-      if (!blob){ alert('Não foi possível cortar essa foto. Tente outra.'); return; }
-      processarFotoEscolhida(new File([blob], 'nota.jpg', { type:'image/jpeg' }), formEl);
-    }, 'image/jpeg', 0.92);
   }
 
   /* ---------- Data refresh ---------- */
@@ -9755,13 +9544,6 @@
       if (document.hidden && scannerLeitor) fecharLeitorAoVivo();
     });
 
-    cropCancelarEl.addEventListener('click', cancelarCorte);
-    cropConfirmarEl.addEventListener('click', confirmarCorte);
-    cropAreaEl.addEventListener('pointerdown', cropPointerDown);
-    document.addEventListener('pointermove', cropPointerMove);
-    document.addEventListener('pointerup', cropPointerUp);
-    document.addEventListener('pointercancel', cropPointerUp);
-
     agendaModalEl.addEventListener('click', function(e){ if (e.target === agendaModalEl) fecharAgenda(); });
     agendaPanelEl.addEventListener('click', function(e){
       if (e.target.closest('[data-action="fechar-agenda"]')){ fecharAgenda(); return; }
@@ -9991,13 +9773,6 @@
     scannerTituloEl = document.getElementById('scanner-titulo');
     scannerMsgEl = document.getElementById('scanner-msg');
     scannerFecharEl = document.getElementById('scanner-fechar');
-    cropModalEl = document.getElementById('crop-modal');
-    cropImgEl = document.getElementById('crop-img');
-    cropAreaEl = document.getElementById('crop-area');
-    cropBoxEl = document.getElementById('crop-box');
-    cropTituloEl = document.getElementById('crop-titulo');
-    cropCancelarEl = document.getElementById('crop-cancelar');
-    cropConfirmarEl = document.getElementById('crop-confirmar');
     authScreenEl = document.getElementById('auth-screen');
     authCardEl = document.getElementById('auth-card');
     syncBarEl = document.getElementById('sync-bar');
