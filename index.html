@@ -36,8 +36,10 @@
     /* Status de pagamento */
     --status-pending:#FFA500;
     --status-pending-soft:rgba(255,165,0,0.12);
-    --status-paid:#39FF88;
-    --status-paid-soft:rgba(57,255,136,0.12);
+    /* O verde neon vinha do tema escuro e destoava do resto no claro; este é
+       o mesmo verde do "positivo" da paleta. */
+    --status-paid:#1EA85C;
+    --status-paid-soft:rgba(30,168,92,0.12);
     --status-overdue:#E5484D;
     --status-overdue-soft:rgba(229,72,77,0.12);
   }
@@ -389,9 +391,13 @@
     display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--ink-soft);
     border:1px solid var(--line);
   }
-  .entry .info{flex:1;min-width:0;}
-  .entry .desc{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .entry .date{font-size:11.5px;color:var(--ink-soft);}
+  .entry .info{flex:1;min-width:0;overflow:hidden;}
+  .entry .desc{
+    font-size:14px; font-weight:600;
+    display:flex; align-items:center; gap:6px; min-width:0; flex-wrap:wrap; row-gap:3px;
+  }
+  .entry .desc-txt{ flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .entry .date{font-size:11.5px;color:var(--ink-soft);overflow-wrap:anywhere;}
   .entry .value{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;}
   .entry .edit,
   .entry .del{
@@ -434,6 +440,83 @@
     background:var(--status-overdue);
     color:white;
   }
+
+  /* O aviso de conta vencida usa as classes .modal/.hidden, que existiam só
+     dentro do RachaFácil — no Gestor não havia regra nenhuma pra elas, então a
+     janela nunca escondia direito. Aqui ela ganha as suas. */
+  #modal-overdue{
+    position:fixed; inset:0; z-index:9999;
+    background:var(--backdrop);
+    display:flex; align-items:center; justify-content:center;
+    padding:18px;
+  }
+  #modal-overdue.hidden{ display:none !important; }
+  #modal-overdue .modal-caixa{
+    width:min(520px, 100%); max-height:86vh; overflow-y:auto;
+  }
+
+  /* ---------- Faixa da situação: etiqueta + os três botões ---------- */
+  .entry.tem-situacao{ flex-wrap:wrap; }
+  .sit-linha{
+    flex-basis:100%; display:flex; align-items:center; flex-wrap:wrap;
+    gap:6px 10px; margin-top:7px;
+  }
+  .sit-botoes{ display:flex; gap:5px; flex-wrap:wrap; }
+  .sit-tag{
+    display:inline-block; flex:0 0 auto; white-space:nowrap;
+    font-size:10.5px; font-weight:800; letter-spacing:.03em;
+    padding:3px 9px; border-radius:999px;
+  }
+  .sit-paid{ color:#0C5C31; background:var(--status-paid-soft); }
+  .sit-pending{ color:#8A5200; background:var(--status-pending-soft); }
+  .sit-overdue{ color:#9C1F23; background:var(--status-overdue-soft); }
+
+  .sit-btn{
+    padding:5px 11px; border-radius:999px; line-height:1.2;
+    border:1px solid var(--line); background:var(--paper-raised); color:var(--ink-soft);
+    font-size:11px; font-weight:700; font-family:inherit; cursor:pointer;
+  }
+  .sit-btn:hover{ border-color:var(--ink-soft); color:var(--ink); }
+  .sit-btn-paid.is-on{ border-color:var(--status-paid); background:var(--status-paid); color:#FFFFFF; }
+  .sit-btn-pending.is-on{ border-color:var(--status-pending); background:var(--status-pending); color:#3A2300; }
+  .sit-btn-overdue.is-on{ border-color:var(--status-overdue); background:var(--status-overdue); color:#fff; }
+
+  /* ---------- Linhas do aviso de conta vencida ---------- */
+  .cob-linha{
+    display:flex; align-items:center; gap:10px;
+    padding:11px 12px; margin-bottom:9px;
+    border:1px solid var(--status-overdue-soft); border-left:4px solid var(--status-overdue);
+    border-radius:10px; background:var(--status-overdue-soft);
+  }
+  .cob-txt{
+    flex:1; min-width:0; text-align:left;
+    background:transparent; border:none; padding:0;
+    font-family:inherit; color:var(--ink); cursor:pointer;
+  }
+  .cob-nome{
+    display:block; font-size:14px; font-weight:700;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    text-decoration:underline; text-decoration-color:rgba(24,23,18,.25);
+    text-underline-offset:3px;
+  }
+  .cob-txt:hover .cob-nome{ text-decoration-color:var(--accent-text); color:var(--accent-text); }
+  .cob-quando{ display:block; font-size:11.5px; color:var(--ink-soft); margin-top:2px; }
+  .cob-valor{
+    font-size:14px; font-weight:800; color:var(--status-overdue);
+    font-variant-numeric:tabular-nums; white-space:nowrap; flex:0 0 auto;
+  }
+  .cob-pago{
+    flex:0 0 auto; padding:8px 13px; border-radius:8px; border:none;
+    background:var(--status-paid); color:#FFFFFF;
+    font-size:12px; font-weight:800; font-family:inherit; cursor:pointer;
+  }
+  .cob-pago:active{ transform:scale(0.96); }
+  .cob-total{
+    display:flex; justify-content:space-between; align-items:baseline;
+    padding:12px 0 2px; margin-top:4px; border-top:1px solid var(--line);
+    font-size:13px; color:var(--ink-soft);
+  }
+  .cob-total b{ font-size:16px; color:var(--status-overdue); }
   .empty-state{
     text-align:center;
     padding:30px 10px;
@@ -1983,6 +2066,17 @@
   <iframe id="appfull-frame" title="App extra"></iframe>
 </div>
 
+<div class="modal hidden" id="modal-overdue" style="z-index:9999;">
+  <div class="modal-caixa" style="background:var(--paper); padding:20px; border-radius:12px; box-shadow:var(--shadow-lg);">
+    <div class="cob-titulo" style="font-size:18px; font-weight:700; color:var(--status-overdue); margin-bottom:12px;">⏰ Contas que passaram do dia</div>
+    <div id="overdue-list" style="margin-bottom:16px; max-height:300px; overflow-y:auto;"></div>
+    <div style="display:flex; gap:8px;">
+      <button type="button" id="overdue-remind-later" class="secondary-btn" style="flex:1;">⏰ Me lembre mais tarde</button>
+      <button type="button" id="overdue-close" class="submit-btn" style="flex:1; background:var(--neon2); color:#181712;">OK</button>
+    </div>
+  </div>
+</div>
+
 <!--
   Tesseract.js faz a leitura automática (OCR) das notas fiscais direto no
   navegador da pessoa, sem precisar de servidor nem de chave de API.
@@ -2847,6 +2941,7 @@
       items: e.items || null,
       fixed: !!e.fixed,
       fixo_ate: e.fixedUntil || null,
+      pagamento: e.pagamento || null,
       installment: !!e.installment,
       installments_total: e.installmentsTotal == null ? null : Number(e.installmentsTotal),
       installments_paid: e.installmentsPaid == null ? null : Number(e.installmentsPaid),
@@ -2870,6 +2965,7 @@
       items: r.items || null,
       fixed: !!r.fixed,
       fixedUntil: r.fixo_ate || null,
+      pagamento: (r.pagamento && typeof r.pagamento === 'object') ? r.pagamento : null,
       installment: !!r.installment,
       installmentsTotal: r.installments_total,
       installmentsPaid: r.installments_paid,
@@ -2883,7 +2979,8 @@
   // um carimbo de data mudando sozinho faria tudo parecer "alterado".
   function assinaturaGasto(e){
     return JSON.stringify([e.person, e.type, e.category, e.description, Number(e.value)||0,
-      e.date, e.thumb || null, e.items || null, !!e.fixed, e.fixedUntil || null, !!e.installment,
+      e.date, e.thumb || null, e.items || null, !!e.fixed, e.fixedUntil || null,
+      e.pagamento || null, !!e.installment,
       e.installmentsTotal == null ? null : Number(e.installmentsTotal),
       e.installmentsPaid == null ? null : Number(e.installmentsPaid),
       e.paymentMethod || null, e.card || null, !!e.demo]);
@@ -4058,32 +4155,149 @@
     return name + ' de ' + parts[0];
   }
 
-  // Calcular o status de pagamento de um gasto
-  function getPaymentStatus(expense){
-    if (!expense) return 'pending';
-    if (expense.paid) return 'paid';
+  /* ---------- Situação de pagamento ----------
+     Uma conta lançada com data pra frente ainda não foi paga: ela nasce
+     PENDENTE (laranja). Marcada, vira PAGA (verde). Se o dia chegou e ninguém
+     marcou, vira ATRASADA (vermelha) e entra no aviso que abre com o app.
 
-    var today = new Date();
-    today.setHours(0, 0, 0, 0);
+     A situação fica guardada por mês — pagamento: {'2026-09':'paid'} — porque
+     uma conta fixa é UM lançamento que vale pra vários meses, e cada mês dela
+     é pago num dia diferente. Num gasto comum a chave é só o mês dele, então
+     o mesmo campo atende os dois casos. */
 
-    var dueDate = new Date(expense.date + 'T00:00:00');
+  function mesDoLancamento(e){ return monthKeyFromDate(e.date); }
 
-    if (dueDate < today) return 'overdue';
-    return 'pending';
+  function marcaGuardada(e, mk){
+    if (!e) return null;
+    var base = state.expenses.filter(function(x){ return x.id === baseExpenseId(e.id); })[0] || e;
+    mk = mk || mesDoLancamento(e);
+    var mapa = base.pagamento;
+    if (mapa && typeof mapa === 'object' && mapa[mk]) return mapa[mk];
+    // Compatibilidade: quem já tinha marcado com o "paid" antigo continua pago.
+    if (base.paid && mk === mesDoLancamento(base)) return 'paid';
+    return null;
   }
 
-  // Classe CSS para o status
-  function getStatusClass(expense){
-    var status = getPaymentStatus(expense);
-    return 'status-' + status;
+  /* Esta conta é do tipo que se pergunta "já pagou?".
+     - Gasto com data no futuro: sim, ainda vai ser pago.
+     - Conta fixa: sim, do mês atual pra frente.
+     - Compra que já aconteceu: não. Marcar o mercado da semana passada como
+       "atrasado" encheria a lista de vermelho sem querer dizer nada. */
+  function temSituacao(e, mk){
+    if (!e) return false;
+    mk = mk || mesDoLancamento(e);
+    if (marcaGuardada(e, mk)) return true;
+    if (e.fixed) return mk >= currentMonthKey();
+    return String(e.date) > todayISO();
   }
 
-  // Texto do status em português
-  function getStatusText(expense){
-    var status = getPaymentStatus(expense);
-    if (status === 'paid') return '✅ Pago';
-    if (status === 'overdue') return '🔴 Atrasado';
-    return '⏳ Pendente';
+  // Dia em que essa ocorrência vence.
+  function vencimentoDe(e, mk){
+    mk = mk || mesDoLancamento(e);
+    if (!e.fixed || mk === mesDoLancamento(e)) return e.date;
+    return dateInMonth(mk, parseInt(String(e.date).slice(8,10), 10) || 1);
+  }
+
+  // Devolve 'paid' | 'pending' | 'overdue', ou null quando não se aplica.
+  function getPaymentStatus(expense, mk){
+    if (!expense) return null;
+    mk = mk || mesDoLancamento(expense);
+    if (!temSituacao(expense, mk)) return null;
+    var marca = marcaGuardada(expense, mk);
+    if (marca === 'paid') return 'paid';
+    if (marca === 'overdue') return 'overdue';
+    // Pendente vira atrasado sozinho quando o dia passa.
+    return vencimentoDe(expense, mk) < todayISO() ? 'overdue' : 'pending';
+  }
+
+  function getStatusClass(expense, mk){
+    var status = getPaymentStatus(expense, mk);
+    return status ? ('status-' + status) : '';
+  }
+
+  /* A etiqueta diz o estado E o prazo. Repetir só a palavra do botão aceso ao
+     lado não informa nada; "venceu há 9 dias" informa. Em "pago" ela some: a
+     barra verde e o botão aceso já dizem tudo. */
+  function getStatusText(expense, mk){
+    var status = getPaymentStatus(expense, mk);
+    if (!status || status === 'paid') return null;
+    var venc = vencimentoDe(expense, mk);
+    if (status === 'overdue') return 'Atrasado · venceu ' + quandoVenceu(venc);
+    return venc === todayISO()
+      ? 'Pendente de pagamento · vence hoje'
+      : 'Pendente de pagamento · vence ' + formatDateBR(venc);
+  }
+
+  /* A faixa da situação: o que está acontecendo, escrito por extenso, e os
+     três botões do lado. Ocupa a largura inteira do lançamento — antes a
+     etiqueta ia colada no nome e, num celular, não cabia nenhum dos dois. */
+  function situacaoBotoesHTML(e, mk){
+    var sit = getPaymentStatus(e, mk);
+    if (!sit) return '';
+    mk = mk || mesDoLancamento(e);
+    var opcoes = [['paid','Pago'], ['pending','Pendente'], ['overdue','Atrasado']];
+    var botoes = opcoes.map(function(o){
+      var ligado = (sit === o[0]);
+      return '<button type="button" class="sit-btn sit-btn-' + o[0] + (ligado ? ' is-on' : '') + '"'
+        + ' data-action="marcar-pagamento" data-id="' + escapeHTML(baseExpenseId(e.id)) + '"'
+        + ' data-mes="' + mk + '" data-sit="' + o[0] + '">' + o[1] + '</button>';
+    }).join('');
+    var rotulo = getStatusText(e, mk);
+    return '<div class="sit-linha">'
+      + (rotulo ? '<span class="sit-tag sit-' + sit + '">' + escapeHTML(rotulo) + '</span>' : '')
+      + '<span class="sit-botoes">' + botoes + '</span>'
+      + '</div>';
+  }
+
+  async function marcarPagamento(id, mk, sit){
+    var e = state.expenses.filter(function(x){ return x.id === id; })[0];
+    if (!e) return;
+    var antes = e.pagamento ? JSON.parse(JSON.stringify(e.pagamento)) : null;
+    var mapa = Object.assign({}, e.pagamento || {});
+    // Tocar de novo no que já está valendo desmarca — desfaz um toque errado.
+    if (mapa[mk] === sit) delete mapa[mk]; else mapa[mk] = sit;
+    e.pagamento = Object.keys(mapa).length ? mapa : null;
+    // O campo antigo sai de cena pra não brigar com o novo.
+    if (e.paid !== undefined) delete e.paid;
+    render();
+    var ok = await saveExpenses(state.expenses);
+    if (!ok){
+      e.pagamento = antes;
+      alert('Não consegui salvar a situação dessa conta. Tente de novo.');
+      render();
+    }
+  }
+
+  /* Tudo que está vencido e sem marca de pago, hoje. Varre o mês atual e os
+     dois anteriores: conta que venceu há mais de três meses não é lembrete,
+     é histórico. */
+  function contasAtrasadas(){
+    var fora = [];
+    var meses = [monthKeyAdd(currentMonthKey(), -2), monthKeyAdd(currentMonthKey(), -1), currentMonthKey()];
+    meses.forEach(function(mk){
+      materializedForMonth(mk).forEach(function(e){
+        if (getPaymentStatus(e, mk) !== 'overdue') return;
+        fora.push({
+          id: baseExpenseId(e.id), mes: mk,
+          descricao: e.description, categoria: e.category,
+          valor: e.value, pessoa: e.person, tipo: e.type,
+          vence: vencimentoDe(e, mk)
+        });
+      });
+    });
+    fora.sort(function(a,b){ return String(a.vence).localeCompare(String(b.vence)); });
+    return fora;
+  }
+
+  // "venceu hoje", "venceu ontem", "venceu há 5 dias", "venceu em 03/08".
+  function quandoVenceu(iso){
+    var hoje = new Date(todayISO() + 'T00:00:00');
+    var d = new Date(String(iso) + 'T00:00:00');
+    var dias = Math.round((hoje - d) / 86400000);
+    if (dias <= 0) return 'hoje';
+    if (dias === 1) return 'ontem';
+    if (dias <= 30) return 'há ' + dias + ' dias';
+    return 'em ' + formatDateBR(iso);
   }
 
   function getCategoryItems(category){
@@ -4719,13 +4933,17 @@
         var detailLine = c.installment
           ? (' · '+c.total+'x de '+formatBRL(c.parcelValue)+' · ✅ '+c.paid+' pagas'+(c.remaining>0?(' · ⏳ '+c.remaining+' restantes'):''))
           : (e.fixed ? ' · ' + seloFixoHTML(e) : '');
+        var mkLinha = monthKeyFromDate(e.date);
+        var botoes = situacaoBotoesHTML(e, mkLinha);
         return ''
-          + '<div class="entry">'
+          + '<div class="entry '+getStatusClass(e, mkLinha)+(botoes?' tem-situacao':'')+'" id="linha-'+escapeHTML(e.id)+'">'
           + thumb
-          + '<div class="info"><div class="desc">'+escapeHTML(e.description)+'</div><div class="date">'+formatDateBR(e.date)+detailLine+'</div></div>'
+          + '<div class="info"><div class="desc"><span class="desc-txt">'+escapeHTML(e.description)+'</span></div>'
+            + '<div class="date">'+formatDateBR(e.date)+detailLine+'</div></div>'
           + '<div class="value">'+formatBRL(e.value)+'</div>'
           + '<button class="edit" data-action="edit-expense" data-id="'+e.id+'">✏️</button>'
           + '<button class="del" data-action="delete-expense" data-id="'+e.id+'">🗑️</button>'
+          + botoes
           + '</div>';
       }).join('');
       // Cada grupo brilha na cor da própria categoria — dá pra achar
@@ -4742,6 +4960,8 @@
 
   function renderPersonalEntryRow(e){
     var c = personalCalc(e);
+    var mkPessoal = monthKeyFromDate(e.date);
+    var botoesPessoal = situacaoBotoesHTML(e, mkPessoal);
     var thumb = e.thumb
       ? '<img class="thumb" src="'+e.thumb+'" data-action="view-receipt" data-id="'+e.id+'">'
       : '<div class="thumb-placeholder" style="background:'+hexToRgba(catColor(e.category),0.15)+';color:'+catColor(e.category)+';">'+catIcon(e.category)+'</div>';
@@ -4754,12 +4974,14 @@
          : (e.paymentMethod === 'outro' ? 'Pix, dinheiro ou boleto · pago' : 'Crédito à vista · pago'))
         + (e.fixed ? ' · ' + seloFixoHTML(e) : '');
     return ''
-      + '<div class="entry personal-entry">'
+      + '<div class="entry personal-entry '+getStatusClass(e, mkPessoal)+(botoesPessoal?' tem-situacao':'')+'" id="linha-'+escapeHTML(e.id)+'">'
       + thumb
-      + '<div class="info"><div class="desc">'+escapeHTML(e.description)+cardLabel+'</div><div class="date">'+formatDateBR(e.date)+' · '+detailLine+'</div></div>'
+      + '<div class="info"><div class="desc"><span class="desc-txt">'+escapeHTML(e.description)+cardLabel+'</span></div>'
+        + '<div class="date">'+formatDateBR(e.date)+' · '+detailLine+'</div></div>'
       + '<div class="value">'+formatBRL(e.value)+'</div>'
       + '<button class="edit" data-action="edit-expense" data-id="'+e.id+'">✏️</button>'
       + '<button class="del" data-action="delete-expense" data-id="'+e.id+'">🗑️</button>'
+      + botoesPessoal
       + '</div>';
   }
 
@@ -5618,17 +5840,15 @@
       var badge = it.installmentLabel
         ? ('<span class="installment-badge">'+(it.paid?'✅':'⏳')+' Parcela '+it.installmentLabel+'</span>')
         : '';
-      var statusClass = getStatusClass(it);
-      var statusText = getStatusText(it);
-      var paymentStatus = getPaymentStatus(it);
+      // Na aba Meses a situação é a do mês daquela lista, não a do lançamento.
+      var mkMes = g.year + '-' + String(g.month + 1).padStart(2, '0');
+      var botoesMes = situacaoBotoesHTML(it, mkMes);
       return ''
-        + '<div class="entry month-item '+statusClass+' '+(it.paid?'':' pending-item')+'" data-expense-id="'+escapeHTML(it.id)+'">'
+        + '<div class="entry month-item '+getStatusClass(it, mkMes)+(botoesMes?' tem-situacao':'')+'" data-expense-id="'+escapeHTML(it.id)+'">'
         + catChipHTML(it.category, 34)
-        + '<div class="info"><div class="desc" style="cursor:pointer;" data-action="open-expense" data-id="'+escapeHTML(it.id)+'">'+escapeHTML(it.description)+'</div><div class="date">'+escapeHTML(it.category)+(badge?(' · '+badge):'')+'</div></div>'
+        + '<div class="info"><div class="desc"><span class="desc-txt" style="cursor:pointer;" data-action="open-expense" data-id="'+escapeHTML(it.id)+'">'+escapeHTML(it.description)+'</span></div><div class="date">'+escapeHTML(it.category)+(badge?(' · '+badge):'')+'</div></div>'
         + '<div class="value">'+formatBRL(it.value)+'</div>'
-        + '<div class="status-buttons" style="display:flex; gap:4px; margin-left:8px;">'
-          + '<button type="button" class="status-btn" data-action="toggle-payment-status" data-id="'+escapeHTML(it.id)+'" data-expense-id="'+escapeHTML(it.id)+'" title="'+statusText+'" style="background:var(--status-'+paymentStatus+'); color:#fff; border:none; padding:4px 8px; border-radius:4px; font-size:11px; font-weight:600; cursor:pointer; transition:all 0.2s ease;">'+statusText+'</button>'
-        + '</div>'
+        + botoesMes
         + '</div>';
     }).join('');
     return ''
@@ -5760,17 +5980,22 @@
     function listaFixos(itens, titulo, accent){
       if (!itens.length) return '';
       var total = itens.reduce(function(s,e){ return s + e.value; }, 0);
+      var mkAtual = currentMonthKey();
       var linhas = itens.slice().sort(function(a,b){ return b.value - a.value; }).map(function(e){
         var dono = memberById(e.person);
-        return '<div class="entry">'
+        // Aqui a situação é sempre a do mês corrente: é a parcela que está
+        // pra vencer (ou vencida) agora.
+        var botoesFixa = situacaoBotoesHTML(e, mkAtual);
+        return '<div class="entry '+getStatusClass(e, mkAtual)+(botoesFixa?' tem-situacao':'')+'">'
           + '<div class="thumb-placeholder" style="background:'+hexToRgba(catColor(e.category),0.15)+';color:'+catColor(e.category)+';">'+catIcon(e.category)+'</div>'
-          + '<div class="info"><div class="desc">'+escapeHTML(e.description)+'</div>'
+          + '<div class="info"><div class="desc"><span class="desc-txt">'+escapeHTML(e.description)+'</span></div>'
             + '<div class="date">'+escapeHTML(e.category)+' · paga por '+escapeHTML(dono ? dono.name : '?')
             + ' · desde '+escapeHTML(monthLabelFromKey(monthKeyFromDate(e.date)))
             + prazoNaListaHTML(e)+'</div></div>'
           + '<div class="value">'+formatBRL(e.value)+'</div>'
           + '<button class="edit" data-action="edit-fixed" data-id="'+e.id+'" data-person="'+escapeHTML(e.person)+'" data-type="'+e.type+'">✏️</button>'
           + '<button class="del" data-action="delete-expense" data-id="'+e.id+'">🗑️</button>'
+          + botoesFixa
           + '</div>';
       }).join('');
       return '<section class="resumo-block neon-box '+accent+'" style="margin-bottom:16px;">'
@@ -6709,6 +6934,8 @@
      'Pra ver, não. Pra o outro celular receber o que você lançou, sim: o app guarda e envia sozinho assim que a internet voltar.'],
     ['Quero um atalho na tela de início',
      'No menu do navegador, toque em <b>Adicionar à tela de início</b>. Vira um ícone igual a um aplicativo, sem precisar baixar nada.'],
+    ['Como sei o que ainda falta pagar?',
+     'Conta lançada com <b>data pra frente</b> entra como <b>pendente</b> (laranja). Marcou como paga, fica <b>verde</b>. Passou do dia sem marcar, fica <b>vermelha</b> — e, ao abrir o app, aparece um aviso com o que está em aberto: dá pra tocar no nome e ir até o lançamento, marcar PAGO ali mesmo ou pedir pra ser lembrado mais tarde. Vale também pras contas fixas, mês a mês.'],
     ['Pra que serve a aba Apps extras?',
      'São ferramentas que vêm junto com o Gestor, sem custo a mais. Hoje tem o <b>RachaFácil</b>, pra dividir a conta de um rolê entre várias pessoas (viagem, churrasco, república). Elas abrem numa tela própria e <b>não mexem nas contas da casa</b> — o que você lança lá não entra no acerto do casal.']
   ];
@@ -8010,6 +8237,22 @@
     var fixedToggleEl = form.querySelector('.fixed-toggle-select');
     extra.fixed = !!fixedToggleEl && fixedToggleEl.value === 'sim';
 
+    /* Conta lançada com data pra frente nasce PENDENTE. Isso precisa ficar
+       gravado, não só deduzido da data: depois que o dia passa, o app não
+       teria como saber a diferença entre "boleto que eu agendei" e "compra
+       que eu já fiz" — e é justamente aí que ela tem que ficar vermelha. */
+    if (!extra.fixed && date > todayISO()){
+      var mkNovo = monthKeyFromDate(date);
+      var jaTinha = state.editingId
+        ? (state.expenses.filter(function(x){ return x.id === state.editingId; })[0] || {}).pagamento
+        : null;
+      if (!jaTinha || !jaTinha[mkNovo]){
+        var mapaNovo = Object.assign({}, jaTinha || {});
+        mapaNovo[mkNovo] = 'pending';
+        extra.pagamento = mapaNovo;
+      }
+    }
+
     // Prazo do gasto fixo. Só vale quando é fixo E a pessoa escolheu "tem
     // prazo" — nos outros casos vai null e a conta repete sem fim.
     extra.fixedUntil = null;
@@ -9283,19 +9526,13 @@
         return;
       }
 
-      // Botão para alternar status de pagamento de um gasto
-      var togglePaymentBtn = e.target.closest('[data-action="toggle-payment-status"]');
-      if (togglePaymentBtn){
+      // Os três botões de situação (pago / pendente / atrasado).
+      var marcar = e.target.closest('[data-action="marcar-pagamento"]');
+      if (marcar){
         e.preventDefault();
-        (async function(){
-          var expenseId = togglePaymentBtn.getAttribute('data-id') || togglePaymentBtn.getAttribute('data-expense-id');
-          var expense = state.expenses.find(function(ex){ return ex.id === expenseId; });
-          if (expense){
-            expense.paid = !expense.paid;
-            await saveExpenses(state.expenses);
-            render();
-          }
-        })();
+        marcarPagamento(marcar.getAttribute('data-id'),
+                        marcar.getAttribute('data-mes'),
+                        marcar.getAttribute('data-sit'));
         return;
       }
 
@@ -9489,9 +9726,32 @@
       var remindLaterBtn = document.getElementById('overdue-remind-later');
       if (remindLaterBtn){
         remindLaterBtn.addEventListener('click', function(){
+          // Até amanhã: lembrar de novo daqui a uma hora seria a mesma praga.
+          adiarCobranca(20);
           overdueModal.classList.add('hidden');
         });
       }
+
+      // PAGO na linha, tocar no nome pra ir até a conta, e ligar o aviso do navegador.
+      overdueModal.addEventListener('click', function(ev){
+        var pago = ev.target.closest('[data-action="cobranca-pago"]');
+        if (pago){
+          marcarPagamento(pago.getAttribute('data-id'), pago.getAttribute('data-mes'), 'paid');
+          var linha = pago.closest('.cob-linha');
+          if (linha) linha.remove();
+          // Resolveu tudo? A janela não tem mais o que dizer.
+          if (!overdueModal.querySelector('.cob-linha')) overdueModal.classList.add('hidden');
+          return;
+        }
+        var ir = ev.target.closest('[data-action="ir-para-conta"]');
+        if (ir){
+          irParaConta(ir.getAttribute('data-id'), ir.getAttribute('data-person'),
+                      ir.getAttribute('data-type'), ir.getAttribute('data-mes'));
+          return;
+        }
+        var quero = ev.target.closest('[data-action="cobranca-avisar"]');
+        if (quero){ pedirPermissaoDeAviso(); quero.remove(); return; }
+      });
 
       var closeBtn = document.getElementById('overdue-close');
       if (closeBtn){
@@ -10065,32 +10325,110 @@
     checkAndShowOverdueNotification();
   }
 
-  // Verificar e mostrar notificação de contas atrasadas
+  /* ---------- Aviso de conta vencida ----------
+     Abre junto com o app quando tem conta passada do dia sem marcar. Três
+     saídas: tocar no nome leva ao lançamento, PAGO resolve ali mesmo, e
+     "me lembre mais tarde" cala o aviso até o dia seguinte. */
+
+  var SONECA_KEY = 'gastos_casa_soneca_cobranca';
+
+  function sonecaAtiva(){
+    try {
+      var ate = localStorage.getItem(SONECA_KEY);
+      return !!ate && new Date().getTime() < Number(ate);
+    } catch(e){ return false; }
+  }
+  function adiarCobranca(horas){
+    try { localStorage.setItem(SONECA_KEY, String(new Date().getTime() + horas * 3600 * 1000)); }
+    catch(e){}
+  }
+
   function checkAndShowOverdueNotification(){
-    var today = new Date();
-    today.setHours(0, 0, 0, 0);
+    var lista = contasAtrasadas();
+    if (!lista.length) return;
+    avisarNoNavegador(lista);
+    if (sonecaAtiva()) return;
+    abrirCobranca(lista);
+  }
 
-    var overdueExpenses = state.expenses.filter(function(e){
-      if (e.paid || e.type !== 'casal') return false;
-      var dueDate = new Date(e.date + 'T00:00:00');
-      return dueDate < today;
-    });
+  function abrirCobranca(lista){
+    var modal = document.getElementById('modal-overdue');
+    var alvo = document.getElementById('overdue-list');
+    if (!modal || !alvo) return;
+    var total = lista.reduce(function(s, c){ return s + c.valor; }, 0);
 
-    if (overdueExpenses.length === 0) return;
+    alvo.innerHTML = ''
+      + '<div class="note" style="margin:0 0 12px;">Toque no nome pra ver o lançamento, ou marque como paga aqui mesmo.</div>'
+      + lista.map(function(c){
+          return '<div class="cob-linha">'
+            + '<button type="button" class="cob-txt" data-action="ir-para-conta"'
+              + ' data-id="' + escapeHTML(c.id) + '" data-person="' + escapeHTML(c.pessoa) + '"'
+              + ' data-type="' + escapeHTML(c.tipo) + '" data-mes="' + c.mes + '">'
+              + '<span class="cob-nome">' + escapeHTML(c.descricao) + '</span>'
+              + '<span class="cob-quando">' + escapeHTML(c.categoria) + ' · venceu ' + escapeHTML(quandoVenceu(c.vence)) + '</span>'
+            + '</button>'
+            + '<span class="cob-valor">' + formatBRL(c.valor) + '</span>'
+            + '<button type="button" class="cob-pago" data-action="cobranca-pago"'
+              + ' data-id="' + escapeHTML(c.id) + '" data-mes="' + c.mes + '">PAGO</button>'
+            + '</div>';
+        }).join('')
+      + (lista.length > 1
+          ? '<div class="cob-total"><span>Total em aberto</span><b>' + formatBRL(total) + '</b></div>'
+          : '')
+      + (podePedirAviso()
+          ? '<button type="button" class="secondary-btn" data-action="cobranca-avisar" style="margin-top:12px;">'
+            + '🔔 Quero ser avisado no navegador quando vencer</button>'
+          : '');
 
-    var overdueModal = document.getElementById('modal-overdue');
-    var overdueList = document.getElementById('overdue-list');
+    var titulo = modal.querySelector('.cob-titulo');
+    if (titulo){
+      titulo.textContent = lista.length === 1
+        ? '⏰ Uma conta passou do dia'
+        : '⏰ ' + lista.length + ' contas passaram do dia';
+    }
+    modal.classList.remove('hidden');
+  }
 
-    var html = overdueExpenses.map(function(e){
-      return '<div style="padding:10px; background:var(--input-bg); border-left:4px solid var(--status-overdue); border-radius:6px; margin-bottom:8px; cursor:pointer;" data-id="'+escapeHTML(e.id)+'" data-action="open-expense">'
-        + '<div style="font-weight:600; color:var(--ink);">'+escapeHTML(e.description)+'</div>'
-        + '<div style="font-size:12px; color:var(--ink-soft);">'+escapeHTML(e.category)+' · '+formatBRL(e.value)+'</div>'
-        + '<div style="font-size:11px; color:var(--alert); margin-top:4px;">Venceu em '+new Date(e.date+'T00:00:00').toLocaleDateString('pt-BR')+'</div>'
-        + '</div>';
-    }).join('');
+  // Leva a pessoa até o lançamento: troca de aba, abre a edição e rola até ele.
+  function irParaConta(id, pessoa, tipo, mes){
+    var modal = document.getElementById('modal-overdue');
+    if (modal) modal.classList.add('hidden');
+    if (pessoa && memberById(pessoa)){
+      state.currentTab = pessoa;
+      if (tipo) state.subTab[pessoa] = tipo;
+    }
+    handleEditStart(id);
+    setTimeout(function(){
+      var alvo = document.getElementById('linha-' + id) || contentEl.querySelector('form.add-form');
+      if (alvo) alvo.scrollIntoView({block:'center', behavior:'smooth'});
+    }, 150);
+  }
 
-    overdueList.innerHTML = html;
-    overdueModal.classList.remove('hidden');
+  /* Aviso do navegador. É o que dá pra fazer num site de arquivo único: com a
+     permissão dada, o aviso chega mesmo com a aba em segundo plano. Aviso no
+     celular com o app fechado precisa de service worker e de um servidor
+     mandando o push — outra história, e eu aviso antes de fazer. */
+  function avisarNoNavegador(lista){
+    try {
+      if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+      var total = lista.reduce(function(s,c){ return s + c.valor; }, 0);
+      new Notification(state.settings.householdName || 'Gastos da Casa', {
+        body: lista.length === 1
+          ? lista[0].descricao + ' venceu — ' + formatBRL(lista[0].valor)
+          : lista.length + ' contas passaram do dia — ' + formatBRL(total) + ' em aberto',
+        tag: 'gastos-casa-atraso'
+      });
+    } catch(e){}
+  }
+
+  // Pedir permissão assim que o app abre é o jeito certo de a pessoa clicar em
+  // "bloquear". Aqui só aparece quando ela está olhando uma conta vencida.
+  function podePedirAviso(){
+    try { return typeof Notification !== 'undefined' && Notification.permission === 'default'; }
+    catch(e){ return false; }
+  }
+  function pedirPermissaoDeAviso(){
+    try { if (podePedirAviso()) Notification.requestPermission(); } catch(e){}
   }
 
   init();
@@ -10484,16 +10822,6 @@
 <div class="modal hidden" id="modal-pessoa"><div class="modal-caixa" id="painel-pessoa"></div></div>
 <div class="modal hidden" id="modal-confirma"><div class="modal-caixa" id="painel-confirma"></div></div>
 <div class="modal hidden" id="modal-ajuda"><div class="modal-caixa" id="painel-ajuda"></div></div>
-<div class="modal hidden" id="modal-overdue" style="z-index:9999;">
-  <div class="modal-caixa" style="background:var(--paper); padding:20px; border-radius:12px; box-shadow:var(--shadow-lg);">
-    <div style="font-size:18px; font-weight:700; color:var(--status-overdue); margin-bottom:12px;">🔴 Você tem contas vencidas!</div>
-    <div id="overdue-list" style="margin-bottom:16px; max-height:300px; overflow-y:auto;"></div>
-    <div style="display:flex; gap:8px;">
-      <button type="button" id="overdue-remind-later" class="secondary-btn" style="flex:1;">⏰ Me lembre mais tarde</button>
-      <button type="button" id="overdue-close" class="submit-btn" style="flex:1; background:var(--neon2); color:#181712;">OK</button>
-    </div>
-  </div>
-</div>
 <div class="aviso hidden" id="aviso"></div>
 
 <script>
