@@ -893,6 +893,86 @@
   #appfull-acoes button:hover{ border-color:var(--neon2); color:var(--accent-text); }
   #appfull-frame{ flex:1; width:100%; border:none; background:var(--paper); }
 
+  /* Leitor de QR code / código de barras com a câmera ao vivo — tela cheia,
+     igual ao #appfull, porque o vídeo precisa do máximo de espaço possível.
+     Pesquisei como apps parecidos (leitor de nota fiscal, leitor de código
+     de barras) resolvem isso: câmera ao vivo com uma "mira" no meio é o
+     padrão — bem mais rápido que tirar foto e esperar processar. */
+  #scanner-modal{
+    position:fixed; inset:0; z-index:130;
+    display:flex; flex-direction:column; background:#000;
+  }
+  #scanner-modal.hidden{ display:none; }
+  #scanner-bar{
+    display:flex; align-items:center; gap:10px; flex:0 0 auto;
+    padding:7px 12px; padding-top:calc(7px + env(safe-area-inset-top));
+    background:rgba(0,0,0,.55); position:relative; z-index:2;
+  }
+  #scanner-fechar{
+    width:34px; height:34px; border-radius:50%; padding:0; line-height:1; flex:0 0 auto;
+    border:1px solid rgba(255,255,255,.3); background:rgba(255,255,255,.1); color:#fff;
+    font-size:15px; font-weight:800; font-family:inherit; display:grid; place-items:center; cursor:pointer;
+  }
+  #scanner-titulo{ color:#fff; font-size:14px; font-weight:700; flex:1; min-width:0; }
+  #scanner-video-wrap{ position:relative; flex:1; overflow:hidden; background:#000; min-height:0; }
+  #scanner-video{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  #scanner-mira{
+    position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+    width:min(70vw,300px); height:min(70vw,300px); max-height:55vh;
+    border:3px solid rgba(255,255,255,.9); border-radius:20px;
+    box-shadow:0 0 0 999px rgba(0,0,0,.4); pointer-events:none;
+    transition:width .15s ease, height .15s ease, border-radius .15s ease;
+  }
+  /* Código de barras é comprido e baixo — a mira muda de forma pro tipo. */
+  #scanner-mira.barras{
+    width:min(85vw,380px); height:130px; max-height:30vh; border-radius:14px;
+  }
+  #scanner-msg{
+    flex:0 0 auto; padding:14px 18px calc(14px + env(safe-area-inset-bottom));
+    background:rgba(0,0,0,.55); color:#fff; font-size:13px; text-align:center; line-height:1.4; min-height:18px;
+  }
+
+  /* Corte de foto: aparece logo depois que a pessoa escolhe/tira a foto da
+     nota, antes de guardar e ler — assim ela decide o enquadramento exato
+     em vez de sempre usar a foto inteira. */
+  #crop-modal{
+    position:fixed; inset:0; z-index:130;
+    display:flex; flex-direction:column; background:#000;
+  }
+  #crop-modal.hidden{ display:none; }
+  #crop-bar{
+    display:flex; align-items:center; justify-content:space-between; gap:10px; flex:0 0 auto;
+    padding:10px 14px; padding-top:calc(10px + env(safe-area-inset-top));
+    background:rgba(0,0,0,.7);
+  }
+  #crop-cancelar, #crop-confirmar{
+    border:none; background:transparent; font-family:inherit; font-size:14px; font-weight:700; cursor:pointer; padding:6px 4px;
+  }
+  #crop-cancelar{ color:rgba(255,255,255,.75); }
+  #crop-confirmar{ color:#fff; }
+  #crop-titulo{ color:#fff; font-size:13px; font-weight:700; flex:1; text-align:center; }
+  #crop-area{
+    position:relative; flex:1; min-height:0; display:flex;
+    align-items:center; justify-content:center; overflow:hidden; touch-action:none;
+  }
+  #crop-img{ max-width:100%; max-height:100%; display:block; user-select:none; -webkit-user-drag:none; }
+  #crop-box{
+    position:absolute; border:2px solid #fff; box-shadow:0 0 0 999px rgba(0,0,0,.55);
+    cursor:move; touch-action:none;
+  }
+  .crop-handle{
+    position:absolute; width:26px; height:26px; margin:-13px; border-radius:50%;
+    background:#fff; box-shadow:0 1px 4px rgba(0,0,0,.4); touch-action:none;
+  }
+  .crop-handle[data-handle="nw"]{ left:0; top:0; cursor:nwse-resize; }
+  .crop-handle[data-handle="ne"]{ right:0; top:0; cursor:nesw-resize; }
+  .crop-handle[data-handle="sw"]{ left:0; bottom:0; cursor:nesw-resize; }
+  .crop-handle[data-handle="se"]{ right:0; bottom:0; cursor:nwse-resize; }
+  #crop-msg{
+    flex:0 0 auto; padding:10px 18px calc(10px + env(safe-area-inset-bottom));
+    background:rgba(0,0,0,.7); color:rgba(255,255,255,.75); font-size:12px; text-align:center;
+  }
+
   #membro-modal, #ajuda-modal, #cats-modal, #metas-modal, #future-modal, #apps-modal, #cartao-modal, #agenda-modal, #tema-modal{
     position:fixed;inset:0;background:var(--backdrop);
     display:flex;align-items:flex-end;justify-content:center;z-index:70;
@@ -1857,6 +1937,48 @@
 </div>
 
 <!--
+  Leitor de QR code / código de barras com a câmera ao vivo. Fica escondido
+  até a pessoa tocar em "Ler QR code" ou "Ler código de barras" perto da
+  foto da nota — abre a câmera, mostra uma mira, e lê contínuo até achar
+  um código (ou a pessoa fechar com o X).
+-->
+<div id="scanner-modal" class="hidden">
+  <div id="scanner-bar">
+    <button type="button" id="scanner-fechar" aria-label="Fechar leitor">✕</button>
+    <span id="scanner-titulo"></span>
+  </div>
+  <div id="scanner-video-wrap">
+    <video id="scanner-video" playsinline autoplay muted></video>
+    <div id="scanner-mira"></div>
+  </div>
+  <div id="scanner-msg"></div>
+</div>
+
+<!--
+  Corte de foto: some para cima assim que a pessoa escolhe/tira uma foto da
+  nota, antes de guardar e ler — ela arrasta os cantos pra ajustar e toca
+  em "Usar foto". Se não mexer em nada, o corte cobre a foto inteira, então
+  o resultado é igual a hoje (não muda nada pra quem não quer cortar).
+-->
+<div id="crop-modal" class="hidden">
+  <div id="crop-bar">
+    <button type="button" id="crop-cancelar">Cancelar</button>
+    <span id="crop-titulo">Ajustar a foto</span>
+    <button type="button" id="crop-confirmar">Usar foto</button>
+  </div>
+  <div id="crop-area">
+    <img id="crop-img" alt="">
+    <div id="crop-box">
+      <div class="crop-handle" data-handle="nw"></div>
+      <div class="crop-handle" data-handle="ne"></div>
+      <div class="crop-handle" data-handle="sw"></div>
+      <div class="crop-handle" data-handle="se"></div>
+    </div>
+  </div>
+  <div id="crop-msg">Arraste os cantos pra ajustar o corte</div>
+</div>
+
+<!--
   Janela cheia dos apps extras. Cada app roda dentro do iframe abaixo, com o
   HTML vindo de um bloco <script type="text/html"> lá embaixo. O iframe isola
   o CSS e o JS do app extra do resto do Gestor, então um não quebra o outro.
@@ -2289,6 +2411,8 @@
   var cartaoModalEl, cartaoPanelEl;
   var agendaModalEl, agendaPanelEl;
   var temaModalEl, temaPanelEl, temaBtn;
+  var scannerModalEl, scannerVideoEl, scannerMiraEl, scannerTituloEl, scannerMsgEl, scannerFecharEl;
+  var cropModalEl, cropImgEl, cropAreaEl, cropBoxEl, cropTituloEl, cropCancelarEl, cropConfirmarEl;
 
   /* ---------- Apps extras ----------
      Cada app extra é uma página HTML completa guardada num bloco
@@ -4438,6 +4562,8 @@
         + '<div class="photo-row">'
           + '<label class="photo-btn">📷 Tirar foto<input type="file" accept="image/*" capture="environment" class="photo-input" style="display:none;"></label>'
           + '<label class="photo-btn">🖼️ Escolher da galeria<input type="file" accept="image/*" class="photo-input" style="display:none;"></label>'
+          + '<button type="button" class="photo-btn" data-action="scan-qr">📡 Ler QR code</button>'
+          + '<button type="button" class="photo-btn" data-action="scan-barras">📊 Ler código de barras</button>'
           + '<span class="photo-preview-slot">' + renderPhotoSlotHTML(editingExpense) + '</span>'
         + '</div>'
         + '<div class="ocr-status"></div>'
@@ -4491,6 +4617,8 @@
         + '<div class="photo-row">'
           + '<label class="photo-btn">📷 Tirar foto<input type="file" accept="image/*" capture="environment" class="photo-input" style="display:none;"></label>'
           + '<label class="photo-btn">🖼️ Escolher da galeria<input type="file" accept="image/*" class="photo-input" style="display:none;"></label>'
+          + '<button type="button" class="photo-btn" data-action="scan-qr">📡 Ler QR code</button>'
+          + '<button type="button" class="photo-btn" data-action="scan-barras">📊 Ler código de barras</button>'
           + '<span class="photo-preview-slot">' + renderPhotoSlotHTML(editingExpense) + '</span>'
         + '</div>'
         + '<div class="ocr-status"></div>'
@@ -5343,7 +5471,7 @@
     // Cada um tem cor fixa, sempre a mesma, pra virar atalho de leitura.
     var pctFixo = res.totalCasal > 0 ? Math.round(totalFixo / res.totalCasal * 100) : 0;
     var kpiHTML = '<div class="kpi-row">'
-      + kpiTileHTML('Contas do casal', formatBRL(res.totalCasal), byCat.length + (byCat.length === 1 ? ' categoria' : ' categorias'), 'acc-cyan')
+      + kpiTileHTML('Contas da casa', formatBRL(res.totalCasal), byCat.length + (byCat.length === 1 ? ' categoria' : ' categorias'), 'acc-cyan')
       + kpiTileHTML('Contas fixas', formatBRL(totalFixo), pctFixo + '% do mês já é fixo', 'acc-green')
       + kpiTileHTML('Média por mês', formatBRL(media), mesesFechados.length + (mesesFechados.length === 1 ? ' mês de histórico' : ' meses de histórico'), 'acc-purple')
       + futureTileHTML(futuro)
@@ -8083,9 +8211,15 @@
     });
 
     // 3) Conserta o Nº sequencial do item no começo da linha quando ele veio
-    //    com letra ("OO1 7891..." -> "001 7891...").
+    //    com letra ("OO1 7891..." -> "001 7891..."). O código de barras que
+    //    vem depois também pode ter uma letra trocada no meio ou no fim
+    //    ("789123456789O") — por isso ele também é aceito com letra aqui,
+    //    embora só o Nº do item seja de fato corrigido: sem isso, um único
+    //    caractere embaralhado no código de barras (bem comum, ele é longo)
+    //    já é suficiente pra essa linha inteira não ser reconhecida como
+    //    início de item, e o produto some da lista sem nenhum aviso.
     t = t.split(/\r?\n/).map(function(line){
-      return line.replace(/^(\s*)([0-9OoQDlIiTS]{1,3})(\s+\d[\d.\-]{5,}\b)/, function(m, sp, seq, rest){
+      return line.replace(/^(\s*)([0-9OoQDlIiTS]{1,3})(\s+[0-9OoQDlIiTSBZGb][0-9OoQDlIiTSBZGb.\-]{5,}\b)/, function(m, sp, seq, rest){
         return sp + fixDigits(seq) + rest;
       });
     }).join('\n');
@@ -8098,7 +8232,7 @@
   function cleanProductName(raw){
     var s = ' ' + String(raw || '') + ' ';
     s = s.replace(new RegExp(MONEY_SRC, 'g'), ' ');       // valores em R$
-    s = s.replace(/\b\d[\d.\-]{5,}\b/g, ' ');             // código de barras / interno
+    s = s.replace(/\b[0-9OoQDlIiTSBZGb][0-9OoQDlIiTSBZGb.\-]{5,}\b/g, ' '); // código de barras / interno
     s = s.replace(/^\s*\d{1,3}\b(?!\s*(KG|G|ML|L|UN)\b)/i, ' '); // Nº sequencial no início
     s = s.replace(/[^A-Za-zÀ-ÿ0-9.,%/&+\-\s]/g, ' ');     // símbolos que o OCR inventa
     s = s.replace(/\s+[A-Za-z]\s*$/, ' ');                // letra solta no fim (F/T/I/N — código tributário)
@@ -8119,7 +8253,11 @@
   var HEADER_WORDS_RE = /(DESCRI[ÇC]|C[ÓO]DIGO|\bQTDE?\b|VL\.?\s*UNIT|V[LR]\.?\s*TOT|\bCOD\b)/i;
 
   /* ---------- Âncoras de item ---------- */
-  var ANCHOR_STRONG_RE = /^(\d{1,3})\s+(\d[\d.\-]{5,})\b/;
+  // O código de barras (2º grupo) também aceita letra trocada por número —
+  // mesmo motivo do passo 3 do normalizeOcrText: um item inteiro não pode
+  // desaparecer da lista só porque um caractere do código de barras, que é
+  // comprido, saiu errado do OCR.
+  var ANCHOR_STRONG_RE = /^(\d{1,3})\s+([0-9OoQDlIiTSBZGb][0-9OoQDlIiTSBZGb.\-]{5,})\b/;
   var ANCHOR_MEDIUM_RE = /^(\d{1,3})[\s.\)\-]+(?=[A-Za-zÀ-ÿ])/;
 
   // O padrão de compra completo: quantidade + unidade + "x" + valor unitário.
@@ -8388,12 +8526,22 @@
       var pending = '';
       var lastItem = null;
       region.forEach(function(line){
-        // Linha só com valor: é o total do item anterior, não um item novo.
+        // Linha só com valor: normalmente é o total do item anterior — mas se
+        // não tinha item pendente e existe um NOME esperando (pending), essa
+        // é a dupla mais comum em nota sem Nº de item (farmácia, lojinha):
+        // "Dipirona 500mg" numa linha, "12,90" sozinho na linha de baixo. Sem
+        // esse caso, nenhum item nunca chega a ser criado nesse tipo de nota.
         var om = line.match(ONLY_MONEY_RE);
         if (om){
+          var v = parseBRLNumber(om[1]);
           if (lastItem && lastItem._needsTotal){
-            var v = parseBRLNumber(om[1]);
             if (v != null && v > 0){ lastItem.value = v; lastItem._needsTotal = false; }
+          } else if (pending && v != null && v > 0){
+            var novo = { position:null, description:pending, units:null, weight:null, value:v, confidence:'baixa' };
+            novo.position = nextAuto++;
+            result.items.push(novo);
+            lastItem = novo;
+            pending = '';
           }
           return;
         }
@@ -8778,6 +8926,19 @@
     }
   }
 
+  // Decide o que fazer com um texto decodificado de QR code/código de
+  // barras, venha ele da foto da nota (scanCodigoENota) ou do leitor com
+  // câmera ao vivo (abrirLeitorAoVivo) — as duas leituras caem aqui.
+  async function processarCodigoLido(texto, ehQR, formEl){
+    if (/^https?:\/\//i.test(texto)){
+      await lerNotaPorLinkQR(texto, formEl);
+    } else if (!ehQR){
+      await identificarProdutoPorCodigoBarras(texto, formEl);
+    } else {
+      setCodeStatus(formEl, '📡 QR code lido, mas o conteúdo não é um link de nota — nada pra preencher automaticamente com ele.', 'fail');
+    }
+  }
+
   async function scanCodigoENota(file, formEl){
     if (typeof ZXing === 'undefined'){
       console.warn('ZXing indisponível — leitura de QR code/código de barras desativada.');
@@ -8797,14 +8958,7 @@
       if (!formEl.isConnected) return;
       var texto = (resultado.getText() || '').trim();
       var formato = resultado.getBarcodeFormat ? resultado.getBarcodeFormat() : null;
-      var ehQR = formato === ZXing.BarcodeFormat.QR_CODE;
-      if (/^https?:\/\//i.test(texto)){
-        await lerNotaPorLinkQR(texto, formEl);
-      } else if (!ehQR){
-        await identificarProdutoPorCodigoBarras(texto, formEl);
-      }
-      // QR code que não é link (raro nas notas brasileiras): não tem o que
-      // fazer automaticamente, e não é motivo pra avisar nada.
+      await processarCodigoLido(texto, formato === ZXing.BarcodeFormat.QR_CODE, formEl);
     } catch(e){
       // "NotFoundException" é o caso comum: a foto não tinha QR/código de
       // barras visível — a maioria das notas não vem com isso enquadrado.
@@ -8816,10 +8970,81 @@
     }
   }
 
+  /* ---------- Leitor com câmera ao vivo ----------
+     Os botões "Ler QR code" e "Ler código de barras" abrem a câmera na hora
+     (em vez de precisar tirar uma foto e esperar processar) — é como apps
+     de nota fiscal e leitor de código de barras costumam fazer. A ZXing lê
+     contínuo, quadro a quadro, até achar um código; o resultado cai no
+     mesmo processarCodigoLido() de cima. */
+  var scannerLeitor = null;
+  var scannerFormAtual = null;
+
+  function abrirLeitorAoVivo(tipo, formEl){
+    if (typeof ZXing === 'undefined'){
+      alert('A leitura de código não está disponível agora — tente de novo em instantes, ou use a foto da nota normalmente.');
+      return;
+    }
+    if (!formEl){
+      alert('Abra o formulário de uma despesa antes de usar o leitor.');
+      return;
+    }
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+      alert('Esse navegador não deixa usar a câmera aqui. Você ainda pode tirar ou enviar a foto da nota normalmente — a leitura de QR code e código de barras roda nela também.');
+      return;
+    }
+    fecharLeitorAoVivo(); // nunca deixa duas leituras abertas ao mesmo tempo
+
+    scannerFormAtual = formEl;
+    scannerTituloEl.textContent = tipo === 'qr' ? 'Ler QR code da nota' : 'Ler código de barras';
+    scannerMiraEl.className = tipo === 'barras' ? 'barras' : '';
+    scannerMsgEl.textContent = 'Pedindo acesso à câmera...';
+    scannerModalEl.classList.remove('hidden');
+
+    var hints = new Map();
+    hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, tipo === 'qr'
+      ? [ZXing.BarcodeFormat.QR_CODE]
+      : [ZXing.BarcodeFormat.EAN_13, ZXing.BarcodeFormat.EAN_8, ZXing.BarcodeFormat.UPC_A, ZXing.BarcodeFormat.UPC_E,
+         ZXing.BarcodeFormat.CODE_128, ZXing.BarcodeFormat.CODE_39, ZXing.BarcodeFormat.ITF, ZXing.BarcodeFormat.CODABAR]);
+    scannerLeitor = new ZXing.BrowserMultiFormatReader(hints);
+
+    var constraints = { video: { facingMode: { ideal: 'environment' } } };
+    scannerLeitor.decodeFromConstraints(constraints, scannerVideoEl, function(resultado){
+      if (!resultado) return; // quadro sem código — normal, continua tentando
+      var texto = (resultado.getText() || '').trim();
+      var formato = resultado.getBarcodeFormat ? resultado.getBarcodeFormat() : null;
+      var ehQR = formato === ZXing.BarcodeFormat.QR_CODE;
+      var formAlvo = scannerFormAtual;
+      fecharLeitorAoVivo();
+      if (formAlvo && formAlvo.isConnected) processarCodigoLido(texto, ehQR, formAlvo);
+    }).then(function(){
+      if (scannerLeitor){
+        scannerMsgEl.textContent = tipo === 'qr' ? 'Aponte a câmera para o QR code da nota.' : 'Aponte a câmera para o código de barras.';
+      }
+    }).catch(function(e){
+      scannerMsgEl.textContent = 'Não consegui abrir a câmera' + ((e && e.name === 'NotAllowedError') ? ' — permita o acesso nas configurações do navegador e tente de novo.' : '.');
+    });
+  }
+
+  function fecharLeitorAoVivo(){
+    if (scannerLeitor){
+      try { scannerLeitor.reset(); } catch(e){ /* ignora falha ao encerrar */ }
+      scannerLeitor = null;
+    }
+    if (scannerModalEl) scannerModalEl.classList.add('hidden');
+    scannerFormAtual = null;
+  }
+
   async function handlePhotoChange(input){
     var file = input.files[0];
     if (!file) return;
     var formEl = input.closest('form');
+    abrirEditorDeFoto(file, formEl, input);
+  }
+
+  // O que antes rodava direto em handlePhotoChange: comprime pra guardar,
+  // prepara e roda o OCR, e tenta ler QR code/código de barras — agora só
+  // dispara depois que a pessoa confirma o corte no editor de foto.
+  async function processarFotoEscolhida(file, formEl){
     try {
       var results = await Promise.all([compressImage(file, 120, 0.5), compressImage(file, 1000, 0.75)]);
       state.pendingPhoto = {thumb:results[0], full:results[1]};
@@ -8839,6 +9064,125 @@
     // Roda em paralelo, na foto original (resolução cheia ajuda a achar QR
     // code/código de barras pequeno). Não trava nem atrasa o OCR acima.
     scanCodigoENota(file, formEl);
+  }
+
+  /* ---------- Editor de corte da foto ----------
+     Abre assim que a pessoa escolhe/tira a foto, antes de guardar e ler.
+     A caixa de corte começa cobrindo a foto inteira — quem não quiser
+     cortar nada só toca "Usar foto" e o resultado é igual a hoje. */
+  var cropState = null; // {file, formEl, inputEl, url, box:{x,y,w,h}, drag}
+  var CROP_MIN = 40;    // tamanho mínimo da caixa em pixels de tela, pra não desaparecer
+
+  function abrirEditorDeFoto(file, formEl, inputEl){
+    if (cropState) fecharEditorDeFoto();
+    var url = URL.createObjectURL(file);
+    cropState = { file: file, formEl: formEl, inputEl: inputEl, url: url, box: null, drag: null };
+    cropImgEl.onload = function(){
+      if (!cropState) return;
+      // Só dá pra medir o tamanho renderizado da imagem depois que o modal
+      // (e ela dentro dele) já ficou visível e o navegador desenhou o layout.
+      requestAnimationFrame(function(){
+        if (!cropState) return;
+        cropState.box = { x:0, y:0, w:cropImgEl.clientWidth, h:cropImgEl.clientHeight };
+        posicionarCropBox();
+      });
+    };
+    cropImgEl.onerror = function(){
+      alert('Não consegui abrir essa foto. Tente outra.');
+      fecharEditorDeFoto();
+    };
+    cropImgEl.src = url;
+    cropModalEl.classList.remove('hidden');
+  }
+
+  function posicionarCropBox(){
+    if (!cropState || !cropState.box) return;
+    var b = cropState.box;
+    cropBoxEl.style.left = (cropImgEl.offsetLeft + b.x) + 'px';
+    cropBoxEl.style.top = (cropImgEl.offsetTop + b.y) + 'px';
+    cropBoxEl.style.width = b.w + 'px';
+    cropBoxEl.style.height = b.h + 'px';
+  }
+
+  function cropPointerDown(e){
+    if (!cropState || !cropState.box) return;
+    var handle = e.target.closest('.crop-handle');
+    if (!handle && !e.target.closest('#crop-box')) return;
+    e.preventDefault();
+    cropState.drag = {
+      type: handle ? handle.getAttribute('data-handle') : 'move',
+      startPX: e.clientX, startPY: e.clientY,
+      startBox: Object.assign({}, cropState.box)
+    };
+    try { (handle || cropBoxEl).setPointerCapture(e.pointerId); } catch(err){ /* ignora navegador sem suporte */ }
+  }
+
+  function cropPointerMove(e){
+    if (!cropState || !cropState.drag) return;
+    var d = cropState.drag;
+    var dx = e.clientX - d.startPX, dy = e.clientY - d.startPY;
+    var maxW = cropImgEl.clientWidth, maxH = cropImgEl.clientHeight;
+    var b;
+    if (d.type === 'move'){
+      b = Object.assign({}, d.startBox);
+      b.x = Math.min(Math.max(0, d.startBox.x + dx), maxW - b.w);
+      b.y = Math.min(Math.max(0, d.startBox.y + dy), maxH - b.h);
+    } else {
+      // Cada canto mexe em até duas bordas — as outras duas ficam fixas no lugar.
+      var left = d.startBox.x, top = d.startBox.y;
+      var right = d.startBox.x + d.startBox.w, bottom = d.startBox.y + d.startBox.h;
+      if (d.type === 'nw' || d.type === 'sw') left = Math.min(Math.max(0, d.startBox.x + dx), right - CROP_MIN);
+      if (d.type === 'ne' || d.type === 'se') right = Math.max(Math.min(maxW, right + dx), left + CROP_MIN);
+      if (d.type === 'nw' || d.type === 'ne') top = Math.min(Math.max(0, d.startBox.y + dy), bottom - CROP_MIN);
+      if (d.type === 'sw' || d.type === 'se') bottom = Math.max(Math.min(maxH, bottom + dy), top + CROP_MIN);
+      b = { x:left, y:top, w:right-left, h:bottom-top };
+    }
+    cropState.box = b;
+    posicionarCropBox();
+  }
+
+  function cropPointerUp(){
+    if (cropState) cropState.drag = null;
+  }
+
+  function fecharEditorDeFoto(){
+    if (cropState){
+      if (cropState.url) URL.revokeObjectURL(cropState.url);
+      // Limpa o <input> pra deixar escolher a mesma foto de novo depois,
+      // se quiser — sem isso o navegador não dispara "change" de novo.
+      if (cropState.inputEl) cropState.inputEl.value = '';
+    }
+    cropState = null;
+    cropModalEl.classList.add('hidden');
+    cropImgEl.src = '';
+  }
+
+  function cancelarCorte(){
+    fecharEditorDeFoto();
+  }
+
+  function confirmarCorte(){
+    if (!cropState || !cropState.box){ fecharEditorDeFoto(); return; }
+    var b = cropState.box;
+    var scale = cropImgEl.naturalWidth / cropImgEl.clientWidth;
+    var sx = Math.round(b.x * scale), sy = Math.round(b.y * scale);
+    var sw = Math.round(b.w * scale), sh = Math.round(b.h * scale);
+    // Teto de resolução: evita canvas gigante em foto de câmera muito grande —
+    // 3000px de lado já sobra tanto pra leitura quanto pra guardar a foto.
+    var CROP_MAX = 3000;
+    var outW = sw, outH = sh;
+    if (outW > CROP_MAX){ outH = Math.round(outH * (CROP_MAX / outW)); outW = CROP_MAX; }
+    if (outH > CROP_MAX){ outW = Math.round(outW * (CROP_MAX / outH)); outH = CROP_MAX; }
+    var canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, outW); canvas.height = Math.max(1, outH);
+    var ctx = canvas.getContext('2d');
+    ctx.drawImage(cropImgEl, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+    var formEl = cropState.formEl;
+    canvas.toBlob(function(blob){
+      fecharEditorDeFoto();
+      if (!blob){ alert('Não foi possível cortar essa foto. Tente outra.'); return; }
+      processarFotoEscolhida(new File([blob], 'nota.jpg', { type:'image/jpeg' }), formEl);
+    }, 'image/jpeg', 0.92);
   }
 
   /* ---------- Data refresh ---------- */
@@ -8906,6 +9250,12 @@
 
       var remExisting = e.target.closest('[data-action="remove-existing-photo"]');
       if (remExisting){ state.removeExistingPhoto = true; refreshPhotoSlot(remExisting.closest('form')); return; }
+
+      var scanQr = e.target.closest('[data-action="scan-qr"]');
+      if (scanQr){ abrirLeitorAoVivo('qr', scanQr.closest('form')); return; }
+
+      var scanBarras = e.target.closest('[data-action="scan-barras"]');
+      if (scanBarras){ abrirLeitorAoVivo('barras', scanBarras.closest('form')); return; }
 
       var cancelEdit = e.target.closest('[data-action="cancel-edit"]');
       if (cancelEdit){ state.editingId = null; state.pendingPhoto = null; state.removeExistingPhoto = false; render(); return; }
@@ -9378,6 +9728,21 @@
     document.getElementById('appfull-voltar').addEventListener('click', fecharAppExtra);
     ouvirAppExtra();
 
+    scannerFecharEl.addEventListener('click', fecharLeitorAoVivo);
+    // Se a pessoa trocar de app ou minimizar o navegador com a câmera
+    // aberta, fecha sozinho — senão a câmera fica ligada em segundo plano
+    // gastando bateria e com o indicador de câmera aceso sem necessidade.
+    document.addEventListener('visibilitychange', function(){
+      if (document.hidden && scannerLeitor) fecharLeitorAoVivo();
+    });
+
+    cropCancelarEl.addEventListener('click', cancelarCorte);
+    cropConfirmarEl.addEventListener('click', confirmarCorte);
+    cropAreaEl.addEventListener('pointerdown', cropPointerDown);
+    document.addEventListener('pointermove', cropPointerMove);
+    document.addEventListener('pointerup', cropPointerUp);
+    document.addEventListener('pointercancel', cropPointerUp);
+
     agendaModalEl.addEventListener('click', function(e){ if (e.target === agendaModalEl) fecharAgenda(); });
     agendaPanelEl.addEventListener('click', function(e){
       if (e.target.closest('[data-action="fechar-agenda"]')){ fecharAgenda(); return; }
@@ -9601,6 +9966,19 @@
     temaModalEl = document.getElementById('tema-modal');
     temaPanelEl = document.getElementById('tema-panel');
     temaBtn = document.getElementById('tema-btn');
+    scannerModalEl = document.getElementById('scanner-modal');
+    scannerVideoEl = document.getElementById('scanner-video');
+    scannerMiraEl = document.getElementById('scanner-mira');
+    scannerTituloEl = document.getElementById('scanner-titulo');
+    scannerMsgEl = document.getElementById('scanner-msg');
+    scannerFecharEl = document.getElementById('scanner-fechar');
+    cropModalEl = document.getElementById('crop-modal');
+    cropImgEl = document.getElementById('crop-img');
+    cropAreaEl = document.getElementById('crop-area');
+    cropBoxEl = document.getElementById('crop-box');
+    cropTituloEl = document.getElementById('crop-titulo');
+    cropCancelarEl = document.getElementById('crop-cancelar');
+    cropConfirmarEl = document.getElementById('crop-confirmar');
     authScreenEl = document.getElementById('auth-screen');
     authCardEl = document.getElementById('auth-card');
     syncBarEl = document.getElementById('sync-bar');
