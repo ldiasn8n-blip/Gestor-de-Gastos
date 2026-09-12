@@ -309,6 +309,15 @@
   .ocr-status.ocr-loading{ color:var(--ink-soft); }
   .ocr-status.ocr-ok{ color:var(--positive); }
   .ocr-status.ocr-fail{ color:var(--alert); }
+  /* Status da leitura de QR code / código de barras — separado do status do
+     OCR porque as duas leituras rodam em paralelo e uma não pode apagar a
+     mensagem da outra. Sem código achado na foto, fica vazio e quieto. */
+  .code-status{ font-size:11.5px;color:var(--ink-soft);margin-top:4px;min-height:0;line-height:1.4; }
+  .code-status:empty{ margin-top:0; }
+  .code-status.code-loading{ color:var(--ink-soft); }
+  .code-status.code-ok{ color:var(--positive); }
+  .code-status.code-fail{ color:var(--ink-soft); }
+  .code-status a{ color:var(--accent-text); font-weight:700; }
   .photo-preview{
     width:42px;height:42px;border-radius:6px;object-fit:cover;border:1px solid var(--line);
   }
@@ -1866,8 +1875,14 @@
   navegador da pessoa, sem precisar de servidor nem de chave de API.
   Se o CDN não carregar por algum motivo, o app detecta isso e cai de volta
   pro preenchimento manual — a leitura automática nunca trava o resto do site.
+
+  A ZXing lê, na mesma foto, QR code (o da nota fiscal eletrônica) e código de
+  barras (EAN de produto) — também 100% no navegador. Se o CDN não carregar,
+  o app só deixa de tentar essa leitura extra; OCR e preenchimento manual
+  continuam funcionando normalmente.
 -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.0.4/tesseract.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.20.0/umd/index.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/dist/umd/supabase.min.js"></script>
 
 <script>
@@ -4413,7 +4428,7 @@
       + '<div class="form-col form-col-items acc-green">'
       + '<div class="form-col-title">Itens da nota (opcional)</div>'
       + '<div class="field items-section">'
-        + '<div class="items-hint">Tirou foto da nota fiscal? Cada item vira uma linha com <b>Nº + Produto</b>, <b>Unidade</b>, <b>Peso</b> (só se for vendido por quilo — pode deixar em branco) e <b>Valor</b>. As linhas com faixa colorida são as que não consegui ler com certeza: confira só elas.</div>'
+        + '<div class="items-hint">Tirou foto da nota fiscal? Cada item vira uma linha com <b>Nº + Produto</b>, <b>Unidade</b>, <b>Peso</b> (só se for vendido por quilo — pode deixar em branco) e <b>Valor</b>. As linhas com faixa colorida são as que não consegui ler com certeza: confira só elas. Se a foto pegar o <b>QR code</b> da nota ou um <b>código de barras</b>, uso eles também pra ajudar a preencher.</div>'
         + '<div class="items-list">' + existingItems.map(itemRowHTML).join('') + '</div>'
         + itemsTotalRowHTML()
         + '<button type="button" class="secondary-btn add-item-btn" data-action="add-item">+ Adicionar item</button>'
@@ -4426,6 +4441,7 @@
           + '<span class="photo-preview-slot">' + renderPhotoSlotHTML(editingExpense) + '</span>'
         + '</div>'
         + '<div class="ocr-status"></div>'
+        + '<div class="code-status"></div>'
       + '</div>'
       + '</div>'
       + '<div class="form-submit-area">'
@@ -4478,6 +4494,7 @@
           + '<span class="photo-preview-slot">' + renderPhotoSlotHTML(editingExpense) + '</span>'
         + '</div>'
         + '<div class="ocr-status"></div>'
+        + '<div class="code-status"></div>'
       + '</div>'
       + '</div>'
       + '<div class="form-submit-area">'
@@ -8509,7 +8526,8 @@
     el.className = 'ocr-status' + (kind ? (' ocr-' + kind) : '');
   }
 
-  function applyOcrResult(formEl, parsed){
+  function applyOcrResult(formEl, parsed, opcoes){
+    opcoes = opcoes || {};
     var filled = false;
     var lojaDita = null;
 
@@ -8559,18 +8577,27 @@
       }
     }
 
-    showOcrRawText(formEl, parsed.rawText);
+    if (!opcoes.semTextoLido) showOcrRawText(formEl, parsed.rawText);
 
     if (!filled){
-      setOcrStatus(formEl, '⚠️ Não consegui identificar os dados da nota — preencha manualmente.', 'fail');
-      return;
+      // Vindo do QR/código: não achar nada pra preencher é o caso comum (nem
+      // toda nota expõe os dados assim), não é um erro pra alarmar a pessoa —
+      // quem chama trata esse silêncio (ver lerNotaPorLinkQR).
+      if (!opcoes.silencioSeVazio){
+        setOcrStatus(formEl, '⚠️ Não consegui identificar os dados da nota — preencha manualmente.', 'fail');
+      }
+      return false;
     }
 
-    var msg = '✅ ' + (lojaDita ? lojaDita + ' · ' : '') + readCount + (readCount === 1 ? ' item lido' : ' itens lidos');
+    var partes = [];
+    if (lojaDita) partes.push(lojaDita);
+    if (readCount > 0) partes.push(readCount + (readCount === 1 ? ' item lido' : ' itens lidos'));
+    else if (parsed.total != null) partes.push('total ' + formatBRL(parsed.total));
+    var msg = '✅ ' + (partes.length ? partes.join(' · ') : 'dados da nota preenchidos') + (opcoes.origemTxt || '');
     var kind = 'ok';
     // A própria nota costuma imprimir quantos itens tem — se o número que
     // lemos for diferente, algum item ficou de fora e é melhor avisar.
-    if (parsed.itemCountPrinted != null && parsed.itemCountPrinted !== readCount){
+    if (readCount > 0 && parsed.itemCountPrinted != null && parsed.itemCountPrinted !== readCount){
       msg += ' — mas a nota diz ' + parsed.itemCountPrinted + '. Confira se faltou algum.';
       kind = 'fail';
     } else if (toCheck > 0){
@@ -8579,7 +8606,9 @@
       msg += '. Confira antes de salvar.';
     }
     setOcrStatus(formEl, msg, kind);
+    return true;
   }
+
 
   // Mostra o texto cru que o OCR enxergou na foto. Quando um item sai
   // errado, é aqui que dá pra ver se o problema foi a leitura da imagem
@@ -8635,6 +8664,158 @@
     }
   }
 
+  /* ---------- Leitura de QR code e código de barras na foto ----------
+     Roda em paralelo com o OCR de texto (acima), na mesma foto tirada de
+     "Foto da nota fiscal". Dois casos:
+     1) QR code que é um link (o padrão das notas fiscais eletrônicas -
+        NFC-e): tentamos abrir o link e ler a página oficial da nota, que
+        muitas vezes tem loja, itens e total em texto puro — aí passamos
+        esse texto pelo MESMO leitor usado no OCR (parseReceiptText), então
+        loja/categoria/itens são identificados do mesmo jeito. Cada estado
+        tem seu próprio site pra isso, e nem todos permitem essa busca
+        automática vinda do navegador — quando não dá, mostramos o link
+        pronto pra pessoa abrir e conferir na mão.
+     2) Código de barras comum (EAN de produto): buscamos o nome do produto
+        numa base pública, sem chave de API. Só preenche descrição/categoria
+        se esses campos ainda estiverem vazios/no padrão. */
+
+  function setCodeStatus(formEl, html, kind){
+    var el = formEl && formEl.querySelector('.code-status');
+    if (!el) return;
+    el.innerHTML = html || '';
+    el.className = 'code-status' + (kind ? (' code-' + kind) : '');
+  }
+
+  // fetch com prazo: o site de uma nota fiscal pode nunca responder (ou
+  // travar num redirecionamento), e isso não pode deixar a tela de "lendo"
+  // presa pra sempre.
+  function fetchComTimeout(url, ms){
+    var controlador = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+    var timer = controlador ? setTimeout(function(){ controlador.abort(); }, ms) : null;
+    return fetch(url, controlador ? { signal: controlador.signal } : undefined)
+      .finally(function(){ if (timer) clearTimeout(timer); });
+  }
+
+  // HTML de uma página de consulta de nota -> texto "linha a linha", como o
+  // OCR entregaria. Sem isso, tudo dentro da tabela de itens viraria uma
+  // frase só, e o leitor de texto (feito pro recibo impresso) não acha nada.
+  function textoDeHTML(html){
+    var doc = new DOMParser().parseFromString(String(html || ''), 'text/html');
+    doc.querySelectorAll('br, tr, td, th, li, p, div, h1, h2, h3, h4, h5').forEach(function(el){
+      el.insertAdjacentText('afterend', '\n');
+    });
+    return (doc.body ? doc.body.textContent : '') || '';
+  }
+
+  // Só buscamos automaticamente em domínios do governo (".gov.br"), que é
+  // onde ficam as páginas de consulta da nota fiscal eletrônica. Assim, uma
+  // foto ou QR code malicioso não faz o app buscar dados de um site
+  // qualquer da internet sozinho, sem a pessoa pedir — fora desse domínio,
+  // só mostramos o link pronto pra ela abrir e decidir por conta própria.
+  function ehDominioFiscalConfiavel(url){
+    try {
+      var host = new URL(url).hostname.toLowerCase();
+      return host === 'gov.br' || host.endsWith('.gov.br');
+    } catch(e){ return false; }
+  }
+
+  async function lerNotaPorLinkQR(url, formEl){
+    var linkAbrir = ' <a href="' + escapeHTML(url) + '" target="_blank" rel="noopener">Abrir a nota</a> pra conferir.';
+    if (!ehDominioFiscalConfiavel(url)){
+      setCodeStatus(formEl, '🔗 QR code lido, mas o link não é de um site do governo — por segurança, não busco os dados sozinho aqui.' + linkAbrir, 'fail');
+      return;
+    }
+    setCodeStatus(formEl, '🔗 QR code da nota encontrado — buscando os dados...', 'loading');
+    try {
+      var resp = await fetchComTimeout(url, 8000);
+      if (!formEl.isConnected) return;
+      if (!resp.ok) throw new Error('http ' + resp.status);
+      var html = await resp.text();
+      var texto = textoDeHTML(html);
+      var parsed = parseReceiptText(texto);
+      var preencheu = applyOcrResult(formEl, parsed, {
+        silencioSeVazio: true, semTextoLido: true, origemTxt: ' (lido pelo QR da nota)'
+      });
+      if (!preencheu){
+        setCodeStatus(formEl, '🔗 QR lido, mas não achei dados suficientes nessa página pra preencher sozinho.' + linkAbrir, 'fail');
+      }
+    } catch(e){
+      if (!formEl.isConnected) return;
+      // Comum: o site do estado não libera acesso direto do navegador
+      // (CORS) ou demorou demais pra responder — segue o app, sem travar.
+      setCodeStatus(formEl, '🔗 QR code lido, mas não consegui abrir os dados automaticamente aqui.' + linkAbrir, 'fail');
+    }
+  }
+
+  async function identificarProdutoPorCodigoBarras(codigo, formEl){
+    // Códigos de nota (chave de acesso, linha digitável) têm muito mais
+    // dígitos que um código de barras de produto (EAN-8/12/13) — isso já
+    // evita buscar besteira quando o que a câmera pegou não foi um produto.
+    if (!/^\d{6,14}$/.test(codigo)) return;
+    var descInput = formEl.querySelector('.description-input');
+    if (!descInput || descInput.value.trim()) return;
+    setCodeStatus(formEl, '📦 Código de barras encontrado — buscando o produto...', 'loading');
+    try {
+      var resp = await fetchComTimeout('https://world.openfoodfacts.org/api/v0/product/' + encodeURIComponent(codigo) + '.json', 8000);
+      var dados = await resp.json();
+      if (!formEl.isConnected) return;
+      var produto = dados && dados.status === 1 ? dados.product : null;
+      var nome = produto && (produto.product_name_pt || produto.product_name || produto.generic_name_pt || produto.generic_name);
+      if (nome && !descInput.value.trim()){
+        descInput.value = nome;
+        var catSel = formEl.querySelector('.category-select');
+        if (catSel && !formEl.dataset.catTocada && catSel.selectedIndex === 0){
+          var temMercado = Array.prototype.some.call(catSel.options, function(o){ return o.value === 'Mercado'; });
+          if (temMercado) catSel.value = 'Mercado';
+        }
+        setCodeStatus(formEl, '✅ Produto identificado pelo código de barras: ' + escapeHTML(nome) + '. Confira antes de salvar.', 'ok');
+      } else {
+        setCodeStatus(formEl, '📦 Código de barras lido (' + escapeHTML(codigo) + '), mas não achei esse produto pra preencher sozinho.', 'fail');
+      }
+    } catch(e){
+      if (!formEl.isConnected) return;
+      setCodeStatus(formEl, '📦 Código de barras lido (' + escapeHTML(codigo) + '), mas não consegui buscar os dados agora.', 'fail');
+    }
+  }
+
+  async function scanCodigoENota(file, formEl){
+    if (typeof ZXing === 'undefined'){
+      console.warn('ZXing indisponível — leitura de QR code/código de barras desativada.');
+      return;
+    }
+    if (!formEl || !formEl.isConnected) return;
+    var url = URL.createObjectURL(file);
+    try {
+      var hints = new Map();
+      hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
+        ZXing.BarcodeFormat.QR_CODE, ZXing.BarcodeFormat.EAN_13, ZXing.BarcodeFormat.EAN_8,
+        ZXing.BarcodeFormat.UPC_A, ZXing.BarcodeFormat.UPC_E, ZXing.BarcodeFormat.CODE_128,
+        ZXing.BarcodeFormat.CODE_39, ZXing.BarcodeFormat.ITF, ZXing.BarcodeFormat.CODABAR
+      ]);
+      var leitor = new ZXing.BrowserMultiFormatReader(hints);
+      var resultado = await leitor.decodeFromImageUrl(url);
+      if (!formEl.isConnected) return;
+      var texto = (resultado.getText() || '').trim();
+      var formato = resultado.getBarcodeFormat ? resultado.getBarcodeFormat() : null;
+      var ehQR = formato === ZXing.BarcodeFormat.QR_CODE;
+      if (/^https?:\/\//i.test(texto)){
+        await lerNotaPorLinkQR(texto, formEl);
+      } else if (!ehQR){
+        await identificarProdutoPorCodigoBarras(texto, formEl);
+      }
+      // QR code que não é link (raro nas notas brasileiras): não tem o que
+      // fazer automaticamente, e não é motivo pra avisar nada.
+    } catch(e){
+      // "NotFoundException" é o caso comum: a foto não tinha QR/código de
+      // barras visível — a maioria das notas não vem com isso enquadrado.
+      if (!(ZXing.NotFoundException && e instanceof ZXing.NotFoundException)){
+        console.warn('Leitura de QR code/código de barras falhou', e);
+      }
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  }
+
   async function handlePhotoChange(input){
     var file = input.files[0];
     if (!file) return;
@@ -8655,6 +8836,9 @@
       console.error('Preparo da imagem para OCR falhou', e);
       runReceiptOCR(file, formEl);
     }
+    // Roda em paralelo, na foto original (resolução cheia ajuda a achar QR
+    // code/código de barras pequeno). Não trava nem atrasa o OCR acima.
+    scanCodigoENota(file, formEl);
   }
 
   /* ---------- Data refresh ---------- */
@@ -10472,7 +10656,11 @@
 
   if (embutido){
     document.body.classList.add('embutido');
+    // Só aceita mensagem de quem carregou este iframe — sem checar a fonte,
+    // qualquer página (inclusive uma maliciosa, se o Gestor for embutido num
+    // frame de terceiros) poderia mandar "zerar" pra cá de fora.
     window.addEventListener('message', function(e){
+      if (e.source !== window.parent) return;
       var d = e.data;
       if (!d || d.tipo !== 'app-acao') return;
       if (d.id === 'ajuda') abrirAjuda();
@@ -10481,8 +10669,9 @@
     // O Gestor manda a paleta que a pessoa escolheu (cor, cabeçalho, fundo,
     // gráficos, claro/escuro, cantos, bordas neon) assim que este app abre e
     // sempre que ela muda de ideia. Aqui só aplicamos as variáveis — a conta
-    // de cor já vem pronta.
+    // de cor já vem pronta. Mesma checagem de origem do listener acima.
     window.addEventListener('message', function(e){
+      if (e.source !== window.parent) return;
       var d = e.data;
       if (!d || d.tipo !== 'app-tema' || !d.paleta) return;
       var raiz = document.documentElement.style;
