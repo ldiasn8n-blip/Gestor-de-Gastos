@@ -9075,8 +9075,7 @@
 
   function abrirEditorDeFoto(file, formEl, inputEl){
     if (cropState) fecharEditorDeFoto();
-    var url = URL.createObjectURL(file);
-    cropState = { file: file, formEl: formEl, inputEl: inputEl, url: url, box: null, drag: null };
+    cropState = { file: file, formEl: formEl, inputEl: inputEl, box: null, drag: null };
     cropImgEl.onload = function(){
       if (!cropState) return;
       // Só dá pra medir o tamanho renderizado da imagem depois que o modal
@@ -9088,11 +9087,32 @@
       });
     };
     cropImgEl.onerror = function(){
-      alert('Não consegui abrir essa foto. Tente outra.');
-      fecharEditorDeFoto();
+      // Não trava quem só queria anexar a foto: se o editor de corte não
+      // conseguir abrir essa imagem por algum motivo, segue com a foto
+      // inteira sem cortar, em vez de travar o anexo por causa disso.
+      avancarSemCortar();
     };
-    cropImgEl.src = url;
+    // Usa FileReader (igual compressImage/prepareImageForOCR já fazem, e
+    // funciona bem em foto de câmera de verdade) em vez de createObjectURL:
+    // é o caminho já testado no resto do app pra abrir a mesma foto.
+    var reader = new FileReader();
+    reader.onload = function(e){
+      if (!cropState) return;
+      cropImgEl.src = e.target.result;
+    };
+    reader.onerror = function(){ avancarSemCortar(); };
+    reader.readAsDataURL(file);
     cropModalEl.classList.remove('hidden');
+  }
+
+  // Fecha o editor e segue com a foto original, sem cortar — usado quando a
+  // pré-visualização não abre por algum motivo, pra nunca travar quem só
+  // queria anexar a foto da nota.
+  function avancarSemCortar(){
+    if (!cropState) return;
+    var file = cropState.file, formEl = cropState.formEl;
+    fecharEditorDeFoto();
+    processarFotoEscolhida(file, formEl);
   }
 
   function posicionarCropBox(){
@@ -9146,14 +9166,13 @@
   }
 
   function fecharEditorDeFoto(){
-    if (cropState){
-      if (cropState.url) URL.revokeObjectURL(cropState.url);
-      // Limpa o <input> pra deixar escolher a mesma foto de novo depois,
-      // se quiser — sem isso o navegador não dispara "change" de novo.
-      if (cropState.inputEl) cropState.inputEl.value = '';
-    }
+    // Limpa o <input> pra deixar escolher a mesma foto de novo depois, se
+    // quiser — sem isso o navegador não dispara "change" de novo.
+    if (cropState && cropState.inputEl) cropState.inputEl.value = '';
     cropState = null;
     cropModalEl.classList.add('hidden');
+    cropImgEl.onload = null;
+    cropImgEl.onerror = null;
     cropImgEl.src = '';
   }
 
