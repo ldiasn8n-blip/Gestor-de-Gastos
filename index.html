@@ -3964,7 +3964,18 @@
     copia.id = e.id + '@' + mk;
     copia.date = dateInMonth(mk, dia);
     copia.virtual = true;
+    // Garantir que sempre tem o campo paid
+    if (copia.paid === undefined) copia.paid = false;
     return copia;
+  }
+
+  // Normalizar todas as despesas garantindo que tenham o campo paid
+  function normalizeExpenses(expenses){
+    if (!expenses) return [];
+    expenses.forEach(function(e){
+      if (e.paid === undefined) e.paid = false;
+    });
+    return expenses;
   }
 
   // Até onde um gasto fixo se projeta pra frente. Sem esse limite, bastava
@@ -8085,7 +8096,7 @@
 
     var id = generateId();
     var photo = state.pendingPhoto;
-    var newExpense = Object.assign({id:id, person:memberId, type:type, category:category, description:description, value:value, date:date, thumb: photo?photo.thumb:null}, extra);
+    var newExpense = Object.assign({id:id, person:memberId, type:type, category:category, description:description, value:value, date:date, thumb: photo?photo.thumb:null, paid:false}, extra);
     state.expenses.push(newExpense);
     var saved = await saveExpenses(state.expenses);
     if (!saved){ state.expenses.pop(); alert('Não foi possível salvar o gasto. Verifique se o navegador permite armazenamento local e tente novamente.'); return; }
@@ -8127,7 +8138,7 @@
       id: generateId(), person: pessoa, type: 'casal',
       category: categoria, description: descricao, value: valor, date: data,
       thumb: null, items: null, fixed: true, fixedUntil: ateQuando,
-      installment: false, installmentsTotal: null, installmentsPaid: null
+      installment: false, installmentsTotal: null, installmentsPaid: null, paid: false
     };
     state.expenses.push(nova);
     var ok = await saveExpenses(state.expenses);
@@ -9261,13 +9272,15 @@
       var togglePaymentBtn = e.target.closest('[data-action="toggle-payment-status"]');
       if (togglePaymentBtn){
         e.preventDefault();
-        var expenseId = togglePaymentBtn.getAttribute('data-id') || togglePaymentBtn.getAttribute('data-expense-id');
-        var expense = state.expenses.find(function(ex){ return ex.id === expenseId; });
-        if (expense){
-          expense.paid = !expense.paid;
-          saveExpenses(state.expenses);
-          render();
-        }
+        (async function(){
+          var expenseId = togglePaymentBtn.getAttribute('data-id') || togglePaymentBtn.getAttribute('data-expense-id');
+          var expense = state.expenses.find(function(ex){ return ex.id === expenseId; });
+          if (expense){
+            expense.paid = !expense.paid;
+            await saveExpenses(state.expenses);
+            render();
+          }
+        })();
         return;
       }
 
@@ -10005,6 +10018,7 @@
 
     // Sem Supabase configurado: modo local, exatamente como era antes.
     state.expenses = await loadExpenses();
+    state.expenses = normalizeExpenses(state.expenses);
     state.settings = await loadSettings();
     ensureSubTabDefaults();
 
