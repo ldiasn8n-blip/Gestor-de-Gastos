@@ -1781,10 +1781,24 @@
     /* Layout notebook: 3 colunas com distribuição simétrica
        col-a: acerto+quem pagou | col-b: mês | col-c: categorias (lado a lado) */
     .resumo-grid{
-      flex-direction:row; flex-wrap:wrap; align-items:flex-start; gap:18px 22px;
+      flex-direction:row; flex-wrap:nowrap; align-items:stretch; gap:18px 22px;
     }
     .resumo-col{
       display:flex; flex-direction:column; gap:16px; min-width:0;
+    }
+    .resumo-col-left{
+      flex:1 1 0;
+      display:flex;
+      flex-direction:column;
+      gap:16px;
+    }
+    .resumo-col-left .resumo-block{
+      flex:1 1 0;
+      display:flex;
+      flex-direction:column;
+    }
+    .resumo-col-right{
+      flex:1 1 0;
     }
     .resumo-col-a{ flex:0.9 1 0; }
     .resumo-col-b{ flex:1 1 0; }
@@ -5606,13 +5620,14 @@
         : '';
       var statusClass = getStatusClass(it);
       var statusText = getStatusText(it);
+      var paymentStatus = getPaymentStatus(it);
       return ''
         + '<div class="entry month-item '+statusClass+' '+(it.paid?'':' pending-item')+'" data-expense-id="'+escapeHTML(it.id)+'">'
         + catChipHTML(it.category, 34)
         + '<div class="info"><div class="desc" style="cursor:pointer;" data-action="open-expense" data-id="'+escapeHTML(it.id)+'">'+escapeHTML(it.description)+'</div><div class="date">'+escapeHTML(it.category)+(badge?(' · '+badge):'')+'</div></div>'
         + '<div class="value">'+formatBRL(it.value)+'</div>'
         + '<div class="status-buttons" style="display:flex; gap:4px; margin-left:8px;">'
-          + '<button type="button" class="status-btn" data-action="toggle-payment-status" data-id="'+escapeHTML(it.id)+'" data-expense-id="'+escapeHTML(it.id)+'" title="'+statusText+'" style="background:var(--status-'+(it.paid?'paid':'pending')+'); color:#fff; border:none; padding:4px 8px; border-radius:4px; font-size:11px; font-weight:600; cursor:pointer;">'+statusText+'</button>'
+          + '<button type="button" class="status-btn" data-action="toggle-payment-status" data-id="'+escapeHTML(it.id)+'" data-expense-id="'+escapeHTML(it.id)+'" title="'+statusText+'" style="background:var(--status-'+paymentStatus+'); color:#fff; border:none; padding:4px 8px; border-radius:4px; font-size:11px; font-weight:600; cursor:pointer; transition:all 0.2s ease;">'+statusText+'</button>'
         + '</div>'
         + '</div>';
     }).join('');
