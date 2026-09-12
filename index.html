@@ -4449,11 +4449,11 @@
           + '<span>🧮 Total dos itens: <span class="items-total-main">R$ 0,00</span></span>'
           + '<div class="items-total-ref" style="font-size:12px; margin-top:4px;"></div>'
         + '</div>'
-        + '<div class="manual-adjust-field hidden" style="display:none; padding:12px; background:var(--input-bg); border-radius:8px; border-left:4px solid var(--alert);">'
-          + '<div style="font-size:12px; font-weight:600; color:var(--ink-soft); margin-bottom:8px;">⚠️ Ajustar total manualmente (se items estão errados)</div>'
-          + '<div style="display:flex; gap:8px; align-items:center;">'
-            + '<input type="number" class="manual-total-input" inputmode="decimal" step="0.01" min="0" placeholder="R$ 0,00" style="flex:1; padding:8px; border:1px solid var(--line); border-radius:6px; font-size:14px; background:var(--paper-raised);">'
-            + '<button type="button" class="manual-adjust-btn" data-action="confirm-manual-adjust" style="padding:8px 12px; background:var(--neon2); border:none; border-radius:6px; cursor:pointer; font-weight:600; white-space:nowrap; color:var(--accent-ink);">Aplicar</button>'
+        + '<div class="manual-adjust-field" style="display:none; padding:12px; background:var(--input-bg); border-radius:8px; border-left:4px solid var(--alert); width:100%;">'
+          + '<div style="font-size:12px; font-weight:600; color:var(--alert); margin-bottom:8px;">⚠️ Ajustar total manualmente (se items estão errados)</div>'
+          + '<div style="display:flex; gap:8px; align-items:center; width:100%;">'
+            + '<input type="number" class="manual-total-input" inputmode="decimal" step="0.01" min="0" placeholder="R$ 0,00" style="flex:1; padding:8px; border:1px solid var(--line); border-radius:6px; font-size:14px; background:var(--paper-raised); font-weight:600;">'
+            + '<button type="button" class="manual-adjust-btn" data-action="confirm-manual-adjust" style="padding:8px 14px; background:var(--neon2); border:none; border-radius:6px; cursor:pointer; font-weight:700; white-space:nowrap; color:var(--accent-ink); flex-shrink:0;">✓ Aplicar</button>'
           + '</div>'
         + '</div>'
       + '</div>'
@@ -4500,27 +4500,23 @@
       if (refEl){
         if (!isNaN(ocrTotal)){
           var matches = Math.abs(ocrTotal - total) < 0.02;
-          refEl.textContent = (matches ? '✅ confere com o total da nota (' : '⚠️ total da nota lido: ') + formatBRL(ocrTotal) + (matches ? ')' : ' — confira os itens');
+          refEl.textContent = (matches ? '✅ confere com o total da nota (' : '⚠️ total da nota lido: ') + formatBRL(ocrTotal) + (matches ? ')' : ' — ajuste abaixo se necessário');
           totalRow.classList.add(matches ? 'totals-match' : 'totals-mismatch');
 
-          // Mostrar campo de ajuste se houver divergência
+          // Mostrar/esconder campo de ajuste com display direto
           if (manualAdjustField){
             if (matches){
               manualAdjustField.style.display = 'none';
-              manualAdjustField.classList.add('hidden');
             } else {
               manualAdjustField.style.display = 'block';
-              manualAdjustField.classList.remove('hidden');
               var manualInput = manualAdjustField.querySelector('.manual-total-input');
-              if (manualInput && !manualInput.value) manualInput.value = ocrTotal.toFixed(2);
+              // Pré-preencher com o valor da nota
+              if (manualInput) manualInput.value = ocrTotal.toFixed(2);
             }
           }
         } else {
           refEl.textContent = 'Confira com o total impresso na nota.';
-          if (manualAdjustField){
-            manualAdjustField.style.display = 'none';
-            manualAdjustField.classList.add('hidden');
-          }
+          if (manualAdjustField) manualAdjustField.style.display = 'none';
         }
       }
     }
@@ -9175,41 +9171,55 @@
       // Botão para confirmar ajuste manual do total
       var confirmManualBtn = e.target.closest('[data-action="confirm-manual-adjust"]');
       if (confirmManualBtn){
+        e.preventDefault();
         var formM = confirmManualBtn.closest('form');
+        if (!formM) return;
+
         var manualInput = formM.querySelector('.manual-total-input');
         var valueInput = formM.querySelector('.value-input');
+
+        if (!manualInput || !valueInput) return;
+
         var manualValue = parseFloat(manualInput.value) || 0;
 
-        if (manualValue > 0){
-          // Mostrar modal de confirmação
-          var rows = formM.querySelectorAll('.item-row');
-          var calculatedTotal = 0;
-          rows.forEach(function(row){
-            calculatedTotal += parseFloat(row.querySelector('.item-value-input').value) || 0;
-          });
+        if (manualValue <= 0){
+          alert('Por favor, digite um valor válido (maior que 0)');
+          return;
+        }
 
-          var confirmMsg = 'Você está ajustando o total manualmente de R$ ' + calculatedTotal.toFixed(2) + ' para R$ ' + manualValue.toFixed(2) + '.\n\n'
-            + '⚠️ Isso significa que os itens podem estar errados, mas o valor total será R$ ' + manualValue.toFixed(2) + '.\n\n'
-            + 'Tem certeza?';
+        // Calcular total dos itens
+        var rows = formM.querySelectorAll('.item-row');
+        var calculatedTotal = 0;
+        rows.forEach(function(row){
+          calculatedTotal += parseFloat(row.querySelector('.item-value-input').value) || 0;
+        });
 
-          if (confirm(confirmMsg)){
-            valueInput.value = manualValue.toFixed(2);
-            valueInput.readOnly = true;
-            valueInput.classList.add('computed-value');
+        var diff = Math.abs(manualValue - calculatedTotal).toFixed(2);
 
-            // Remover o campo de ajuste após aplicar
-            var totalRow = formM.querySelector('.items-total-row');
-            if (totalRow){
-              var adjustField = totalRow.querySelector('.manual-adjust-field');
-              if (adjustField){
-                adjustField.style.display = 'none';
-                adjustField.classList.add('hidden');
-              }
+        var confirmMsg = 'Você está ajustando o total manualmente:\n\n'
+          + 'De: R$ ' + calculatedTotal.toFixed(2) + ' (itens)\n'
+          + 'Para: R$ ' + manualValue.toFixed(2) + '\n'
+          + 'Diferença: R$ ' + diff + '\n\n'
+          + '⚠️ Os itens podem estar errados, mas o valor total será R$ ' + manualValue.toFixed(2) + '\n\n'
+          + 'Tem certeza?';
+
+        if (confirm(confirmMsg)){
+          // Aplicar o ajuste
+          valueInput.value = manualValue.toFixed(2);
+          valueInput.readOnly = true;
+          valueInput.classList.add('computed-value');
+
+          // Esconder o campo de ajuste
+          var totalRow = formM.querySelector('.items-total-row');
+          if (totalRow){
+            var adjustField = totalRow.querySelector('.manual-adjust-field');
+            if (adjustField){
+              adjustField.style.display = 'none';
             }
-
-            // Mostrar notificação de sucesso
-            alert('Total ajustado manualmente! ✅\n\nOs itens podem conter erros, mas o valor final está correto.');
           }
+
+          // Mostrar notificação de sucesso
+          alert('✅ Total ajustado manualmente!\n\nValor final: R$ ' + manualValue.toFixed(2) + '\n\nOs itens podem conter erros, mas o valor total está correto.');
         }
         return;
       }
