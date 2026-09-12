@@ -4033,6 +4033,34 @@
     return name + ' de ' + parts[0];
   }
 
+  // Calcular o status de pagamento de um gasto
+  function getPaymentStatus(expense){
+    if (!expense) return 'pending';
+    if (expense.paid) return 'paid';
+
+    var today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    var dueDate = new Date(expense.date + 'T00:00:00');
+
+    if (dueDate < today) return 'overdue';
+    return 'pending';
+  }
+
+  // Classe CSS para o status
+  function getStatusClass(expense){
+    var status = getPaymentStatus(expense);
+    return 'status-' + status;
+  }
+
+  // Texto do status em português
+  function getStatusText(expense){
+    var status = getPaymentStatus(expense);
+    if (status === 'paid') return '✅ Pago';
+    if (status === 'overdue') return '🔴 Atrasado';
+    return '⏳ Pendente';
+  }
+
   function getCategoryItems(category){
     var expenses = materializedAll().filter(function(e){ return e.type === 'casal' && e.category === category; });
     var items = [];
@@ -5565,11 +5593,16 @@
       var badge = it.installmentLabel
         ? ('<span class="installment-badge">'+(it.paid?'✅':'⏳')+' Parcela '+it.installmentLabel+'</span>')
         : '';
+      var statusClass = getStatusClass(it);
+      var statusText = getStatusText(it);
       return ''
-        + '<div class="entry month-item'+(it.paid?'':' pending-item')+'">'
+        + '<div class="entry month-item '+statusClass+' '+(it.paid?'':' pending-item')+'" data-expense-id="'+escapeHTML(it.id)+'">'
         + catChipHTML(it.category, 34)
-        + '<div class="info"><div class="desc">'+escapeHTML(it.description)+'</div><div class="date">'+escapeHTML(it.category)+(badge?(' · '+badge):'')+'</div></div>'
+        + '<div class="info"><div class="desc" style="cursor:pointer;" data-action="open-expense" data-id="'+escapeHTML(it.id)+'">'+escapeHTML(it.description)+'</div><div class="date">'+escapeHTML(it.category)+(badge?(' · '+badge):'')+'</div></div>'
         + '<div class="value">'+formatBRL(it.value)+'</div>'
+        + '<div class="status-buttons" style="display:flex; gap:4px; margin-left:8px;">'
+          + '<button type="button" class="status-btn" data-action="toggle-payment-status" data-id="'+escapeHTML(it.id)+'" data-expense-id="'+escapeHTML(it.id)+'" title="'+statusText+'" style="background:var(--status-'+(it.paid?'paid':'pending')+'); color:#fff; border:none; padding:4px 8px; border-radius:4px; font-size:11px; font-weight:600; cursor:pointer;">'+statusText+'</button>'
+        + '</div>'
         + '</div>';
     }).join('');
     return ''
@@ -9224,6 +9257,29 @@
         return;
       }
 
+      // Botão para alternar status de pagamento de um gasto
+      var togglePaymentBtn = e.target.closest('[data-action="toggle-payment-status"]');
+      if (togglePaymentBtn){
+        e.preventDefault();
+        var expenseId = togglePaymentBtn.getAttribute('data-id') || togglePaymentBtn.getAttribute('data-expense-id');
+        var expense = state.expenses.find(function(ex){ return ex.id === expenseId; });
+        if (expense){
+          expense.paid = !expense.paid;
+          saveExpenses(state.expenses);
+          render();
+        }
+        return;
+      }
+
+      // Clicar na descrição da despesa para abrir
+      var descLink = e.target.closest('[data-action="open-expense"]');
+      if (descLink){
+        e.preventDefault();
+        var expId = descLink.getAttribute('data-id');
+        handleEditStart(expId);
+        return;
+      }
+
       // Clique numa barra do gráfico = filtro rápido daquele mês.
       var barra = e.target.closest('[data-action="pick-month"]');
       if (barra){
@@ -9394,6 +9450,28 @@
         if (b) b.click();
       }
     });
+
+    // Modal de contas atrasadas
+    var overdueModal = document.getElementById('modal-overdue');
+    if (overdueModal){
+      overdueModal.addEventListener('click', function(e){
+        if (e.target === overdueModal) overdueModal.classList.add('hidden');
+      });
+
+      var remindLaterBtn = document.getElementById('overdue-remind-later');
+      if (remindLaterBtn){
+        remindLaterBtn.addEventListener('click', function(){
+          overdueModal.classList.add('hidden');
+        });
+      }
+
+      var closeBtn = document.getElementById('overdue-close');
+      if (closeBtn){
+        closeBtn.addEventListener('click', function(){
+          overdueModal.classList.add('hidden');
+        });
+      }
+    }
 
     // Internet voltou: sobe o que ficou na fila.
     window.addEventListener('online', function(){ esvaziarFila(); });
@@ -9955,6 +10033,35 @@
     }
 
     render();
+    checkAndShowOverdueNotification();
+  }
+
+  // Verificar e mostrar notificação de contas atrasadas
+  function checkAndShowOverdueNotification(){
+    var today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    var overdueExpenses = state.expenses.filter(function(e){
+      if (e.paid || e.type !== 'casal') return false;
+      var dueDate = new Date(e.date + 'T00:00:00');
+      return dueDate < today;
+    });
+
+    if (overdueExpenses.length === 0) return;
+
+    var overdueModal = document.getElementById('modal-overdue');
+    var overdueList = document.getElementById('overdue-list');
+
+    var html = overdueExpenses.map(function(e){
+      return '<div style="padding:10px; background:var(--input-bg); border-left:4px solid var(--status-overdue); border-radius:6px; margin-bottom:8px; cursor:pointer;" data-id="'+escapeHTML(e.id)+'" data-action="open-expense">'
+        + '<div style="font-weight:600; color:var(--ink);">'+escapeHTML(e.description)+'</div>'
+        + '<div style="font-size:12px; color:var(--ink-soft);">'+escapeHTML(e.category)+' · '+formatBRL(e.value)+'</div>'
+        + '<div style="font-size:11px; color:var(--alert); margin-top:4px;">Venceu em '+new Date(e.date+'T00:00:00').toLocaleDateString('pt-BR')+'</div>'
+        + '</div>';
+    }).join('');
+
+    overdueList.innerHTML = html;
+    overdueModal.classList.remove('hidden');
   }
 
   init();
@@ -10348,6 +10455,16 @@
 <div class="modal hidden" id="modal-pessoa"><div class="modal-caixa" id="painel-pessoa"></div></div>
 <div class="modal hidden" id="modal-confirma"><div class="modal-caixa" id="painel-confirma"></div></div>
 <div class="modal hidden" id="modal-ajuda"><div class="modal-caixa" id="painel-ajuda"></div></div>
+<div class="modal hidden" id="modal-overdue" style="z-index:9999;">
+  <div class="modal-caixa" style="background:var(--paper); padding:20px; border-radius:12px; box-shadow:var(--shadow-lg);">
+    <div style="font-size:18px; font-weight:700; color:var(--status-overdue); margin-bottom:12px;">🔴 Você tem contas vencidas!</div>
+    <div id="overdue-list" style="margin-bottom:16px; max-height:300px; overflow-y:auto;"></div>
+    <div style="display:flex; gap:8px;">
+      <button type="button" id="overdue-remind-later" class="secondary-btn" style="flex:1;">⏰ Me lembre mais tarde</button>
+      <button type="button" id="overdue-close" class="submit-btn" style="flex:1; background:var(--neon2); color:#181712;">OK</button>
+    </div>
+  </div>
+</div>
 <div class="aviso hidden" id="aviso"></div>
 
 <script>
