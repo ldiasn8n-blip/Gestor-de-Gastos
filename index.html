@@ -444,6 +444,41 @@
   /* O aviso de conta vencida usa as classes .modal/.hidden, que existiam só
      dentro do RachaFácil — no Gestor não havia regra nenhuma pra elas, então a
      janela nunca escondia direito. Aqui ela ganha as suas. */
+  #aviso-rapido{
+    position:fixed; left:50%; bottom:calc(78px + env(safe-area-inset-bottom));
+    transform:translateX(-50%) translateY(8px);
+    z-index:10000; pointer-events:none;
+    background:var(--ink); color:var(--paper);
+    padding:11px 17px; border-radius:12px;
+    font-size:13.5px; font-weight:600; box-shadow:var(--shadow-lg);
+    opacity:0; transition:opacity .18s ease, transform .18s ease;
+    max-width:min(420px, calc(100vw - 32px)); text-align:center;
+  }
+  #aviso-rapido.aparecendo{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  #modal-total{
+    position:fixed; inset:0; z-index:9998;
+    background:var(--backdrop);
+    display:flex; align-items:center; justify-content:center;
+    padding:18px;
+  }
+  #modal-total.hidden{ display:none !important; }
+  #modal-total .modal-caixa{ width:min(440px, 100%); max-height:86vh; overflow-y:auto; }
+  .tot-titulo{ font-size:17px; font-weight:800; margin:0 0 8px; }
+  .tot-linha{
+    display:flex; justify-content:space-between; align-items:baseline; gap:12px;
+    padding:9px 0; border-bottom:1px solid var(--line); font-size:14px;
+  }
+  .tot-linha:last-of-type{ border-bottom:none; }
+  .tot-linha b{ font-variant-numeric:tabular-nums; font-size:15px; }
+  .tot-destaque b{ color:var(--accent-text); font-size:18px; }
+  .tot-aviso{
+    margin:14px 0 0; padding:11px 13px; border-radius:10px;
+    background:var(--status-pending-soft);
+    border-left:3px solid var(--status-pending);
+    font-size:13px; line-height:1.5; color:var(--ink);
+  }
+
   #modal-overdue{
     position:fixed; inset:0; z-index:9999;
     background:var(--backdrop);
@@ -455,6 +490,49 @@
     width:min(520px, 100%); max-height:86vh; overflow-y:auto;
   }
 
+  .manual-adjust-field{
+    padding:12px; border-radius:10px; width:100%;
+    background:var(--input-bg); border:1px solid var(--line);
+  }
+  .manual-adjust-titulo{ font-size:13px; font-weight:700; color:var(--ink); }
+  .manual-adjust-dica{ font-size:11.5px; color:var(--ink-soft); margin:3px 0 9px; line-height:1.45; }
+  .manual-adjust-linha{ display:flex; gap:8px; align-items:center; width:100%; flex-wrap:wrap; }
+  .manual-adjust-linha input{
+    flex:1 1 130px; min-width:0; padding:9px 10px; font-size:15px; font-weight:600;
+    border:1px solid var(--line); border-radius:8px;
+    background:var(--paper-raised); color:var(--ink);
+  }
+  .manual-adjust-btn{
+    flex:0 0 auto; padding:9px 15px; border:none; border-radius:8px; cursor:pointer;
+    background:var(--neon2); color:var(--accent-ink);
+    font-size:13px; font-weight:700; font-family:inherit; white-space:nowrap;
+  }
+  .manual-aplicado{
+    display:flex; align-items:center; flex-wrap:wrap; gap:6px 10px;
+    padding:10px 12px; border-radius:10px;
+    background:var(--hover-soft); border:1px solid var(--line);
+    font-size:12.5px; color:var(--ink);
+  }
+  .manual-aplicado.hidden{ display:none; }
+  .manual-aplicado b{ font-variant-numeric:tabular-nums; }
+  .manual-desfazer{
+    background:transparent; border:none; padding:0; cursor:pointer;
+    color:var(--accent-text); font-size:12px; font-weight:700; font-family:inherit;
+    text-decoration:underline; text-underline-offset:3px;
+  }
+
+  .sugestao-loja{
+    display:flex; align-items:center; flex-wrap:wrap; gap:6px;
+    margin-top:6px; font-size:12px; color:var(--ink-soft);
+  }
+  .sugestao-loja button{
+    padding:4px 11px; border-radius:999px; cursor:pointer;
+    border:1px dashed var(--accent-text); background:transparent;
+    color:var(--accent-text); font-size:12px; font-weight:700; font-family:inherit;
+  }
+  .sugestao-loja button:hover{ background:var(--hover); }
+  .sugestao-dica{ font-size:11px; }
+
   /* ---------- Faixa da situação: etiqueta + os três botões ---------- */
   .entry.tem-situacao{ flex-wrap:wrap; }
   .sit-linha{
@@ -462,24 +540,32 @@
     gap:6px 10px; margin-top:7px;
   }
   .sit-botoes{ display:flex; gap:5px; flex-wrap:wrap; }
+  /* A etiqueta pinta o texto com a própria cor da situação (que já vem
+     calculada pro tema claro ou escuro) e usa um contorno em vez de um fundo
+     forte. Assim ela continua legível em qualquer tema que a pessoa escolher,
+     sem eu ter que adivinhar um tom de texto pra cada um. */
   .sit-tag{
     display:inline-block; flex:0 0 auto; white-space:nowrap;
-    font-size:10.5px; font-weight:800; letter-spacing:.03em;
-    padding:3px 9px; border-radius:999px;
+    font-size:11.5px; font-weight:800; letter-spacing:.01em;
+    padding:4px 10px; border-radius:999px;
+    background:transparent; border:1px solid currentColor;
   }
-  .sit-paid{ color:#0C5C31; background:var(--status-paid-soft); }
-  .sit-pending{ color:#8A5200; background:var(--status-pending-soft); }
-  .sit-overdue{ color:#9C1F23; background:var(--status-overdue-soft); }
+  .sit-paid{ color:var(--status-paid); }
+  .sit-pending{ color:var(--status-pending); }
+  .sit-overdue{ color:var(--status-overdue); }
 
   .sit-btn{
-    padding:5px 11px; border-radius:999px; line-height:1.2;
-    border:1px solid var(--line); background:var(--paper-raised); color:var(--ink-soft);
-    font-size:11px; font-weight:700; font-family:inherit; cursor:pointer;
+    padding:6px 12px; border-radius:999px; line-height:1.2;
+    border:1px solid var(--line); background:var(--paper-raised); color:var(--ink);
+    font-size:12px; font-weight:700; font-family:inherit; cursor:pointer;
   }
   .sit-btn:hover{ border-color:var(--ink-soft); color:var(--ink); }
-  .sit-btn-paid.is-on{ border-color:var(--status-paid); background:var(--status-paid); color:#FFFFFF; }
-  .sit-btn-pending.is-on{ border-color:var(--status-pending); background:var(--status-pending); color:#3A2300; }
-  .sit-btn-overdue.is-on{ border-color:var(--status-overdue); background:var(--status-overdue); color:#fff; }
+  /* O botão aceso é sólido; o texto dele é escuro ou claro conforme a cor de
+     fundo, calculado no próprio CSS pra não depender do tema. */
+  .sit-btn.is-on{ font-weight:800; }
+  .sit-btn-paid.is-on{ border-color:var(--status-paid); background:var(--status-paid); color:var(--paper); }
+  .sit-btn-pending.is-on{ border-color:var(--status-pending); background:var(--status-pending); color:var(--paper); }
+  .sit-btn-overdue.is-on{ border-color:var(--status-overdue); background:var(--status-overdue); color:var(--paper); }
 
   /* ---------- Linhas do aviso de conta vencida ---------- */
   .cob-linha{
@@ -2066,6 +2152,12 @@
   <iframe id="appfull-frame" title="App extra"></iframe>
 </div>
 
+<div class="modal hidden" id="modal-total" style="z-index:9998;">
+  <div class="modal-caixa" style="background:var(--paper); padding:20px; border-radius:12px; box-shadow:var(--shadow-lg);">
+    <div id="total-corpo"></div>
+  </div>
+</div>
+
 <div class="modal hidden" id="modal-overdue" style="z-index:9999;">
   <div class="modal-caixa" style="background:var(--paper); padding:20px; border-radius:12px; box-shadow:var(--shadow-lg);">
     <div class="cob-titulo" style="font-size:18px; font-weight:700; color:var(--status-overdue); margin-bottom:12px;">⏰ Contas que passaram do dia</div>
@@ -2300,10 +2392,17 @@
     var fundo = tonsFundo(cfg.fundoCor, escuro);
     var grafico = coresGrafico(cfg.graficoCor, escuro);
 
+    /* As cores de pago/pendente/atrasado estavam fixas no :root e não
+       acompanhavam o tema: num tema escuro a etiqueta virava vermelho-escuro
+       em cima de vinho e não dava pra ler. Agora elas entram na paleta e são
+       calculadas pro claro e pro escuro, como o resto. */
     var base = !escuro ? {
       ink:'#181712', 'ink-soft':'#82806F',
       positive:'#1EA85C', 'positive-soft':'rgba(30,168,92,0.12)',
       alert:'#E5484D', 'alert-soft':'rgba(229,72,77,0.12)',
+      'status-paid':'#1B8F50', 'status-paid-soft':'rgba(30,168,92,0.12)',
+      'status-pending':'#A8690B', 'status-pending-soft':'rgba(214,138,20,0.14)',
+      'status-overdue':'#C9333A', 'status-overdue-soft':'rgba(229,72,77,0.11)',
       'tab-active-bg':'#181712',
       hover:'rgba(24,23,18,0.05)', 'hover-soft':'rgba(24,23,18,0.035)',
       backdrop:'rgba(24,22,12,0.55)',
@@ -2314,6 +2413,9 @@
       ink:'#F1F0E9', 'ink-soft':'#9A9C9F',
       positive:'#3BCB80', 'positive-soft':'rgba(59,203,128,0.16)',
       alert:'#FF6B72', 'alert-soft':'rgba(255,107,114,0.16)',
+      'status-paid':'#4FE08C', 'status-paid-soft':'rgba(79,224,140,0.16)',
+      'status-pending':'#FFC24F', 'status-pending-soft':'rgba(255,194,79,0.16)',
+      'status-overdue':'#FF7C83', 'status-overdue-soft':'rgba(255,124,131,0.16)',
       'tab-active-bg':'#F1F0E9',
       hover:'rgba(255,255,255,0.06)', 'hover-soft':'rgba(255,255,255,0.04)',
       backdrop:'rgba(0,0,0,0.68)',
@@ -3455,6 +3557,10 @@
     loadingEl.style.display = 'none';
     atualizarAvisoSync();
     render();
+    // Quem entra com conta (que é o caso normal) passava batido: o init()
+    // devolvia antes de chegar na conferência, e o aviso de conta vencida só
+    // aparecia pra quem usava o app sem servidor.
+    checkAndShowOverdueNotification();
   }
 
   async function acaoResgatar(){
@@ -4709,6 +4815,11 @@
       + '</div>';
   }
 
+  /* O campo de "valor certo" fica SEMPRE à mão quando existem itens lidos da
+     nota, não só quando a soma bate diferente do total impresso. A leitura
+     pode errar um item e ainda assim fechar uma conta que parece certa — aí a
+     pessoa precisa poder corrigir o total sem sair caçando qual item saiu
+     torto. */
   function itemsTotalRowHTML(){
     return '<div class="items-total-row hidden">'
       + '<div style="width:100%; display:flex; flex-direction:column; gap:10px;">'
@@ -4716,12 +4827,17 @@
           + '<span>🧮 Total dos itens: <span class="items-total-main">R$ 0,00</span></span>'
           + '<div class="items-total-ref" style="font-size:12px; margin-top:4px;"></div>'
         + '</div>'
-        + '<div class="manual-adjust-field" style="display:none; padding:12px; background:var(--input-bg); border-radius:8px; border-left:4px solid var(--alert); width:100%;">'
-          + '<div style="font-size:12px; font-weight:600; color:var(--alert); margin-bottom:8px;">⚠️ Ajustar total manualmente (se items estão errados)</div>'
-          + '<div style="display:flex; gap:8px; align-items:center; width:100%;">'
-            + '<input type="number" class="manual-total-input" inputmode="decimal" step="0.01" min="0" placeholder="R$ 0,00" style="flex:1; padding:8px; border:1px solid var(--line); border-radius:6px; font-size:14px; background:var(--paper-raised); font-weight:600;">'
-            + '<button type="button" class="manual-adjust-btn" data-action="confirm-manual-adjust" style="padding:8px 14px; background:var(--neon2); border:none; border-radius:6px; cursor:pointer; font-weight:700; white-space:nowrap; color:var(--accent-ink); flex-shrink:0;">✓ Aplicar</button>'
+        + '<div class="manual-adjust-field">'
+          + '<div class="manual-adjust-titulo">✍️ O valor certo é outro?</div>'
+          + '<div class="manual-adjust-dica">Digite o total que está impresso na nota. Os itens ficam como estão — só o valor da conta muda.</div>'
+          + '<div class="manual-adjust-linha">'
+            + '<input type="number" class="manual-total-input" inputmode="decimal" step="0.01" min="0" placeholder="R$ 0,00">'
+            + '<button type="button" class="manual-adjust-btn" data-action="confirm-manual-adjust">Usar este valor</button>'
           + '</div>'
+        + '</div>'
+        + '<div class="manual-aplicado hidden">'
+          + '<span class="manual-aplicado-txt">✍️ Total ajustado à mão: <b class="manual-aplicado-valor"></b></span>'
+          + '<button type="button" class="manual-desfazer" data-action="desfazer-total-manual">voltar pra soma dos itens</button>'
         + '</div>'
       + '</div>'
     + '</div>';
@@ -4731,14 +4847,17 @@
     var rows = form.querySelectorAll('.item-row');
     var valueInput = form.querySelector('.value-input');
     var totalRow = form.querySelector('.items-total-row');
-    var manualAdjustField = totalRow ? totalRow.querySelector('.manual-adjust-field') : null;
+    if (!totalRow) return;
+    var manualAdjustField = totalRow.querySelector('.manual-adjust-field');
+    var aplicadoEl = totalRow.querySelector('.manual-aplicado');
 
     if (rows.length === 0){
       if (valueInput){
         valueInput.readOnly = false;
         valueInput.classList.remove('computed-value');
       }
-      if (totalRow) totalRow.classList.add('hidden');
+      totalRow.classList.add('hidden');
+      delete totalRow.dataset.totalManual;
       return;
     }
 
@@ -4748,43 +4867,51 @@
       total += val;
     });
 
+    // Se a pessoa disse "o valor certo é este", é esse que vale. Antes, mexer
+    // em qualquer item depois do ajuste jogava o valor manual fora sem avisar.
+    var manual = parseFloat(totalRow.dataset.totalManual || '');
+    var temManual = !isNaN(manual) && manual > 0;
+
     if (valueInput){
-      valueInput.value = total.toFixed(2);
+      valueInput.value = (temManual ? manual : total).toFixed(2);
       valueInput.readOnly = true;
       valueInput.classList.add('computed-value');
     }
 
-    if (totalRow){
-      totalRow.classList.remove('hidden');
-      var mainEl = totalRow.querySelector('.items-total-main');
-      if (mainEl) mainEl.textContent = formatBRL(total);
+    totalRow.classList.remove('hidden');
+    var mainEl = totalRow.querySelector('.items-total-main');
+    if (mainEl) mainEl.textContent = formatBRL(total);
 
-      var refEl = totalRow.querySelector('.items-total-ref');
-      var itemsList = form.querySelector('.items-list');
-      var ocrTotal = itemsList ? parseFloat(itemsList.dataset.ocrTotal || '') : NaN;
-      totalRow.classList.remove('totals-match', 'totals-mismatch');
+    if (aplicadoEl){
+      aplicadoEl.classList.toggle('hidden', !temManual);
+      var vEl = aplicadoEl.querySelector('.manual-aplicado-valor');
+      if (vEl && temManual) vEl.textContent = formatBRL(manual);
+    }
 
-      if (refEl){
-        if (!isNaN(ocrTotal)){
-          var matches = Math.abs(ocrTotal - total) < 0.02;
-          refEl.textContent = (matches ? '✅ confere com o total da nota (' : '⚠️ total da nota lido: ') + formatBRL(ocrTotal) + (matches ? ')' : ' — ajuste abaixo se necessário');
-          totalRow.classList.add(matches ? 'totals-match' : 'totals-mismatch');
+    var refEl = totalRow.querySelector('.items-total-ref');
+    var itemsList = form.querySelector('.items-list');
+    var ocrTotal = itemsList ? parseFloat(itemsList.dataset.ocrTotal || '') : NaN;
+    totalRow.classList.remove('totals-match', 'totals-mismatch');
 
-          // Mostrar/esconder campo de ajuste com display direto
-          if (manualAdjustField){
-            if (matches){
-              manualAdjustField.style.display = 'none';
-            } else {
-              manualAdjustField.style.display = 'block';
-              var manualInput = manualAdjustField.querySelector('.manual-total-input');
-              // Pré-preencher com o valor da nota
-              if (manualInput) manualInput.value = ocrTotal.toFixed(2);
-            }
-          }
-        } else {
-          refEl.textContent = 'Confira com o total impresso na nota.';
-          if (manualAdjustField) manualAdjustField.style.display = 'none';
-        }
+    if (refEl){
+      if (!isNaN(ocrTotal)){
+        var bate = Math.abs(ocrTotal - total) < 0.02;
+        refEl.textContent = bate
+          ? '✅ confere com o total da nota (' + formatBRL(ocrTotal) + ')'
+          : '⚠️ o total impresso na nota é ' + formatBRL(ocrTotal) + ' — a soma dos itens deu outra coisa';
+        totalRow.classList.add(bate ? 'totals-match' : 'totals-mismatch');
+      } else {
+        refEl.textContent = 'Confira com o total impresso na nota.';
+      }
+    }
+
+    // O campo de correção fica sempre visível; só some depois de aplicado.
+    if (manualAdjustField){
+      manualAdjustField.style.display = temManual ? 'none' : 'block';
+      var manualInput = manualAdjustField.querySelector('.manual-total-input');
+      // Sugere o total impresso quando ele existe e discorda da soma.
+      if (manualInput && !manualInput.value && !isNaN(ocrTotal) && Math.abs(ocrTotal - total) >= 0.02){
+        manualInput.value = ocrTotal.toFixed(2);
       }
     }
   }
@@ -6934,6 +7061,8 @@
      'Pra ver, não. Pra o outro celular receber o que você lançou, sim: o app guarda e envia sozinho assim que a internet voltar.'],
     ['Quero um atalho na tela de início',
      'No menu do navegador, toque em <b>Adicionar à tela de início</b>. Vira um ícone igual a um aplicativo, sem precisar baixar nada.'],
+    ['O QR code da nota serve pra quê?',
+     'O QR do cupom carrega a <b>chave de acesso</b> da nota — 44 dígitos que dizem a loja (CNPJ), o estado, o mês da compra e o número do documento. O app confere o dígito verificador e usa isso mesmo sem internet: preenche a data e identifica a loja. Se você escrever o nome da loja, ele guarda e da próxima vez que aquele CNPJ aparecer já sugere sozinho. Vale pro código de barras também: você nomeia uma vez, ele lembra.'],
     ['Como sei o que ainda falta pagar?',
      'Conta lançada com <b>data pra frente</b> entra como <b>pendente</b> (laranja). Marcou como paga, fica <b>verde</b>. Passou do dia sem marcar, fica <b>vermelha</b> — e, ao abrir o app, aparece um aviso com o que está em aberto: dá pra tocar no nome e ir até o lançamento, marcar PAGO ali mesmo ou pedir pra ser lembrado mais tarde. Vale também pras contas fixas, mês a mês.'],
     ['Pra que serve a aba Apps extras?',
@@ -8231,6 +8360,12 @@
     var date = form.querySelector('.date-input').value || todayISO();
 
     if (!description){ alert('Digite uma descrição.'); return; }
+
+    /* Aqui a casa aprende. A pessoa acabou de dizer, com as palavras dela,
+       o que é aquele CNPJ ou aquele código de barras — é a melhor fonte que
+       existe, e não custa uma consulta na internet. */
+    if (form.dataset && form.dataset.cnpjNota) aprenderLoja(form.dataset.cnpjNota, description);
+    if (form.dataset && form.dataset.eanPendente) aprenderProduto(form.dataset.eanPendente, description);
     if (!value || value <= 0){ alert('Digite um valor válido.'); return; }
 
     var extra = {};
@@ -8980,16 +9115,34 @@
     el.className = 'ocr-status' + (kind ? (' ocr-' + kind) : '');
   }
 
+  // Sugestão de loja embaixo da descrição: um toque põe no campo, e ela some.
+  function mostrarSugestaoDeLoja(formEl, nome){
+    var campo = formEl.querySelector('.description-input');
+    if (!campo) return;
+    var antiga = formEl.querySelector('.sugestao-loja');
+    if (antiga) antiga.remove();
+    var el = document.createElement('div');
+    el.className = 'sugestao-loja';
+    el.innerHTML = 'Li na nota: '
+      + '<button type="button" data-action="usar-loja" data-nome="' + escapeHTML(nome) + '">'
+      + escapeHTML(nome) + '</button>'
+      + '<span class="sugestao-dica">toque pra usar</span>';
+    campo.insertAdjacentElement('afterend', el);
+  }
+
   function applyOcrResult(formEl, parsed, opcoes){
     opcoes = opcoes || {};
     var filled = false;
     var lojaDita = null;
 
+    /* A descrição NÃO é preenchida sozinha. A leitura da nota erra de vez em
+       quando e escrevia ali o nome de um produto da lista em vez da loja — e
+       isso passava batido, porque o campo já vinha cheio. Agora o nome que eu
+       li vira uma sugestão, e só entra no campo se você tocar nela. */
     var descInput = formEl.querySelector('.description-input');
-    if (descInput && !descInput.value.trim() && parsed.storeName){
-      descInput.value = parsed.storeName;
+    if (descInput && parsed.storeName){
       lojaDita = parsed.storeName;
-      filled = true;
+      mostrarSugestaoDeLoja(formEl, parsed.storeName);
     }
 
     // Rede conhecida também sugere a categoria — mas só se a categoria ainda
@@ -9173,13 +9326,181 @@
     } catch(e){ return false; }
   }
 
+  /* ---------- O que a casa já aprendeu ----------
+     Nenhum banco de produtos de fora acerta o que ESTA casa compra, e os que
+     existem cobram, limitam consulta por minuto ou exigem cabeçalho que o
+     navegador não deixa mandar. Então o app aprende com o uso: da primeira
+     vez você escreve "Shibata" naquele CNPJ, ou o nome do produto naquele
+     código de barras; da segunda em diante ele sugere sozinho, na hora, sem
+     internet. Fica neste aparelho (é uma lista pequena de texto). */
+
+  var MEMORIA_KEY = 'gastos_casa_memoria';
+
+  function lerMemoria(){
+    try {
+      var m = JSON.parse(localStorage.getItem(MEMORIA_KEY) || 'null');
+      if (!m || typeof m !== 'object') m = {};
+      if (!m.lojas || typeof m.lojas !== 'object') m.lojas = {};
+      if (!m.produtos || typeof m.produtos !== 'object') m.produtos = {};
+      return m;
+    } catch(e){ return {lojas:{}, produtos:{}}; }
+  }
+
+  function gravarMemoria(m){
+    try { localStorage.setItem(MEMORIA_KEY, JSON.stringify(m)); } catch(e){}
+  }
+
+  function lojaConhecidaPorCNPJ(cnpj){
+    var m = lerMemoria();
+    return m.lojas[String(cnpj || '').replace(/\D/g,'')] || null;
+  }
+  function aprenderLoja(cnpj, nome){
+    cnpj = String(cnpj || '').replace(/\D/g,'');
+    nome = String(nome || '').trim();
+    if (cnpj.length !== 14 || !nome) return;
+    var m = lerMemoria();
+    m.lojas[cnpj] = nome;
+    gravarMemoria(m);
+  }
+  function produtoConhecido(ean){
+    var m = lerMemoria();
+    return m.produtos[String(ean || '').replace(/\D/g,'')] || null;
+  }
+  function aprenderProduto(ean, nome){
+    ean = String(ean || '').replace(/\D/g,'');
+    nome = String(nome || '').trim();
+    if (!ean || !nome) return;
+    var m = lerMemoria();
+    m.produtos[ean] = nome;
+    gravarMemoria(m);
+  }
+
+  /* ---------- A chave de acesso da nota ----------
+     O QR code da NFC-e carrega, como primeiro campo, a chave de acesso de 44
+     dígitos. Isso importa porque o site da Sefaz quase nunca deixa o navegador
+     buscar a página (bloqueio de origem cruzada), e aí a leitura do QR morria
+     sem servir pra nada. Só a chave já entrega, sem internet nenhuma:
+
+        posição  tam  campo
+        1-2       2   cUF     estado de quem emitiu
+        3-6       4   AAMM    ano e mês da emissão
+        7-20     14   CNPJ    a loja
+        21-22     2   mod     55 = NF-e, 65 = NFC-e (o cupom do mercado)
+        23-25     3   série
+        26-34     9   número da nota
+        35        1   tpEmis  forma de emissão (9 = contingência offline)
+        36-43     8   código numérico
+        44        1   cDV     dígito verificador, módulo 11
+
+     Conferido contra uma chave real de NF-e antes de entrar aqui. */
+
+  var UFS = {
+    '11':'RO','12':'AC','13':'AM','14':'RR','15':'PA','16':'AP','17':'TO',
+    '21':'MA','22':'PI','23':'CE','24':'RN','25':'PB','26':'PE','27':'AL','28':'SE','29':'BA',
+    '31':'MG','32':'ES','33':'RJ','35':'SP',
+    '41':'PR','42':'SC','43':'RS',
+    '50':'MS','51':'MT','52':'GO','53':'DF'
+  };
+
+  // Módulo 11 com pesos 2..9 da direita pra esquerda. Resto 0 ou 1 → dígito 0.
+  function digitoDaChave(ch43){
+    var pesos = [2,3,4,5,6,7,8,9], soma = 0, j = 0;
+    for (var i = ch43.length - 1; i >= 0; i--){
+      soma += Number(ch43.charAt(i)) * pesos[j % 8];
+      j++;
+    }
+    var resto = soma % 11;
+    return (resto === 0 || resto === 1) ? 0 : (11 - resto);
+  }
+
+  function lerChaveDeAcesso(bruto){
+    var ch = String(bruto || '').replace(/\D/g, '');
+    if (ch.length !== 44) return null;
+    // Sem essa conferência, um dígito lido errado viraria data e CNPJ errados
+    // preenchidos com cara de certos — pior do que não preencher nada.
+    if (digitoDaChave(ch.slice(0,43)) !== Number(ch.charAt(43))) return null;
+
+    var ano = 2000 + Number(ch.slice(2,4));
+    var mes = Number(ch.slice(4,6));
+    if (mes < 1 || mes > 12) return null;
+
+    return {
+      chave: ch,
+      uf: UFS[ch.slice(0,2)] || null,
+      ano: ano,
+      mes: mes,
+      mesKey: ano + '-' + String(mes).padStart(2,'0'),
+      cnpj: ch.slice(6,20),
+      modelo: ch.slice(20,22),
+      serie: ch.slice(22,25),
+      numero: String(Number(ch.slice(25,34))),
+      tpEmis: ch.charAt(34)
+    };
+  }
+
+  function formatarCNPJ(c){
+    var d = String(c || '').replace(/\D/g,'');
+    if (d.length !== 14) return d;
+    return d.slice(0,2)+'.'+d.slice(2,5)+'.'+d.slice(5,8)+'/'+d.slice(8,12)+'-'+d.slice(12);
+  }
+
+  /* O que vem escrito no QR, além da chave. São três formatos no padrão da
+     Sefaz, e os dois primeiros trazem o valor total da nota — que é
+     exatamente o número que a leitura da foto mais erra:
+
+       versão 1: ...?chNFe=...&nVersao=100&tpAmb=1&dhEmi=...&vNF=...&...
+       versão 2/3, emissão normal:     p=chave|versao|tpAmb|cIdToken|hash
+       versão 2/3, contingência (9):   p=chave|versao|tpAmb|dia|vNF|digVal|... */
+  function lerQRdaNota(url){
+    var out = { chave:null, tpAmb:null, vNF:null, dhEmi:null };
+    try {
+      var q = String(url).split('?')[1] || '';
+      var p = null;
+      q.split('&').forEach(function(par){
+        var i = par.indexOf('=');
+        var k = (i < 0 ? par : par.slice(0,i)).toLowerCase();
+        var v = i < 0 ? '' : decodeURIComponent(par.slice(i+1).replace(/\+/g,' '));
+        if (k === 'p') p = v;
+        else if (k === 'chnfe') out.chave = v;
+        else if (k === 'tpamb') out.tpAmb = v;
+        else if (k === 'vnf') out.vNF = parseFloat(v);
+        else if (k === 'dhemi') out.dhEmi = v;
+      });
+      if (p){
+        var partes = p.split('|');
+        out.chave = partes[0] || out.chave;
+        out.tpAmb = partes[2] || out.tpAmb;
+        // Só a contingência offline traz data/valor; na emissão normal os
+        // campos 4 e 5 são o identificador do token e o hash, não valor.
+        var info = lerChaveDeAcesso(out.chave);
+        if (info && info.tpEmis === '9' && partes.length >= 6){
+          out.dhEmi = partes[3] || null;
+          var v = parseFloat(partes[4]);
+          if (!isNaN(v) && v > 0) out.vNF = v;
+        }
+      }
+    } catch(e){}
+    return out;
+  }
+
   async function lerNotaPorLinkQR(url, formEl){
     var linkAbrir = ' <a href="' + escapeHTML(url) + '" target="_blank" rel="noopener">Abrir a nota</a> pra conferir.';
+
+    /* Primeiro o que dá pra saber SEM internet, direto do que está escrito no
+       QR. O site da Sefaz costuma recusar o pedido do navegador, e antes disso
+       a leitura do QR não servia pra nada quando ele recusava. */
+    var doQR = lerQRdaNota(url);
+    var nota = lerChaveDeAcesso(doQR.chave);
+    var achou = aplicarDadosDaChave(formEl, nota, doQR);
+
     if (!ehDominioFiscalConfiavel(url)){
-      setCodeStatus(formEl, '🔗 QR code lido, mas o link não é de um site do governo — por segurança, não busco os dados sozinho aqui.' + linkAbrir, 'fail');
+      setCodeStatus(formEl, achou
+        ? achou + ' O link do QR não é de site do governo, então não busco o resto sozinho.' + linkAbrir
+        : '🔗 QR code lido, mas o link não é de um site do governo — por segurança, não busco os dados sozinho aqui.' + linkAbrir,
+        achou ? 'ok' : 'fail');
       return;
     }
-    setCodeStatus(formEl, '🔗 QR code da nota encontrado — buscando os dados...', 'loading');
+    setCodeStatus(formEl, (achou ? achou + ' Buscando o resto...' : '🔗 QR code da nota encontrado — buscando os dados...'), 'loading');
     try {
       var resp = await fetchComTimeout(url, 8000);
       if (!formEl.isConnected) return;
@@ -9191,45 +9512,153 @@
         silencioSeVazio: true, semTextoLido: true, origemTxt: ' (lido pelo QR da nota)'
       });
       if (!preencheu){
-        setCodeStatus(formEl, '🔗 QR lido, mas não achei dados suficientes nessa página pra preencher sozinho.' + linkAbrir, 'fail');
+        setCodeStatus(formEl, (achou || '🔗 QR lido') + ', mas a página da nota não trouxe os itens.' + linkAbrir, achou ? 'ok' : 'fail');
       }
     } catch(e){
       if (!formEl.isConnected) return;
-      // Comum: o site do estado não libera acesso direto do navegador
-      // (CORS) ou demorou demais pra responder — segue o app, sem travar.
-      setCodeStatus(formEl, '🔗 QR code lido, mas não consegui abrir os dados automaticamente aqui.' + linkAbrir, 'fail');
+      // Comum: o site do estado não libera acesso direto do navegador (CORS)
+      // ou demorou demais. Mesmo assim o que veio da chave já está preenchido.
+      setCodeStatus(formEl, achou
+        ? achou + ' A página da nota não abriu daqui, então os itens ficam por sua conta.' + linkAbrir
+        : '🔗 QR code lido, mas não consegui abrir os dados automaticamente aqui.' + linkAbrir,
+        achou ? 'ok' : 'fail');
     }
   }
 
+  /* Preenche o que a chave garante e devolve o recado do que foi usado.
+     Data entra direto (é informação do documento, não chute da leitura).
+     Nome da loja NUNCA entra sozinho: vira sugestão, como em toda a parte
+     de leitura de nota. */
+  function aplicarDadosDaChave(formEl, nota, doQR){
+    if (!nota) return null;
+    var partes = [];
+
+    if (doQR && String(doQR.tpAmb) === '2'){
+      return '⚠️ Essa nota é de <b>teste</b> (homologação), não vale como compra. Confira se é o cupom certo.';
+    }
+
+    // Data: da contingência vem o dia exato; senão vem o mês da emissão, e aí
+    // só mexo se o campo ainda estiver no dia de hoje (ou seja, intocado).
+    var dataEl = formEl.querySelector('.date-input');
+    if (dataEl){
+      var diaExato = null;
+      if (doQR && doQR.dhEmi){
+        var m = String(doQR.dhEmi).match(/(\d{4})-?(\d{2})-?(\d{2})/);
+        if (m) diaExato = m[1] + '-' + m[2] + '-' + m[3];
+        else if (/^\d{2}$/.test(String(doQR.dhEmi))) diaExato = nota.mesKey + '-' + doQR.dhEmi;
+      }
+      if (diaExato){
+        dataEl.value = diaExato;
+        partes.push('data ' + formatDateBR(diaExato));
+      } else if (dataEl.value === todayISO() && nota.mesKey !== currentMonthKey()){
+        // A nota é de outro mês: põe o último dia daquele mês, que é o mais
+        // perto do certo sem inventar um dia que a nota não disse.
+        dataEl.value = dateInMonth(nota.mesKey, 28);
+        partes.push('mês ' + monthLabelFromKey(nota.mesKey) + ' (confira o dia)');
+      }
+    }
+
+    // Valor: só a versão 1 e a contingência trazem. Quando vem, é o número
+    // do documento — melhor que qualquer soma de itens lida por foto.
+    if (doQR && doQR.vNF > 0){
+      var valorEl = formEl.querySelector('.value-input');
+      if (valorEl && !valorEl.readOnly && (!valorEl.value || parseFloat(valorEl.value) === 0)){
+        valorEl.value = doQR.vNF.toFixed(2);
+        partes.push('total ' + formatBRL(doQR.vNF));
+      }
+    }
+
+    // Loja: se a casa já disse quem é esse CNPJ, sugere. Senão, mostra o CNPJ.
+    var loja = lojaConhecidaPorCNPJ(nota.cnpj);
+    var campoDesc = formEl.querySelector('.description-input');
+    if (loja && campoDesc){
+      mostrarSugestaoDeLoja(formEl, loja);
+      partes.push('loja ' + loja);
+    }
+    if (formEl.dataset) formEl.dataset.cnpjNota = nota.cnpj;
+
+    var quem = loja ? escapeHTML(loja) : ('CNPJ ' + formatarCNPJ(nota.cnpj));
+    var tipo = nota.modelo === '65' ? 'Cupom (NFC-e)' : (nota.modelo === '55' ? 'Nota (NF-e)' : 'Documento');
+    return '🧾 ' + tipo + ' nº ' + nota.numero + ' · ' + quem
+      + (nota.uf ? ' · ' + nota.uf : '')
+      + (partes.length ? ' — usei: ' + partes.join(', ') + '.' : '.');
+  }
+
+  /* Dígito verificador de EAN-13, EAN-8 e UPC-A: soma alternando peso 3 e 1
+     da direita pra esquerda, e o dígito é o que falta pra fechar na dezena.
+     Sem essa conferência, um código lido torto vira busca de produto que não
+     existe — ou, pior, de um produto que existe e não é o da prateleira. */
+  function codigoDeBarrasValido(codigo){
+    var d = String(codigo || '').replace(/\D/g,'');
+    if ([8,12,13,14].indexOf(d.length) === -1) return false;
+    var soma = 0, peso = 3;
+    for (var i = d.length - 2; i >= 0; i--){
+      soma += Number(d.charAt(i)) * peso;
+      peso = (peso === 3) ? 1 : 3;
+    }
+    var dv = (10 - (soma % 10)) % 10;
+    return dv === Number(d.charAt(d.length - 1));
+  }
+
   async function identificarProdutoPorCodigoBarras(codigo, formEl){
-    // Códigos de nota (chave de acesso, linha digitável) têm muito mais
-    // dígitos que um código de barras de produto (EAN-8/12/13) — isso já
-    // evita buscar besteira quando o que a câmera pegou não foi um produto.
-    if (!/^\d{6,14}$/.test(codigo)) return;
-    var descInput = formEl.querySelector('.description-input');
-    if (!descInput || descInput.value.trim()) return;
-    setCodeStatus(formEl, '📦 Código de barras encontrado — buscando o produto...', 'loading');
+    var d = String(codigo || '').replace(/\D/g,'');
+
+    // 44 dígitos não é produto: é a chave de acesso da nota, que às vezes vem
+    // impressa como código de barras no rodapé do cupom.
+    if (d.length === 44){
+      var nota = lerChaveDeAcesso(d);
+      var recado = aplicarDadosDaChave(formEl, nota, null);
+      setCodeStatus(formEl, recado || '📄 Li um código de 44 dígitos, mas ele não passou na conferência de nota fiscal.', recado ? 'ok' : 'fail');
+      return;
+    }
+
+    if (!codigoDeBarrasValido(d)){
+      setCodeStatus(formEl, '📦 Li ' + escapeHTML(d) + ', mas esse número não fecha como código de barras de produto — provavelmente saiu torto na leitura. Tente de novo.', 'fail');
+      return;
+    }
+
+    // 1º: o que a casa já aprendeu. É instantâneo, funciona sem internet e
+    // acerta o nome do jeito que VOCÊS chamam o produto.
+    var deCasa = produtoConhecido(d);
+    if (deCasa){
+      mostrarSugestaoDeProduto(formEl, deCasa, d);
+      setCodeStatus(formEl, '📦 Você já lançou esse código antes: <b>' + escapeHTML(deCasa) + '</b>. Toque na sugestão pra usar de novo.', 'ok');
+      return;
+    }
+
+    // 2º: tenta um banco público, só como sugestão. Ele é gratuito mas tem
+    // limite de consultas por minuto e nem sempre tem produto brasileiro,
+    // então nunca é dono do campo — quem escreve é você.
+    setCodeStatus(formEl, '📦 Código ' + escapeHTML(d) + ' — vendo se acho o nome...', 'loading');
     try {
-      var resp = await fetchComTimeout('https://world.openfoodfacts.org/api/v0/product/' + encodeURIComponent(codigo) + '.json', 8000);
+      var resp = await fetchComTimeout('https://world.openfoodfacts.org/api/v0/product/' + encodeURIComponent(d) + '.json', 8000);
       var dados = await resp.json();
       if (!formEl.isConnected) return;
       var produto = dados && dados.status === 1 ? dados.product : null;
       var nome = produto && (produto.product_name_pt || produto.product_name || produto.generic_name_pt || produto.generic_name);
-      if (nome && !descInput.value.trim()){
-        descInput.value = nome;
-        var catSel = formEl.querySelector('.category-select');
-        if (catSel && !formEl.dataset.catTocada && catSel.selectedIndex === 0){
-          var temMercado = Array.prototype.some.call(catSel.options, function(o){ return o.value === 'Mercado'; });
-          if (temMercado) catSel.value = 'Mercado';
-        }
-        setCodeStatus(formEl, '✅ Produto identificado pelo código de barras: ' + escapeHTML(nome) + '. Confira antes de salvar.', 'ok');
+      if (nome){
+        mostrarSugestaoDeProduto(formEl, nome, d);
+        setCodeStatus(formEl, '📦 Achei <b>' + escapeHTML(nome) + '</b> pra esse código. Toque na sugestão se for isso.', 'ok');
       } else {
-        setCodeStatus(formEl, '📦 Código de barras lido (' + escapeHTML(codigo) + '), mas não achei esse produto pra preencher sozinho.', 'fail');
+        guardarCodigoPendente(formEl, d);
+        setCodeStatus(formEl, '📦 Código ' + escapeHTML(d) + ' lido. Escreva o nome do produto — na próxima vez que ler esse código, eu já sugiro ele.', 'ok');
       }
     } catch(e){
       if (!formEl.isConnected) return;
-      setCodeStatus(formEl, '📦 Código de barras lido (' + escapeHTML(codigo) + '), mas não consegui buscar os dados agora.', 'fail');
+      guardarCodigoPendente(formEl, d);
+      setCodeStatus(formEl, '📦 Código ' + escapeHTML(d) + ' lido, mas não consegui procurar o nome agora. Escreva você — eu guardo pra próxima.', 'ok');
     }
+  }
+
+  // Guarda o código no formulário pra, quando a pessoa salvar, o app aprender
+  // qual nome ela deu a ele.
+  function guardarCodigoPendente(formEl, codigo){
+    if (formEl && formEl.dataset) formEl.dataset.eanPendente = codigo;
+  }
+
+  function mostrarSugestaoDeProduto(formEl, nome, codigo){
+    guardarCodigoPendente(formEl, codigo);
+    mostrarSugestaoDeLoja(formEl, nome);
   }
 
   // Decide o que fazer com um texto decodificado de QR code/código de
@@ -9243,6 +9672,16 @@
     } else {
       setCodeStatus(formEl, '📡 QR code lido, mas o conteúdo não é um link de nota — nada pra preencher automaticamente com ele.', 'fail');
     }
+  }
+
+  /* Porta de teste. A leitura de verdade depende da câmera e da biblioteca
+     que vem do CDN, então não dá pra exercitar no automático. Com ?__teste na
+     URL, o mesmo caminho que trata um código lido fica alcançável — e só com
+     a flag: numa aberta normal do app isto não existe. */
+  if (location.search.indexOf('__teste') >= 0){
+    window.__testProcessar = function(texto, ehQR, formEl){
+      return processarCodigoLido(texto, ehQR, formEl);
+    };
   }
 
   async function scanCodigoENota(file, formEl){
@@ -9470,59 +9909,48 @@
         return;
       }
 
-      // Botão para confirmar ajuste manual do total
+      // "Usar este valor": abre a janela explicando o que vai acontecer.
       var confirmManualBtn = e.target.closest('[data-action="confirm-manual-adjust"]');
       if (confirmManualBtn){
         e.preventDefault();
         var formM = confirmManualBtn.closest('form');
         if (!formM) return;
-
         var manualInput = formM.querySelector('.manual-total-input');
-        var valueInput = formM.querySelector('.value-input');
-
-        if (!manualInput || !valueInput) return;
-
+        if (!manualInput) return;
         var manualValue = parseFloat(manualInput.value) || 0;
-
         if (manualValue <= 0){
-          alert('Por favor, digite um valor válido (maior que 0)');
+          avisarRapido('Digite o valor total que está na nota.');
+          manualInput.focus();
           return;
         }
+        abrirJanelaTotal(formM, manualValue);
+        return;
+      }
 
-        // Calcular total dos itens
-        var rows = formM.querySelectorAll('.item-row');
-        var calculatedTotal = 0;
-        rows.forEach(function(row){
-          calculatedTotal += parseFloat(row.querySelector('.item-value-input').value) || 0;
-        });
-
-        var diff = Math.abs(manualValue - calculatedTotal).toFixed(2);
-
-        var confirmMsg = 'Você está ajustando o total manualmente:\n\n'
-          + 'De: R$ ' + calculatedTotal.toFixed(2) + ' (itens)\n'
-          + 'Para: R$ ' + manualValue.toFixed(2) + '\n'
-          + 'Diferença: R$ ' + diff + '\n\n'
-          + '⚠️ Os itens podem estar errados, mas o valor total será R$ ' + manualValue.toFixed(2) + '\n\n'
-          + 'Tem certeza?';
-
-        if (confirm(confirmMsg)){
-          // Aplicar o ajuste
-          valueInput.value = manualValue.toFixed(2);
-          valueInput.readOnly = true;
-          valueInput.classList.add('computed-value');
-
-          // Esconder o campo de ajuste
-          var totalRow = formM.querySelector('.items-total-row');
-          if (totalRow){
-            var adjustField = totalRow.querySelector('.manual-adjust-field');
-            if (adjustField){
-              adjustField.style.display = 'none';
-            }
-          }
-
-          // Mostrar notificação de sucesso
-          alert('✅ Total ajustado manualmente!\n\nValor final: R$ ' + manualValue.toFixed(2) + '\n\nOs itens podem conter erros, mas o valor total está correto.');
+      // Voltar a usar a soma dos itens.
+      var desfazerTotal = e.target.closest('[data-action="desfazer-total-manual"]');
+      if (desfazerTotal){
+        e.preventDefault();
+        var formD = desfazerTotal.closest('form');
+        var linhaD = formD && formD.querySelector('.items-total-row');
+        if (linhaD){
+          delete linhaD.dataset.totalManual;
+          var campoD = linhaD.querySelector('.manual-total-input');
+          if (campoD) campoD.value = '';
+          recalcItemsTotal(formD);
         }
+        return;
+      }
+
+      // Sugestão de loja/produto: entra no campo só quando a pessoa toca nela.
+      var usarLoja = e.target.closest('[data-action="usar-loja"]');
+      if (usarLoja){
+        e.preventDefault();
+        var formL = usarLoja.closest('form');
+        var campoL = formL && formL.querySelector('.description-input');
+        if (campoL){ campoL.value = usarLoja.getAttribute('data-nome'); campoL.focus(); }
+        var sug = usarLoja.closest('.sugestao-loja');
+        if (sug) sug.remove();
         return;
       }
 
@@ -9722,6 +10150,15 @@
       overdueModal.addEventListener('click', function(e){
         if (e.target === overdueModal) overdueModal.classList.add('hidden');
       });
+
+      var modalTotal = document.getElementById('modal-total');
+      if (modalTotal){
+        modalTotal.addEventListener('click', function(ev){
+          if (ev.target === modalTotal){ fecharJanelaTotal(); return; }
+          if (ev.target.closest('[data-action="total-cancelar"]')){ fecharJanelaTotal(); return; }
+          if (ev.target.closest('[data-action="total-confirmar"]')){ aplicarTotalManual(); return; }
+        });
+      }
 
       var remindLaterBtn = document.getElementById('overdue-remind-later');
       if (remindLaterBtn){
@@ -10323,6 +10760,73 @@
 
     render();
     checkAndShowOverdueNotification();
+  }
+
+  /* ---------- Janela do total ajustado à mão ----------
+     Trocar o total é uma decisão que muda o valor da conta, então ela precisa
+     ser dita com todas as letras: o que era, o que passa a ser, e que os itens
+     continuam como a leitura deixou. Antes isso era um confirm() do navegador,
+     que aparece fora do app e ninguém lê. */
+
+  // Recado curto no rodapé, pra confirmar uma ação sem parar a tela.
+  var avisoTimer = null;
+  function avisarRapido(texto){
+    var el = document.getElementById('aviso-rapido');
+    if (!el){
+      el = document.createElement('div');
+      el.id = 'aviso-rapido';
+      document.body.appendChild(el);
+    }
+    el.textContent = texto;
+    el.classList.add('aparecendo');
+    clearTimeout(avisoTimer);
+    avisoTimer = setTimeout(function(){ el.classList.remove('aparecendo'); }, 2600);
+  }
+
+  var totalPendente = null;   // {form, valor, soma}
+
+  function abrirJanelaTotal(form, valor){
+    var soma = 0;
+    form.querySelectorAll('.item-row').forEach(function(row){
+      soma += parseFloat(row.querySelector('.item-value-input').value) || 0;
+    });
+    totalPendente = { form: form, valor: valor, soma: soma };
+
+    var corpo = document.getElementById('total-corpo');
+    var modal = document.getElementById('modal-total');
+    if (!corpo || !modal) return;
+
+    var dif = valor - soma;
+    corpo.innerHTML = ''
+      + '<div class="tot-titulo">✍️ Ajustando o total à mão</div>'
+      + '<div class="note" style="margin:0 0 12px;">A conta vai valer o número que você digitou, não a soma dos itens.</div>'
+      + '<div class="tot-linha"><span>Soma dos itens lidos</span><b>' + formatBRL(soma) + '</b></div>'
+      + '<div class="tot-linha"><span>Diferença</span><b>' + (dif >= 0 ? '+' : '−') + formatBRL(Math.abs(dif)) + '</b></div>'
+      + '<div class="tot-linha tot-destaque"><span>A conta vai ficar</span><b>' + formatBRL(valor) + '</b></div>'
+      + '<div class="tot-aviso">Os itens continuam do jeito que a leitura deixou — algum deles pode estar errado. '
+        + 'O que fica certo é o <b>valor total da conta</b>, que é o que entra no acerto e nos gráficos.</div>'
+      + '<div class="settings-actions" style="margin-top:18px;">'
+        + '<button type="button" class="secondary-btn" data-action="total-cancelar">Cancelar</button>'
+        + '<button type="button" class="submit-btn" data-action="total-confirmar" style="background:var(--neon2); color:var(--accent-ink);">Sim, usar ' + formatBRL(valor) + '</button>'
+      + '</div>';
+    modal.classList.remove('hidden');
+  }
+
+  function fecharJanelaTotal(){
+    var modal = document.getElementById('modal-total');
+    if (modal) modal.classList.add('hidden');
+    totalPendente = null;
+  }
+
+  function aplicarTotalManual(){
+    if (!totalPendente) return;
+    var form = totalPendente.form;
+    var valor = totalPendente.valor;
+    var linha = form.querySelector('.items-total-row');
+    if (linha) linha.dataset.totalManual = String(valor);
+    fecharJanelaTotal();
+    recalcItemsTotal(form);
+    avisarRapido('Total da conta: ' + formatBRL(valor));
   }
 
   /* ---------- Aviso de conta vencida ----------
