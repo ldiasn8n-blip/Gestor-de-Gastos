@@ -456,6 +456,100 @@
   }
   #aviso-rapido.aparecendo{ opacity:1; transform:translateX(-50%) translateY(0); }
 
+  #modal-import{
+    position:fixed; inset:0; z-index:9997;
+    background:var(--backdrop);
+    display:flex; align-items:center; justify-content:center;
+    padding:18px;
+  }
+  #modal-import.hidden{ display:none !important; }
+  #modal-import .modal-caixa{ width:min(680px, 100%); max-height:88vh; overflow-y:auto; }
+
+  .imp-titulo{ font-size:17px; font-weight:800; margin:0 0 6px; }
+  .imp-passo{
+    display:inline-block; font-size:11px; font-weight:800; letter-spacing:.06em;
+    text-transform:uppercase; color:var(--accent-text); margin-bottom:10px;
+  }
+  .imp-mapa{
+    margin:10px 0 2px; border:1px solid var(--line); border-radius:12px;
+    background:var(--input-bg); padding:10px 12px;
+  }
+  .imp-mapa > summary{
+    cursor:pointer; list-style:none; font-size:13px; font-weight:700; color:var(--ink);
+    display:flex; align-items:baseline; gap:8px; flex-wrap:wrap;
+  }
+  .imp-mapa > summary::-webkit-details-marker{ display:none; }
+  .imp-mapa > summary::before{
+    content:'▸'; color:var(--accent-text); font-size:12px; transform:translateY(-1px);
+  }
+  .imp-mapa[open] > summary::before{ content:'▾'; }
+  .imp-mapa-resumo{
+    font-size:12px; font-weight:600; color:var(--ink-soft); min-width:0;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .imp-colunas{
+    display:grid; gap:8px; margin:12px 0 4px;
+    grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));
+  }
+  .imp-coluna{
+    border:1px solid var(--line); border-radius:10px; padding:10px 11px;
+    background:var(--input-bg); min-width:0;
+  }
+  .imp-coluna-nome{
+    font-size:11px; font-weight:800; color:var(--ink-soft);
+    text-transform:uppercase; letter-spacing:.04em;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .imp-coluna-exemplo{
+    font-size:12px; color:var(--ink); margin:3px 0 8px;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .imp-coluna select{
+    width:100%; padding:7px 8px; border-radius:8px;
+    border:1px solid var(--line); background:var(--paper-raised); color:var(--ink);
+    font-size:13px; font-family:inherit;
+  }
+  .imp-opcoes{
+    display:grid; gap:10px; margin:14px 0 0;
+    grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));
+  }
+  .imp-opcoes label{ display:block; font-size:12px; color:var(--ink-soft); margin-bottom:5px; }
+  .imp-opcoes select{
+    width:100%; padding:9px 10px; border-radius:8px;
+    border:1px solid var(--line); background:var(--input-bg); color:var(--ink);
+    font-size:14px; font-family:inherit;
+  }
+  .imp-previa{
+    margin-top:14px; border:1px solid var(--line); border-radius:10px; overflow:hidden;
+  }
+  .imp-previa-linha{
+    display:flex; align-items:center; gap:10px;
+    padding:9px 11px; border-bottom:1px solid var(--line); font-size:13px;
+  }
+  .imp-previa-linha:last-child{ border-bottom:none; }
+  .imp-previa-data{ color:var(--ink-soft); font-size:12px; white-space:nowrap; flex:0 0 auto; }
+  .imp-previa-desc{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .imp-previa-valor{ font-weight:700; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .imp-resumo{
+    display:flex; flex-wrap:wrap; gap:8px; margin:14px 0 0;
+  }
+  .imp-selo{
+    padding:5px 11px; border-radius:999px; font-size:12px; font-weight:700;
+    border:1px solid currentColor;
+  }
+  .imp-selo-ok{ color:var(--status-paid); }
+  .imp-selo-pula{ color:var(--ink-soft); }
+  .imp-selo-erro{ color:var(--status-overdue); }
+  .imp-selo-nota{ color:var(--accent-text); }
+  .imp-problemas{
+    margin-top:10px; font-size:12px; color:var(--ink-soft); line-height:1.6;
+    max-height:130px; overflow-y:auto;
+  }
+  .imp-problemas code{
+    display:block; font-size:11px; opacity:.8;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+
   #modal-total{
     position:fixed; inset:0; z-index:9998;
     background:var(--backdrop);
@@ -2150,6 +2244,12 @@
     <span id="appfull-acoes"></span>
   </div>
   <iframe id="appfull-frame" title="App extra"></iframe>
+</div>
+
+<div class="modal hidden" id="modal-import" style="z-index:9997;">
+  <div class="modal-caixa" style="background:var(--paper); padding:20px; border-radius:12px; box-shadow:var(--shadow-lg);">
+    <div id="import-corpo"></div>
+  </div>
 </div>
 
 <div class="modal hidden" id="modal-total" style="z-index:9998;">
@@ -6245,6 +6345,13 @@
       + contaSectionHTML()
       + licencasSectionHTML()
       + backupSectionHTML()
+      + '<div class="field" style="margin-top:22px;"><label>Trazer lançamentos de um arquivo</label>'
+        + '<div class="note" style="margin:-2px 0 8px;">Tem planilha, extrato ou anotação de antes? Traga tudo de uma vez. '
+        + 'Você vê na tela o que vai entrar antes de confirmar, e os lançamentos vão pra <b>esta</b> casa — a que está logada agora.</div>'
+        + '<label class="secondary-btn" style="display:block; text-align:center; cursor:pointer;">📄 Escolher arquivo (.txt ou .csv)'
+          + '<input type="file" id="trazer-input" accept=".txt,.csv,text/plain,text/csv" style="display:none;"></label>'
+        + desfazerImportHTML()
+      + '</div>'
       + '<div class="field" style="margin-top:22px;"><label>Dados de exemplo</label>'
         + '<div class="note" style="margin:-2px 0 8px;">Preenche agosto, setembro e outubro de 2026 pra você ver como fica com o app cheio. Fica marcado como exemplo — dá pra tirar depois sem mexer no que é seu.</div>'
         + '<button type="button" id="load-demo-btn" class="secondary-btn">🧪 Carregar 3 meses de exemplo</button>'
@@ -6746,6 +6853,767 @@
   }
 
   // Bloco de backup e espaço usado, mostrado nas configurações.
+  /* ==========================================================
+     IMPORTAR LANÇAMENTOS DE UM ARQUIVO
+     ==========================================================
+     Quem já anotava em planilha ou no bloco de notas não pode ser obrigado a
+     digitar meses de histórico na mão pra começar a usar o app. Aqui o
+     arquivo entra inteiro, mas nada é gravado antes de você ver na tela o que
+     vai entrar.
+
+     Uma coisa que este importador NÃO faz, de propósito: escolher a conta de
+     destino. Os lançamentos entram na casa de quem está logado, e só. Mandar
+     dados pra conta de outra pessoa exigiria a chave secreta do servidor, que
+     ignora todas as regras de segurança — é ela que impede um cliente de ler
+     os dados de outro. Pra importar na casa da outra pessoa, é ela que entra
+     na conta dela e importa. */
+
+  /* ---------- Ler o arquivo ---------- */
+
+  // Arquivo salvo no Windows costuma vir em ANSI, não em UTF-8, e aí
+  // "Alimentação" chega como "Alimenta��o". Lemos como UTF-8 primeiro; se
+  // aparecer o caractere de erro, lemos de novo como windows-1252.
+  function decodificarArquivo(buffer){
+    var utf8 = new TextDecoder('utf-8').decode(buffer);
+    if (utf8.indexOf('\uFFFD') === -1) return utf8;
+    try { return new TextDecoder('windows-1252').decode(buffer); }
+    catch(e){ return utf8; }
+  }
+
+  // Qual separador o arquivo usa: aquele que aparece o mesmo número de vezes
+  // em quase toda linha. Contar só a primeira linha erraria num arquivo cuja
+  // descrição tem vírgula ("Mercado, feira e padaria").
+  /* Muita gente anota assim: uma linha só com o mês ("01/2024") e embaixo as
+     contas daquele mês. Aqui reconheço essa linha de cabeçalho de mês, em
+     número ou por extenso, e até com sobra digitada por engano ("01/2026/26"). */
+  var MESES_POR_NOME = {
+    jan:1, fev:2, mar:3, abr:4, mai:5, jun:6,
+    jul:7, ago:8, set:9, out:10, nov:11, dez:12
+  };
+
+  function lerMesSolto(linha){
+    var s = String(linha || '').trim().replace(/[.:;]+$/, '');
+    if (!s) return null;
+
+    // 01/2024 · 1-2024 · 01/2026/26 (o "/26" repetido não atrapalha)
+    var m = s.match(/^(\d{1,2})\s*[\/\-.]\s*(\d{4})(?:\s*[\/\-.]\s*\d{2,4})?$/);
+    if (m && Number(m[1]) >= 1 && Number(m[1]) <= 12) return juntarMes(m[2], m[1]);
+
+    // 2024-01 · 2024/1
+    m = s.match(/^(\d{4})\s*[\/\-.]\s*(\d{1,2})$/);
+    if (m && Number(m[2]) >= 1 && Number(m[2]) <= 12) return juntarMes(m[1], m[2]);
+
+    // janeiro/2024 · jan 2024 · Janeiro de 2024
+    m = s.match(/^([a-zà-ÿ]{3,12})\.?\s*(?:\/|-|de\s+|\s)\s*(\d{2,4})$/i);
+    if (m){
+      var chave = m[1].toLowerCase().normalize ? m[1].toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').slice(0,3) : m[1].toLowerCase().slice(0,3);
+      var num = MESES_POR_NOME[chave];
+      if (num){
+        var ano = m[2].length === 2 ? ('20' + m[2]) : m[2];
+        return juntarMes(ano, num);
+      }
+    }
+    return null;
+  }
+  function juntarMes(ano, mes){
+    ano = Number(ano);
+    if (ano < 1900 || ano > 2200) return null;
+    return ano + '-' + String(Number(mes)).padStart(2,'0') + '-01';
+  }
+
+  /* Separa o arquivo em blocos de mês. Só vale se achei pelo menos dois meses
+     e se sobrou conta embaixo deles — senão é um arquivo comum e devolvo nada,
+     pra seguir pelo caminho de sempre. */
+  function separarBlocosDeMes(linhas){
+    var datas = [], sobra = [], mesAtual = null, quantosMeses = 0;
+    for (var i = 0; i < linhas.length; i++){
+      var mes = lerMesSolto(linhas[i]);
+      if (mes){ mesAtual = mes; quantosMeses++; continue; }
+      if (!mesAtual) return null;            // tem linha solta antes do 1º mês
+      sobra.push(linhas[i]);
+      datas.push(mesAtual);
+    }
+    if (quantosMeses < 2 || sobra.length < 2) return null;
+    return { linhas: sobra, datas: datas, meses: quantosMeses };
+  }
+
+  /* A vírgula de "964,00" não é separador de coluna, é a vírgula dos centavos.
+     Sem isso, "Gasolina/ 964,00" era partido em "Gasolina/ 964" e "00" — e o
+     arquivo inteiro entrava errado. Se quase toda ocorrência do candidato está
+     entre dígitos com dois dígitos depois, ele é dos centavos, não das colunas. */
+  function ehVirgulaDeCentavos(sep, linhas){
+    if (sep !== ',' && sep !== '.') return false;
+    var re = new RegExp('\\d\\' + sep + '\\d{2}(?!\\d)', 'g');
+    var total = 0, decimais = 0;
+    linhas.slice(0, 20).forEach(function(l){
+      total += l.split(sep).length - 1;
+      var achados = l.match(re);
+      decimais += achados ? achados.length : 0;
+    });
+    return total > 0 && decimais >= total * 0.8;
+  }
+
+  function acharSeparador(linhas, incluirBarra){
+    var candidatos = incluirBarra ? [';', '\t', ',', '|', '/'] : [';', '\t', ',', '|'];
+    var melhor = ';', melhorNota = -1;
+    candidatos.forEach(function(sep){
+      if (ehVirgulaDeCentavos(sep, linhas)) return;
+      var contagens = linhas.slice(0, 20).map(function(l){ return l.split(sep).length - 1; });
+      var validas = contagens.filter(function(c){ return c > 0; });
+      if (validas.length < Math.min(2, linhas.length)) return;
+      // Constância: quantas linhas têm exatamente a contagem mais comum.
+      var freq = {}, moda = 0, modaN = 0;
+      validas.forEach(function(c){ freq[c] = (freq[c]||0)+1; if (freq[c] > modaN){ modaN = freq[c]; moda = c; } });
+      var nota = modaN * 10 + moda;
+      if (nota > melhorNota){ melhorNota = nota; melhor = sep; }
+    });
+    return melhor;
+  }
+
+  // Quebra uma linha respeitando aspas: Excel escreve "Mercado, feira";50,00
+  function quebrarLinha(linha, sep){
+    var out = [], atual = '', dentro = false;
+    for (var i = 0; i < linha.length; i++){
+      var c = linha.charAt(i);
+      if (c === '"'){
+        if (dentro && linha.charAt(i+1) === '"'){ atual += '"'; i++; }
+        else dentro = !dentro;
+      } else if (c === sep && !dentro){
+        out.push(atual); atual = '';
+      } else atual += c;
+    }
+    out.push(atual);
+    return out.map(function(x){ return x.trim(); });
+  }
+
+  /* Data em qualquer jeito que apareça por aqui: 05/09/2026, 5/9/26,
+     2026-09-05, 05-09-2026, 05.09.2026. Devolve sempre AAAA-MM-DD. */
+  function lerDataSolta(txt){
+    var t = String(txt || '').trim();
+    if (!t) return null;
+    var m = t.match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})/);
+    if (m) return montarData(m[1], m[2], m[3]);
+    m = t.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{2,4})/);
+    if (m){
+      var ano = m[3].length === 2 ? ('20' + m[3]) : m[3];
+      return montarData(ano, m[2], m[1]);
+    }
+    return null;
+  }
+  function montarData(a, m, d){
+    a = Number(a); m = Number(m); d = Number(d);
+    if (!a || m < 1 || m > 12 || d < 1 || d > 31) return null;
+    if (a < 1900 || a > 2200) return null;
+    var ultimo = new Date(a, m, 0).getDate();
+    if (d > ultimo) return null;
+    return a + '-' + String(m).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+  }
+
+  /* Valor do jeito brasileiro e do jeito de fora: "R$ 1.234,56", "1234,56",
+     "1.234.56"? não — a regra é: o ÚLTIMO separador é o dos centavos, e o que
+     vier antes é separador de milhar. Isso resolve 1.234,56 e 1,234.56 sem
+     precisar adivinhar o país do arquivo. Parênteses e "-" viram negativo,
+     que é como planilha de extrato escreve saída. */
+  function lerValorSolto(txt){
+    var t = String(txt || '').trim();
+    if (!t) return null;
+    // Negativo quando vem entre parênteses (jeito de extrato) ou com o sinal
+    // antes do primeiro número — "-50,00" e "R$ -50,00" contam os dois.
+    var negativo = /^\(.*\)$/.test(t) || /^[^\d]*-/.test(t);
+    t = t.replace(/[^\d.,]/g, '');
+    if (!t) return null;
+    var ultimaV = t.lastIndexOf(','), ultimoP = t.lastIndexOf('.');
+    var corte = Math.max(ultimaV, ultimoP);
+    var inteiro, centavos = '';
+    if (corte >= 0 && (t.length - corte - 1) <= 2 && (t.length - corte - 1) > 0){
+      inteiro = t.slice(0, corte).replace(/[.,]/g, '');
+      centavos = t.slice(corte + 1);
+    } else {
+      inteiro = t.replace(/[.,]/g, '');
+    }
+    if (!inteiro && !centavos) return null;
+    var n = Number((inteiro || '0') + '.' + (centavos || '0').padEnd(2,'0').slice(0,2));
+    if (isNaN(n)) return null;
+    return negativo ? -n : n;
+  }
+
+  /* ---------- Entender o arquivo ---------- */
+
+  var CAMPOS_IMPORT = [
+    ['ignorar',   'Não usar'],
+    ['data',      'Data'],
+    ['descricao', 'Descrição'],
+    ['valor',     'Valor'],
+    ['categoria', 'Categoria'],
+    ['cartao',    'Cartão'],
+    ['pessoa',    'Quem pagou']
+  ];
+
+  // Palpite pelo nome da coluna. Cobre o que aparece em extrato de banco,
+  // exportação de planilha e app de finanças.
+  var PISTAS_CABECALHO = [
+    ['data',      /^(data|dia|dt|date|lançamento|lancamento|emiss)/i],
+    ['descricao', /^(descri|hist|nome|produto|estabelec|memo|detalhe|lançamento|lancamento|title)/i],
+    ['valor',     /^(valor|vl|total|preç|prec|montante|amount|quantia|débito|debito|saída|saida)/i],
+    ['categoria', /^(categoria|cat|classific|tipo de gasto|grupo)/i],
+    ['cartao',    /^(cart|conta|banco|pagamento|forma)/i],
+    ['pessoa',    /^(pessoa|quem|respons|pagador|titular|membro)/i]
+  ];
+
+  // Palpite pelo conteúdo, quando não há cabeçalho (ou ele não diz nada).
+  function palpitarPorConteudo(valores){
+    var uteis = valores.filter(function(v){ return String(v || '').trim(); });
+    if (!uteis.length) return 'ignorar';
+    var datas = uteis.filter(function(v){ return lerDataSolta(v); }).length;
+    if (datas >= uteis.length * 0.7) return 'data';
+    var numeros = uteis.filter(function(v){ return lerValorSolto(v) !== null && /\d/.test(v); }).length;
+    if (numeros >= uteis.length * 0.7) return 'valor';
+    return 'descricao';
+  }
+
+  function ehCabecalho(campos){
+    // Uma linha de cabeçalho não tem data nem valor em lugar nenhum.
+    var temDado = campos.some(function(c){ return lerDataSolta(c) || (lerValorSolto(c) !== null && /\d/.test(c)); });
+    return !temDado && campos.some(function(c){ return /[A-Za-zÀ-ÿ]{3,}/.test(c); });
+  }
+
+  function analisarArquivo(texto){
+    var linhas = String(texto || '')
+      .split(/\r?\n/)
+      .filter(function(l){ return l.trim().length > 0; });
+    if (!linhas.length) return null;
+
+    // Anotação por mês: "01/2024" numa linha e as contas do mês embaixo. A
+    // data não está em nenhuma coluna, está no cabeçalho do bloco — então eu
+    // tiro essas linhas e devolvo a data como primeira coluna de cada conta.
+    var blocos = separarBlocosDeMes(linhas);
+    var datasPorLinha = null;
+    if (blocos){ datasPorLinha = blocos.datas; linhas = blocos.linhas; }
+
+    var sep = acharSeparador(linhas, !!blocos);
+    var tabela = linhas.map(function(l){ return quebrarLinha(l, sep); });
+    if (datasPorLinha){
+      tabela = tabela.map(function(r, i){ return [datasPorLinha[i]].concat(r); });
+    }
+
+    // Quantas colunas o arquivo tem de verdade (a moda, não a primeira linha).
+    var freq = {}, nCols = 0, maior = 0;
+    tabela.forEach(function(r){ freq[r.length] = (freq[r.length]||0)+1; });
+    Object.keys(freq).forEach(function(k){ if (freq[k] > maior){ maior = freq[k]; nCols = Number(k); } });
+
+    // Em bloco de mês a primeira linha já é conta, nunca cabeçalho.
+    var cabecalho = (!datasPorLinha && ehCabecalho(tabela[0])) ? tabela[0] : null;
+    var corpo = cabecalho ? tabela.slice(1) : tabela;
+
+    // Palpite por coluna: o nome do cabeçalho manda; sem ele, o conteúdo.
+    var mapa = [];
+    for (var c = 0; c < nCols; c++){
+      var escolha = null;
+      if (cabecalho && cabecalho[c]){
+        for (var i = 0; i < PISTAS_CABECALHO.length; i++){
+          if (PISTAS_CABECALHO[i][1].test(cabecalho[c].trim())){ escolha = PISTAS_CABECALHO[i][0]; break; }
+        }
+      }
+      if (!escolha){
+        escolha = palpitarPorConteudo(corpo.slice(0, 30).map(function(r){ return r[c]; }));
+      }
+      mapa.push(escolha);
+    }
+
+    // Duas colunas não podem ser a mesma coisa: a segunda vira descrição.
+    var vistos = {};
+    mapa = mapa.map(function(m){
+      if (m === 'ignorar') return m;
+      if (vistos[m]) return (m === 'descricao') ? 'ignorar' : 'descricao';
+      vistos[m] = true;
+      return m;
+    });
+
+    // Nesse formato o nome repete mês a mês ("Mercado", "Luz", "Gasolina"):
+    // não é descrição de uma compra, é a categoria do gasto. Se a coluna tem
+    // poucos nomes diferentes pra muita linha, eu trato como categoria — e a
+    // descrição de cada lançamento passa a ser esse mesmo nome.
+    if (datasPorLinha && mapa.indexOf('categoria') === -1){
+      var alvo = mapa.indexOf('descricao');
+      if (alvo !== -1){
+        var vistas = {}, quantas = 0;
+        corpo.forEach(function(r){
+          var v = String(r[alvo] || '').trim().toLowerCase();
+          if (v && !vistas[v]){ vistas[v] = true; quantas++; }
+        });
+        if (quantas >= 2 && quantas <= 25 && corpo.length >= quantas * 2) mapa[alvo] = 'categoria';
+      }
+    }
+
+    return { sep: sep, cabecalho: cabecalho, linhas: corpo, nCols: nCols, mapa: mapa,
+             porMes: !!datasPorLinha, meses: blocos ? blocos.meses : 0 };
+  }
+
+  /* ---------- Transformar em lançamentos ---------- */
+
+  /* A categoria escrita no arquivo quase nunca bate letra por letra com a da
+     casa: vem "Alimentação" onde aqui é "Mercado", "Moradia" onde é "Aluguel",
+     "ÁGUA" em caixa alta. Primeiro tento o nome como está, depois sem acento e
+     sem caixa, e só então uma lista de apelidos comuns. Se nada encaixar numa
+     categoria que EXISTE nesta casa, devolvo nada e quem decide é a opção
+     "categoria quando não vier no arquivo" — eu não invento categoria. */
+  var APELIDOS_CATEGORIA = [
+    ['Mercado',               /^(alimenta|mercado|supermerc|feira|hortifr|padaria|acougue|açougue|compras? do m[eê]s|comida)/i],
+    ['Aluguel/Financiamento', /^(aluguel|moradia|financiamento|presta[cç][aã]o da casa|condom[ií]nio|iptu)/i],
+    ['Água',                  /^(agua|água|saneamento|sabesp)/i],
+    ['Luz',                   /^(luz|energia|el[eé]tric|enel|cpfl|light)/i],
+    ['Internet/Telefone',     /^(internet|telefone|celular|banda larga|tv|streaming|vivo|claro|tim\b|net\b|oi\b)/i],
+    ['Gás',                   /^(g[aá]s\b|botij|glp)/i],
+    ['Transporte',            /^(transporte|combust|gasolina|etanol|[aá]lcool|uber|99|[oô]nibus|metr[oô]|estacionamento|ped[aá]gio|carro|ipva)/i],
+    ['Saúde',                 /^(saude|saúde|farm[aá]cia|rem[eé]dio|m[eé]dico|dentista|plano de sa[uú]de|hospital|exame|academia|pilates)/i],
+    ['Lazer',                 /^(lazer|divers[aã]o|restaurante|bar\b|cinema|viagem|passeio|ifood|delivery|presente)/i],
+    ['Educação',              /^(educa|escola|faculdade|curso|mensalidade|material escolar|livr)/i],
+    ['Outros',                /^(outros?|diversos|geral|n[aã]o classificad)/i]
+  ];
+
+  function encaixarCategoria(nome, catsValidas){
+    nome = String(nome || '').trim();
+    if (!nome) return null;
+    if (catsValidas.indexOf(nome) !== -1) return nome;
+
+    function chave(s){
+      return String(s).normalize ? String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim()
+                                 : String(s).toLowerCase().trim();
+    }
+    var k = chave(nome);
+    for (var i = 0; i < catsValidas.length; i++){
+      if (chave(catsValidas[i]) === k) return catsValidas[i];
+    }
+    for (var j = 0; j < APELIDOS_CATEGORIA.length; j++){
+      if (APELIDOS_CATEGORIA[j][1].test(nome) && catsValidas.indexOf(APELIDOS_CATEGORIA[j][0]) !== -1){
+        return APELIDOS_CATEGORIA[j][0];
+      }
+    }
+    return null;
+  }
+
+  var LIMITE_CATS_NOVAS = 15;
+
+  /* Categoria nova nasceria com a etiqueta cinza 🏷️. Quando o nome diz o que
+     é, já dou o ícone certo — só nos casos óbvios; no resto fica a etiqueta,
+     que a pessoa troca em Categorias. */
+  var ICONE_POR_NOME = [
+    [/^(casa|lar|moradia|reforma)/i, '🏠'],
+    [/^(seguro|prote|garantia)/i,    '🛡️'],
+    [/^(fixos?|contas? fixas?|mensalidade|assinatura)/i, '📄'],
+    [/^(ifood|delivery|lanche|comida de rua)/i, '🛵'],
+    [/^(academia|treino|pilates|crossfit)/i, '🧘'],
+    [/^(pet|cachorro|dog|ração|racao|veterin)/i, '🐶'],
+    [/^(gato|cat\b)/i,              '🐱'],
+    [/^(filh|beb[eê]|crian|escolinha|creche)/i, '👶'],
+    [/^(roupa|vestu|calçad|calcad)/i, '👕'],
+    [/^(cabelo|sal[aã]o|beleza|est[eé]tica)/i, '💇'],
+    [/^(viagem|f[eé]rias|passagem)/i, '✈️'],
+    [/^(poupan|guardar|reserva|investi)/i, '🐖'],
+    [/^(imposto|iptu|ipva|taxa|cart[oó]rio)/i, '🧾'],
+    [/^(banco|tarifa|juros|empr[eé]stimo)/i, '🏦'],
+    [/^(presente|anivers)/i,          '🎁']
+  ];
+  function palpitarIcone(nome){
+    for (var i = 0; i < ICONE_POR_NOME.length; i++){
+      if (ICONE_POR_NOME[i][0].test(nome)) return ICONE_POR_NOME[i][1];
+    }
+    return null;
+  }
+
+  // "casa" vira "Casa", "IFOOD" vira "Ifood". Nome de categoria aparece em
+  // gráfico e em botão: entra arrumado ou fica feio pra sempre.
+  function arrumarNomeDeCategoria(txt){
+    var s = String(txt || '').trim().replace(/\s+/g, ' ').slice(0, 30);
+    if (!s || !/[A-Za-zÀ-ÿ]/.test(s)) return null;
+    if (/[a-zà-ÿ]/.test(s) && s === s.toUpperCase()) s = s.toLowerCase();
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
+
+  function montarImportacao(analise, opcoes){
+    var prontos = [], problemas = [], novasCats = [];
+    var idx = {};
+    analise.mapa.forEach(function(campo, i){ if (campo !== 'ignorar' && idx[campo] === undefined) idx[campo] = i; });
+
+    var catsValidas = catsDaCasa();
+    var pessoas = state.settings.members;
+
+    analise.linhas.forEach(function(linha, n){
+      function celula(campo){
+        return idx[campo] === undefined ? '' : String(linha[idx[campo]] || '').trim();
+      }
+
+      var data = lerDataSolta(celula('data'));
+      var valorBruto = lerValorSolto(celula('valor'));
+      var descricao = celula('descricao');
+
+      if (!data && valorBruto === null && !descricao && !celula('categoria')) return;  // linha em branco
+
+      if (!data){ problemas.push({linha:n+1, porque:'sem data que eu entenda', bruto:linha.join(' | ')}); return; }
+      if (valorBruto === null){ problemas.push({linha:n+1, porque:'sem valor', bruto:linha.join(' | ')}); return; }
+
+      // Extrato escreve saída com sinal negativo; aqui tudo é gasto, então o
+      // que importa é o tamanho. Entrada (positiva) num extrato não é gasto —
+      // mas como nem todo arquivo usa sinal, quem decide é a opção lá na tela.
+      var valor = Math.abs(valorBruto);
+      if (valor <= 0){ problemas.push({linha:n+1, porque:'valor zerado', bruto:linha.join(' | ')}); return; }
+      if (opcoes.soNegativos && valorBruto > 0){ return; }
+
+      var rotuloCat = celula('categoria');
+      var categoria = encaixarCategoria(rotuloCat, catsValidas);
+
+      // Sem coluna de categoria, ainda dá pra aproveitar a descrição:
+      // "Posto Ipiranga" é Transporte, "Farmácia" é Saúde.
+      if (!categoria && idx['categoria'] === undefined){
+        categoria = encaixarCategoria(descricao, catsValidas);
+      }
+      // Nome que o arquivo traz e a casa não tem. Vira categoria nova só se a
+      // pessoa escolher isso na tela — e nunca a partir de descrição solta,
+      // que daria uma categoria pra cada compra.
+      if (!categoria && rotuloCat && opcoes.criarCategorias){
+        var nomeNovo = arrumarNomeDeCategoria(rotuloCat);
+        if (nomeNovo && (novasCats.indexOf(nomeNovo) !== -1 || novasCats.length < LIMITE_CATS_NOVAS)){
+          if (novasCats.indexOf(nomeNovo) === -1) novasCats.push(nomeNovo);
+          categoria = nomeNovo;
+        }
+      }
+      if (!categoria) categoria = opcoes.categoriaPadrao;
+
+      // Em anotação por mês o nome É a descrição e a categoria ao mesmo tempo.
+      if (!descricao) descricao = rotuloCat || 'Importado';
+
+      var pessoa = opcoes.pessoa;
+      var nomePessoa = celula('pessoa');
+      if (nomePessoa){
+        var achada = pessoas.filter(function(m){
+          return m.name.toLowerCase() === nomePessoa.toLowerCase() || m.id === nomePessoa.toLowerCase();
+        })[0];
+        if (achada) pessoa = achada.id;
+      }
+
+      var cartao = celula('cartao');
+      var pagamento = 'outro';
+      if (cartao){
+        if (/cr[ée]dito/i.test(cartao)) pagamento = 'credito';
+        else if (/d[ée]bito/i.test(cartao)) pagamento = 'debito';
+        else if (listaDeCartoes().indexOf(cartao) !== -1) pagamento = 'credito';
+        else cartao = '';
+      }
+
+      prontos.push({
+        id: generateId(),
+        person: pessoa,
+        type: opcoes.tipo,
+        category: categoria,
+        description: descricao.slice(0, 120),
+        value: valor,
+        date: data,
+        thumb: null, items: null,
+        fixed: false, fixedUntil: null,
+        installment: false, installmentsTotal: null, installmentsPaid: null,
+        paymentMethod: pagamento,
+        card: (pagamento === 'credito' || pagamento === 'debito') ? (cartao || null) : null
+      });
+    });
+
+    return { prontos: prontos, problemas: problemas, novasCategorias: novasCats };
+  }
+
+  // Já existe na casa? Mesma data, mesmo valor, mesma descrição e mesma
+  // pessoa. Importar o mesmo arquivo duas vezes é o erro mais fácil de
+  // cometer, e o mais chato de desfazer na mão.
+  function chaveDeRepetido(e){
+    return [e.date, Number(e.value).toFixed(2), String(e.description).trim().toLowerCase(), e.person].join('||');
+  }
+
+  function separarRepetidos(lista){
+    var jaTem = {};
+    state.expenses.forEach(function(e){ jaTem[chaveDeRepetido(e)] = true; });
+    var novos = [], repetidos = [];
+    lista.forEach(function(e){
+      var k = chaveDeRepetido(e);
+      if (jaTem[k]) repetidos.push(e);
+      else { jaTem[k] = true; novos.push(e); }
+    });
+    return { novos: novos, repetidos: repetidos };
+  }
+
+  /* ---------- A janela ---------- */
+
+  var importAtual = null;   // {analise, nomeArquivo, opcoes}
+  var ULTIMA_IMPORT_KEY = 'gastos_casa_ultima_importacao';
+  var OPCOES_IMPORT_KEY = 'gastos_casa_import_opcoes';
+
+  // Lista de gastos comum vem toda positiva. Extrato mistura os dois sinais.
+  function temSinalDosDoisLados(analise){
+    var col = analise.mapa.indexOf('valor');
+    if (col === -1) return false;
+    var neg = false, pos = false;
+    for (var i = 0; i < analise.linhas.length; i++){
+      var v = lerValorSolto(String(analise.linhas[i][col] || '').trim());
+      if (v === null || v === 0) continue;
+      if (v < 0) neg = true; else pos = true;
+      if (neg && pos) return true;
+    }
+    return false;
+  }
+
+  function lerOpcoesImport(){
+    try { return JSON.parse(localStorage.getItem(OPCOES_IMPORT_KEY) || 'null'); } catch(e){ return null; }
+  }
+  function guardarOpcoesImport(o){
+    try { localStorage.setItem(OPCOES_IMPORT_KEY, JSON.stringify(o)); } catch(e){}
+  }
+
+  function abrirImportacao(texto, nomeArquivo){
+    var analise = analisarArquivo(texto);
+    if (!analise || !analise.linhas.length){
+      alert('Não consegui achar linhas com dados nesse arquivo. Ele precisa ter uma linha por lançamento, com data e valor.');
+      return;
+    }
+    if (analise.linhas.length > 3000){
+      if (!confirm('Esse arquivo tem ' + analise.linhas.length + ' linhas. Importar tudo de uma vez pode demorar. Quer continuar?')) return;
+    }
+    var eu = (sessaoUsuario && state.settings.members[0]) ? state.settings.members[0].id : (state.settings.members[0] || {}).id;
+    var opcoes = {
+      pessoa: state.currentTab && memberById(state.currentTab) ? state.currentTab : eu,
+      tipo: 'casal',
+      categoriaPadrao: catsDaCasa()[0] || 'Outros',
+      soNegativos: false,
+      pularRepetidos: true,
+      criarCategorias: true
+    };
+    // Quem importa de novo quase sempre quer as mesmas escolhas da última vez.
+    // Isso também é o que faz a trava de repetidos funcionar: se na segunda vez
+    // a pessoa voltasse pro padrão, o mesmo arquivo entraria em nome de outra
+    // pessoa e não pareceria repetido. Só guardo o que é da CASA (quem, onde,
+    // qual categoria) — o que é do arquivo eu leio do arquivo toda vez.
+    var guardadas = lerOpcoesImport();
+    if (guardadas){
+      if (guardadas.pessoa && memberById(guardadas.pessoa)) opcoes.pessoa = guardadas.pessoa;
+      if (guardadas.tipo === 'casal' || guardadas.tipo === 'pessoal') opcoes.tipo = guardadas.tipo;
+      if (guardadas.categoriaPadrao && catsDaCasa().indexOf(guardadas.categoriaPadrao) !== -1) opcoes.categoriaPadrao = guardadas.categoriaPadrao;
+    }
+    // Extrato de banco se reconhece sozinho: tem valor negativo (a saída) e
+    // valor positivo (o que entrou) no mesmo arquivo. Aí o positivo não é
+    // gasto, e já deixo marcado pra pular — dá pra desmarcar na tela.
+    if (temSinalDosDoisLados(analise)) opcoes.soNegativos = true;
+    importAtual = { analise: analise, nome: nomeArquivo || 'arquivo', opcoes: opcoes };
+    renderImportacao();
+    document.getElementById('modal-import').classList.remove('hidden');
+  }
+
+  function fecharImportacao(){
+    var m = document.getElementById('modal-import');
+    if (m) m.classList.add('hidden');
+    importAtual = null;
+  }
+
+  function renderImportacao(){
+    if (!importAtual) return;
+    var corpo = document.getElementById('import-corpo');
+    if (!corpo) return;
+    var a = importAtual.analise, o = importAtual.opcoes;
+
+    var res = montarImportacao(a, o);
+    var sep = separarRepetidos(res.prontos);
+    var vaoEntrar = o.pularRepetidos ? sep.novos : res.prontos;
+    importAtual.ultimoResultado = { vaoEntrar: vaoEntrar, repetidos: sep.repetidos,
+                                    problemas: res.problemas, novasCategorias: res.novasCategorias };
+
+    var colunas = a.mapa.map(function(campo, i){
+      var exemplo = '';
+      for (var k = 0; k < a.linhas.length && !exemplo; k++) exemplo = String(a.linhas[k][i] || '').trim();
+      return '<div class="imp-coluna">'
+        + '<div class="imp-coluna-nome">' + escapeHTML(a.cabecalho ? (a.cabecalho[i] || ('Coluna ' + (i+1))) : ('Coluna ' + (i+1))) + '</div>'
+        + '<div class="imp-coluna-exemplo">' + (exemplo ? escapeHTML(exemplo) : '<span style="opacity:.5;">(vazio)</span>') + '</div>'
+        + '<select data-col="' + i + '">'
+          + CAMPOS_IMPORT.map(function(c){
+              return '<option value="' + c[0] + '"' + (campo === c[0] ? ' selected' : '') + '>' + c[1] + '</option>';
+            }).join('')
+        + '</select></div>';
+    }).join('');
+
+    var previa = vaoEntrar.slice(0, 6).map(function(e){
+      return '<div class="imp-previa-linha">'
+        + '<span class="imp-previa-data">' + formatDateBR(e.date) + '</span>'
+        + '<span class="imp-previa-desc">' + escapeHTML(e.description) + '</span>'
+        + '<span class="imp-previa-valor">' + formatBRL(e.value) + '</span>'
+        + '</div>';
+    }).join('') || '<div class="imp-previa-linha" style="color:var(--ink-soft);">Nada pra importar com essas escolhas.</div>';
+
+    // "Seguro" é quando achei as duas colunas sem as quais nada entra.
+    var seguro = a.mapa.indexOf('data') !== -1 && a.mapa.indexOf('valor') !== -1;
+    var temColunaCat = a.mapa.indexOf('categoria') !== -1;
+    var nomeDoCampo = {};
+    CAMPOS_IMPORT.forEach(function(c){ nomeDoCampo[c[0]] = c[1]; });
+    var resumoColunas = a.mapa.map(function(m){ return nomeDoCampo[m] || m; })
+      .filter(function(x){ return x !== nomeDoCampo['ignorar']; }).join(' · ');
+
+    var pessoasOpts = state.settings.members.map(function(m){
+      return '<option value="' + escapeHTML(m.id) + '"' + (o.pessoa === m.id ? ' selected' : '') + '>' + escapeHTML(m.name) + '</option>';
+    }).join('');
+    var catsOpts = catsDaCasa().map(function(c){
+      return '<option value="' + escapeHTML(c) + '"' + (o.categoriaPadrao === c ? ' selected' : '') + '>' + escapeHTML(c) + '</option>';
+    }).join('');
+
+    corpo.innerHTML = ''
+      + '<div class="imp-passo">Importar · ' + escapeHTML(importAtual.nome) + '</div>'
+      + '<div class="imp-titulo">' + (seguro ? 'Confira e confirme' : 'O que é cada coluna?') + '</div>'
+      // Quando o palpite está seguro (achei data e valor), o mapa de colunas
+      // fica dobrado: no celular ele empurrava pra baixo justamente o que
+      // importa — quantos entram, a prévia e o botão. Quem quiser conferir
+      // abre numa batida; quando o palpite NÃO está seguro, já vem aberto.
+      + '<details class="imp-mapa"' + (seguro ? '' : ' open') + '>'
+        + '<summary><span>O que é cada coluna?</span>'
+          + '<span class="imp-mapa-resumo">' + escapeHTML(resumoColunas) + '</span></summary>'
+        + '<div class="note" style="margin:8px 0 0;">Eu chutei pelo conteúdo. Corrija o que estiver errado.</div>'
+        + '<div class="imp-colunas">' + colunas + '</div>'
+      + '</details>'
+
+      + '<div class="imp-opcoes">'
+        + '<div><label>Entra como gasto de quem</label><select data-imp="pessoa">' + pessoasOpts + '</select></div>'
+        + '<div><label>Vai pra qual parte</label><select data-imp="tipo">'
+          + '<option value="casal"' + (o.tipo === 'casal' ? ' selected' : '') + '>Contas da casa</option>'
+          + '<option value="pessoal"' + (o.tipo === 'pessoal' ? ' selected' : '') + '>Gastos pessoais</option>'
+          + '</select></div>'
+        + '<div><label>Categoria quando não vier no arquivo</label><select data-imp="categoriaPadrao">' + catsOpts + '</select></div>'
+        + '<div><label>Valores positivos (entradas)</label><select data-imp="soNegativos">'
+          + '<option value="nao"' + (!o.soNegativos ? ' selected' : '') + '>Importar também</option>'
+          + '<option value="sim"' + (o.soNegativos ? ' selected' : '') + '>Pular (é extrato)</option>'
+          + '</select></div>'
+        + '<div><label>Linhas que já existem</label><select data-imp="pularRepetidos">'
+          + '<option value="sim"' + (o.pularRepetidos ? ' selected' : '') + '>Pular</option>'
+          + '<option value="nao"' + (!o.pularRepetidos ? ' selected' : '') + '>Importar assim mesmo</option>'
+          + '</select></div>'
+        + (temColunaCat
+            ? '<div><label>Categoria do arquivo que não existe aqui</label><select data-imp="criarCategorias">'
+              + '<option value="sim"' + (o.criarCategorias ? ' selected' : '') + '>Criar na casa</option>'
+              + '<option value="nao"' + (!o.criarCategorias ? ' selected' : '') + '>Jogar na categoria padrão</option>'
+              + '</select></div>'
+            : '')
+      + '</div>'
+
+      + '<div class="imp-resumo">'
+        + '<span class="imp-selo imp-selo-ok">' + vaoEntrar.length + (vaoEntrar.length === 1 ? ' lançamento entra' : ' lançamentos entram') + '</span>'
+        + (sep.repetidos.length && o.pularRepetidos ? '<span class="imp-selo imp-selo-pula">' + sep.repetidos.length + ' já existem, vão ser pulados</span>' : '')
+        + (res.problemas.length ? '<span class="imp-selo imp-selo-erro">' + res.problemas.length + ' linhas eu não entendi</span>' : '')
+        + (a.porMes ? '<span class="imp-selo imp-selo-nota">' + a.meses + ' meses, um bloco cada</span>' : '')
+      + '</div>'
+      + (res.novasCategorias.length
+          ? '<div class="note" style="margin:2px 0 0;">Categorias novas que vou criar: <b>'
+            + res.novasCategorias.map(escapeHTML).join(', ') + '</b>. Dá pra renomear e trocar o ícone depois, em Categorias.</div>'
+          : '')
+
+      + '<div class="imp-previa">' + previa + '</div>'
+      + (vaoEntrar.length > 6 ? '<div class="note" style="margin:8px 0 0;">…e mais ' + (vaoEntrar.length - 6) + '.</div>' : '')
+
+      + (res.problemas.length
+          ? '<div class="imp-problemas"><b>Linhas que ficaram de fora:</b>'
+            + res.problemas.slice(0, 8).map(function(p){
+                return '<div>Linha ' + p.linha + ' — ' + escapeHTML(p.porque) + '<code>' + escapeHTML(p.bruto.slice(0,90)) + '</code></div>';
+              }).join('')
+            + (res.problemas.length > 8 ? '<div>…e mais ' + (res.problemas.length - 8) + '.</div>' : '')
+            + '</div>'
+          : '')
+
+      + '<div class="settings-actions" style="margin-top:18px;">'
+        + '<button type="button" class="secondary-btn" data-action="import-cancelar">Cancelar</button>'
+        + '<button type="button" class="submit-btn" data-action="import-confirmar"'
+          + (vaoEntrar.length ? '' : ' disabled')
+          + ' style="background:var(--neon2); color:var(--accent-ink);">Importar ' + vaoEntrar.length + '</button>'
+      + '</div>';
+  }
+
+  async function confirmarImportacao(){
+    if (!importAtual || !importAtual.ultimoResultado) return;
+    var novos = importAtual.ultimoResultado.vaoEntrar;
+    if (!novos.length) return;
+
+    // As categorias que o arquivo trouxe entram ANTES dos lançamentos: se
+    // entrassem depois, por um instante haveria gasto apontando pra categoria
+    // que ainda não existe, e o gráfico pularia esse pedaço.
+    var criar = (importAtual.ultimoResultado.novasCategorias || []).filter(function(c){ return !catExiste(c); });
+    if (criar.length){
+      var icones = Object.assign({}, state.settings.categoryIcons || {});
+      criar.forEach(function(c){ var ic = palpitarIcone(c); if (ic) icones[c] = ic; });
+      var comAsNovas = Object.assign({}, state.settings, {
+        categories: normalizarCategorias(catsDaCasa().concat(criar)),
+        categoryIcons: icones
+      });
+      if (!await salvarCategorias(comAsNovas, false)) return;
+    }
+
+    var antes = state.expenses.slice();
+    state.expenses = state.expenses.concat(novos);
+    var ok = await saveExpenses(state.expenses);
+    if (!ok){
+      state.expenses = antes;
+      alert('Não consegui salvar a importação. Nada foi alterado — tente de novo.');
+      return;
+    }
+    guardarOpcoesImport(importAtual.opcoes);
+
+    // Guarda os ids pra poder desfazer tudo de uma vez. Um arquivo errado
+    // vira centenas de linhas, e apagar na mão seria castigo.
+    try {
+      localStorage.setItem(ULTIMA_IMPORT_KEY, JSON.stringify({
+        quando: new Date().toISOString(),
+        nome: importAtual.nome,
+        ids: novos.map(function(e){ return e.id; })
+      }));
+    } catch(e){}
+
+    var quantos = novos.length;
+    fecharImportacao();
+    render();
+    if (state.settingsDraft) renderSettingsModal();
+    avisarRapido(quantos + (quantos === 1 ? ' lançamento importado' : ' lançamentos importados'));
+  }
+
+  function lerUltimaImport(){
+    try {
+      var u = JSON.parse(localStorage.getItem(ULTIMA_IMPORT_KEY) || 'null');
+      if (!u || !Array.isArray(u.ids) || !u.ids.length) return null;
+      // Só oferece desfazer enquanto os lançamentos ainda existirem.
+      var existentes = {};
+      state.expenses.forEach(function(e){ existentes[e.id] = true; });
+      var vivos = u.ids.filter(function(id){ return existentes[id]; });
+      if (!vivos.length) return null;
+      u.ids = vivos;
+      return u;
+    } catch(e){ return null; }
+  }
+
+  function desfazerImportHTML(){
+    var u = lerUltimaImport();
+    if (!u) return '';
+    var quando = new Date(u.quando);
+    var dia = isNaN(quando.getTime()) ? '' : (' em ' + formatDateBR(quando.toISOString().slice(0,10)));
+    return '<button type="button" class="secondary-btn" data-action="desfazer-import" style="margin-top:8px;">'
+      + '↩️ Desfazer a importação de ' + escapeHTML(u.nome) + ' (' + u.ids.length + ')' + escapeHTML(dia) + '</button>';
+  }
+
+  async function desfazerUltimaImport(){
+    var u = lerUltimaImport();
+    if (!u) return;
+    if (!confirm('Tirar de volta os ' + u.ids.length + ' lançamentos que vieram de "' + u.nome + '"?\n\nSó saem os que foram importados; o resto não é tocado.')) return;
+    var fora = {};
+    u.ids.forEach(function(id){ fora[id] = true; });
+    var antes = state.expenses.slice();
+    state.expenses = state.expenses.filter(function(e){ return !fora[e.id]; });
+    var ok = await saveExpenses(state.expenses);
+    if (!ok){
+      state.expenses = antes;
+      alert('Não consegui desfazer agora. Nada foi alterado.');
+      return;
+    }
+    try { localStorage.removeItem(ULTIMA_IMPORT_KEY); } catch(e){}
+    render();
+    if (state.settingsDraft) renderSettingsModal();
+    avisarRapido('Importação desfeita.');
+  }
+
   function backupSectionHTML(){
     var uso = usoDoArmazenamento();
     var barra = '';
@@ -10151,6 +11019,34 @@
         if (e.target === overdueModal) overdueModal.classList.add('hidden');
       });
 
+      var modalImport = document.getElementById('modal-import');
+      if (modalImport){
+        modalImport.addEventListener('click', function(ev){
+          if (ev.target === modalImport){ fecharImportacao(); return; }
+          if (ev.target.closest('[data-action="import-cancelar"]')){ fecharImportacao(); return; }
+          if (ev.target.closest('[data-action="import-confirmar"]')){ confirmarImportacao(); return; }
+        });
+        // Trocar o que é uma coluna, ou qualquer opção, refaz a prévia na hora
+        // — a pessoa vê o efeito da escolha antes de confirmar.
+        modalImport.addEventListener('change', function(ev){
+          if (!importAtual) return;
+          var col = ev.target.closest('[data-col]');
+          if (col){
+            importAtual.analise.mapa[Number(col.getAttribute('data-col'))] = ev.target.value;
+            renderImportacao();
+            return;
+          }
+          var opt = ev.target.closest('[data-imp]');
+          if (opt){
+            var chave = opt.getAttribute('data-imp');
+            var v = ev.target.value;
+            if (chave === 'soNegativos' || chave === 'pularRepetidos' || chave === 'criarCategorias') importAtual.opcoes[chave] = (v === 'sim');
+            else importAtual.opcoes[chave] = v;
+            renderImportacao();
+          }
+        });
+      }
+
       var modalTotal = document.getElementById('modal-total');
       if (modalTotal){
         modalTotal.addEventListener('click', function(ev){
@@ -10259,6 +11155,23 @@
         state.settingsDraft.cards[cidx] = e.target.value;
         return;
       }
+      if (e.target.matches('#trazer-input')){
+        var arq = e.target.files && e.target.files[0];
+        if (!arq) return;
+        var leitor = new FileReader();
+        leitor.onload = function(){
+          try {
+            abrirImportacao(decodificarArquivo(leitor.result), arq.name);
+          } catch(err){
+            console.error('importação', err);
+            alert('Não consegui ler esse arquivo. Ele precisa ser um texto simples (.txt ou .csv).');
+          }
+        };
+        leitor.onerror = function(){ alert('Não consegui abrir o arquivo.'); };
+        leitor.readAsArrayBuffer(arq);
+        e.target.value = '';
+        return;
+      }
       if (e.target.matches('#cfg-lembrar')){
         mudarLembrar(e.target.checked);
         return;
@@ -10295,6 +11208,8 @@
         renderSettingsModal();
         return;
       }
+      if (e.target.closest('[data-action="desfazer-import"]')){ desfazerUltimaImport(); return; }
+
       var edCartao = e.target.closest('[data-action="editar-cartao"]');
       if (edCartao){ openCartaoModal(Number(edCartao.getAttribute('data-idx'))); return; }
       if (e.target.closest('#save-settings-btn')){ saveSettingsAndClose(); return; }
