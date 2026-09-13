@@ -826,7 +826,7 @@
   }
   @keyframes spin{ to{ transform:rotate(360deg); } }
 
-  /* Itemized receipt entry (contas do casal) */
+  /* Itemized receipt entry (contas da casa) */
   .items-section{ margin-top:2px; }
   .items-section-head{ display:flex;justify-content:space-between;align-items:baseline; }
   .items-hint{ font-size:11.5px;color:var(--ink-soft);margin:2px 0 8px;line-height:1.4; }
@@ -1232,6 +1232,28 @@
   #scanner-mira.barras{
     width:min(85vw,380px); height:130px; max-height:30vh; border-radius:14px;
   }
+  /* Aviso do toque pra focar: aparece por uns segundos e some sozinho. */
+  #scanner-toque{
+    position:absolute; left:50%; bottom:14px; transform:translateX(-50%);
+    background:rgba(0,0,0,.55); color:#fff; font-size:11px; font-weight:700;
+    padding:5px 12px; border-radius:99px; pointer-events:none;
+    opacity:0; transition:opacity .25s ease;
+  }
+  #scanner-toque.aparece{ opacity:.9; }
+  #scanner-controles{
+    flex:0 0 auto; display:flex; align-items:center; justify-content:center; gap:14px;
+    padding:10px 16px 2px; background:rgba(0,0,0,.55); position:relative; z-index:2;
+  }
+  #scanner-controles.hidden{ display:none; }
+  #scanner-luz{
+    border:1px solid rgba(255,255,255,.35); background:rgba(255,255,255,.12); color:#fff;
+    font-family:inherit; font-size:13px; font-weight:700; padding:8px 14px;
+    border-radius:99px; cursor:pointer;
+  }
+  #scanner-luz.ligada{ background:#FFC61A; color:#1b1500; border-color:#FFC61A; }
+  #scanner-luz.hidden, #scanner-zoom-wrap.hidden{ display:none; }
+  #scanner-zoom-wrap{ display:flex; align-items:center; gap:8px; color:#fff; font-size:13px; }
+  #scanner-zoom{ width:min(46vw,180px); accent-color:#FFC61A; }
   #scanner-msg{
     flex:0 0 auto; padding:14px 18px calc(14px + env(safe-area-inset-bottom));
     background:rgba(0,0,0,.55); color:#fff; font-size:13px; text-align:center; line-height:1.4; min-height:18px;
@@ -1906,13 +1928,41 @@
   /* Evolução mensal — barras em HTML/CSS.
      A altura da área do gráfico é fixa e as barras dividem a largura entre si,
      então a proporção não muda quando a caixa fica mais larga. */
+  /* A caixa que rola. A barra do navegador fica escondida e no lugar dela vem
+     a minha, sempre visível — no celular a do sistema só aparece enquanto o
+     dedo arrasta, e aí ninguém descobre que dá pra rolar. */
+  .trend-caixa{ position:relative; }
+  .trend-scroll{
+    overflow-x:auto; overflow-y:hidden;
+    scrollbar-width:none; -ms-overflow-style:none;
+    -webkit-overflow-scrolling:touch; overscroll-behavior-x:contain;
+  }
+  .trend-scroll::-webkit-scrollbar{ height:0; display:none; }
+  .trend-nav{ display:flex; align-items:center; gap:10px; margin-top:10px; }
+  .trend-seta{
+    flex:0 0 auto; width:30px; height:30px; border-radius:50%; padding:0;
+    border:1px solid var(--line); background:var(--input-bg); color:var(--ink);
+    font-family:inherit; font-size:17px; font-weight:800; line-height:1;
+    display:grid; place-items:center; cursor:pointer;
+  }
+  .trend-seta:hover{ background:var(--hover-soft); border-color:var(--accent); color:var(--accent-text); }
+  .trend-barra{
+    position:relative; flex:1; height:7px; border-radius:99px;
+    background:var(--input-bg); border:1px solid var(--line); overflow:hidden;
+  }
+  .trend-barra-cursor{
+    position:absolute; top:0; bottom:0; left:0; width:100%;
+    background:var(--neon2); border-radius:99px;
+    transition:left .12s linear, width .12s linear;
+  }
   .trend-chart{
     display:flex; align-items:stretch; justify-content:center;
     gap:10px; height:172px; margin-top:4px;
     border-bottom:1px solid var(--line); padding-bottom:0;
+    width:max-content; min-width:100%;
   }
   .trend-bar{
-    flex:1 1 0; max-width:78px; min-width:0;
+    flex:1 0 52px; max-width:78px; min-width:0;
     display:flex; flex-direction:column; align-items:center;
     background:transparent; border:none; padding:0; margin:0;
     font-family:inherit; cursor:pointer; color:inherit;
@@ -2228,6 +2278,11 @@
   <div id="scanner-video-wrap">
     <video id="scanner-video" playsinline autoplay muted></video>
     <div id="scanner-mira"></div>
+    <div id="scanner-toque">toque pra focar</div>
+  </div>
+  <div id="scanner-controles" class="hidden">
+    <button type="button" id="scanner-luz" class="hidden">🔦 Lanterna</button>
+    <label id="scanner-zoom-wrap" class="hidden">🔍 <input type="range" id="scanner-zoom" min="1" max="3" step="0.1" value="1"></label>
   </div>
   <div id="scanner-msg"></div>
 </div>
@@ -2619,7 +2674,7 @@
       // apagar. Começa com as de fábrica, e cada casa molda a sua.
       categories: CATEGORIES.map(function(c){ return c.id; }),
       categoryIcons: {},
-      // Metas do mês. geral = teto das contas do casal; categorias = teto por
+      // Metas do mês. geral = teto das contas da casa; categorias = teto por
       // categoria. Vazio = a pessoa nunca configurou, e aí nada de meta
       // aparece na tela.
       goals: {geral:null, categorias:{}}
@@ -2699,6 +2754,7 @@
   var agendaModalEl, agendaPanelEl;
   var temaModalEl, temaPanelEl, temaBtn;
   var scannerModalEl, scannerVideoEl, scannerMiraEl, scannerTituloEl, scannerMsgEl, scannerFecharEl;
+  var scannerControlesEl, scannerLuzEl, scannerZoomEl, scannerZoomWrapEl, scannerToqueEl;
 
   /* ---------- Apps extras ----------
      Cada app extra é uma página HTML completa guardada num bloco
@@ -2724,6 +2780,12 @@
 
   function memberById(id){
     return state.settings.members.find(function(m){ return m.id === id; }) || {id:id, name:id, color:'#8B93A1'};
+  }
+
+  // memberById tem substituto pra nome que sumiu, então ele NUNCA devolve
+  // vazio — não serve pra perguntar "isso é uma pessoa?". Este serve.
+  function ehPessoaDaCasa(id){
+    return !!id && state.settings.members.some(function(m){ return m.id === id; });
   }
 
   function catIcon(cat){
@@ -3150,7 +3212,7 @@
       payment_method: e.paymentMethod || null,
       card: e.card || null,
       demo: !!e.demo,
-      atualizado_em: new Date().toISOString()
+      atualizado_em: e.mexidoEm || new Date().toISOString()
     };
   }
 
@@ -3173,7 +3235,8 @@
       installmentsPaid: r.installments_paid,
       paymentMethod: r.payment_method || undefined,
       card: r.card || undefined,
-      demo: !!r.demo
+      demo: !!r.demo,
+      mexidoEm: r.atualizado_em || null
     };
   }
 
@@ -3185,7 +3248,8 @@
       e.pagamento || null, !!e.installment,
       e.installmentsTotal == null ? null : Number(e.installmentsTotal),
       e.installmentsPaid == null ? null : Number(e.installmentsPaid),
-      e.paymentMethod || null, e.card || null, !!e.demo]);
+      e.paymentMethod || null, e.card || null, !!e.demo,
+      e.mexidoEm || null]);
   }
 
   function refazerEspelho(lista){
@@ -3955,7 +4019,23 @@
   // no MESMO dia empatavam e ficavam na ordem em que foram digitadas — quem
   // acabou de lançar via o item novo lá embaixo. O id carrega a hora exata do
   // lançamento (id_<timestamp>_...), então ele desempata.
+  /* Quando o lançamento foi mexido pela última vez (criado ou editado). É o
+     que faz a lista virar fila: o que você acabou de mexer sobe pro topo da
+     categoria dele, e a categoria sobe junto. Lançamento antigo, que ninguém
+     tocou desde que este carimbo existe, fica sem ele e continua ordenado pela
+     data — que é como a lista sempre foi. */
+  function carimboDe(e){
+    if (e && e.mexidoEm){
+      var t = Date.parse(e.mexidoEm);
+      if (!isNaN(t)) return t;
+    }
+    return 0;
+  }
+  function agoraISO(){ return new Date().toISOString(); }
+
   function ordemMaisRecente(a, b){
+    var ca = carimboDe(a), cb = carimboDe(b);
+    if (ca !== cb) return cb - ca;
     var d = String(b.date || '').localeCompare(String(a.date || ''));
     if (d !== 0) return d;
     return String(b.id || '').localeCompare(String(a.id || ''));
@@ -3969,7 +4049,7 @@
     return {installment:false, parcelValue:e.value, total:1, paid:1, remaining:0, paidValue:e.value, remainingValue:0};
   }
 
-  function groupByCategory(list){
+  function groupByCategory(list, ordem){
     var map = {};
     list.forEach(function(e){
       if (!map[e.category]) map[e.category] = [];
@@ -3980,9 +4060,21 @@
       var total = items.reduce(function(s,e){ return s+e.value; }, 0);
       var noMes = items.reduce(function(s,e){ return s + calcDoGasto(e).paidValue; }, 0);
       var futuro = items.reduce(function(s,e){ return s + calcDoGasto(e).remainingValue; }, 0);
-      return {category:cat, items:items, total:total, noMes:noMes, futuro:futuro};
+      return {category:cat, items:items, total:total, noMes:noMes, futuro:futuro,
+              carimbo: items.length ? carimboDe(items[0]) : 0};
     });
-    groups.sort(function(a,b){ return b.total - a.total; });
+    if (ordem === 'fila'){
+      // Na LISTA, a categoria em que você mexeu por último vem primeiro — os
+      // itens já estão ordenados, então o primeiro deles é o mais recente.
+      // Categoria que ninguém tocou desce e se organiza por valor, como antes.
+      groups.sort(function(a,b){
+        if (a.carimbo !== b.carimbo) return b.carimbo - a.carimbo;
+        return b.total - a.total;
+      });
+    } else {
+      // No RESUMO é ranking de gasto: a maior primeiro, sempre.
+      groups.sort(function(a,b){ return b.total - a.total; });
+    }
     return groups;
   }
 
@@ -4605,7 +4697,7 @@
       headerSubEl.textContent = 'Resumo dos gastos';
     } else if (state.currentTab === 'meses'){
       headerTitleEl.textContent = 'Meses';
-      headerSubEl.textContent = 'Contas do casal, mês a mês';
+      headerSubEl.textContent = 'Contas da casa, mês a mês';
     } else if (state.currentTab === 'fixas'){
       headerTitleEl.textContent = 'Contas fixas';
       headerSubEl.textContent = 'O que se repete todo mês';
@@ -5150,7 +5242,7 @@
     if (list.length === 0){
       return '<div class="empty-state">Nenhum gasto registrado aqui ainda.</div>';
     }
-    var groups = groupByCategory(list);
+    var groups = groupByCategory(list, 'fila');
     return groups.map(function(g){
       var rows = g.items.map(function(e){
         var thumb = e.thumb
@@ -5219,7 +5311,7 @@
       // "nada aqui" e deixar parecer que o gráfico está errado.
       return '<div class="empty-state">Nada foi comprado neste mês. Se o gráfico acima mostra valor aqui, são parcelas de compras feitas antes — elas aparecem no mês da compra.</div>';
     }
-    var groups = groupByCategory(list);
+    var groups = groupByCategory(list, 'fila');
     return groups.map(function(g){
       var rows = g.items.map(renderPersonalEntryRow).join('');
       // Cada grupo brilha na cor da própria categoria — dá pra achar
@@ -5249,7 +5341,7 @@
       ? 'Somando todos os meses'
       : 'Parcelas + compras de ' + monthLabelFromKey(mesSelecionado);
 
-    // Mesmo gráfico de barras das contas do casal, agora com os gastos
+    // Mesmo gráfico de barras das contas da casa, agora com os gastos
     // pessoais desta pessoa. Tocar numa barra troca o mês da aba inteira.
     var grafico = '<section class="resumo-block neon-box acc-purple" style="margin-bottom:16px;">'
       + '<div class="section-title">📈 Seus gastos por mês</div>'
@@ -5325,7 +5417,7 @@
     }
     var softA = hexToRgba(member.color, 0.14);
     var segmentedHTML = '<div class="segmented" data-segmented="'+escapeHTML(memberId)+'">'
-        + '<button data-subtab="casal" style="'+(sub==='casal'?('background:'+softA+';color:'+member.color+';'):'')+'">Contas do casal</button>'
+        + '<button data-subtab="casal" style="'+(sub==='casal'?('background:'+softA+';color:'+member.color+';'):'')+'">Contas da casa</button>'
         + '<button data-subtab="pessoal" style="'+(sub==='pessoal'?('background:'+softA+';color:'+member.color+';'):'')+'">Contas pessoais</button>'
       + '</div>';
     var barraMes = monthBarHTML('entries-month', mesLista, mesesLista, memberId + ':' + sub);
@@ -5417,7 +5509,7 @@
   // Quanto foi gasto contra o teto, no mês que está na tela.
   // Quanto foi gasto por categoria e por cartão no mês.
   // Atenção à diferença, que está escrita na tela pra ninguém se enganar:
-  // categoria conta só as CONTAS DO CASAL (é o que o Resumo mostra), enquanto
+  // categoria conta só as CONTAS DA CASA (é o que o Resumo mostra), enquanto
   // cartão conta TUDO que passou nele — casal e pessoal — porque a fatura do
   // cartão não separa uma coisa da outra.
   function gastoDoMesPorItem(monthKey){
@@ -5559,7 +5651,7 @@
   function categoryBarsHTML(groups, opts){
     opts = opts || {};
     var clicavel = opts.clicavel !== false;
-    if (!groups.length) return '<div class="empty-state">' + (opts.vazio || 'Sem contas do casal neste período.') + '</div>';
+    if (!groups.length) return '<div class="empty-state">' + (opts.vazio || 'Sem contas da casa neste período.') + '</div>';
     var max = groups.reduce(function(m,g){ return Math.max(m, g.total); }, 0) || 1;
     var totalAll = groups.reduce(function(s,g){ return s + g.total; }, 0) || 1;
     return '<div class="cat-bars">' + groups.map(function(g){
@@ -5856,7 +5948,7 @@
             + (temEscolha ? ' Toque num nome pra ver só os cartões daquela pessoa.' : '') + '</div>');
   }
 
-  // Gráfico de barras por mês. É usado em dois lugares — nas contas do casal
+  // Gráfico de barras por mês. É usado em dois lugares — nas contas da casa
   // (Resumo) e nos gastos pessoais de cada pessoa — então recebe a linha do
   // tempo pronta e a ação de clique, em vez de buscar os dados sozinho.
   // Tocar numa barra filtra a tela naquele mês.
@@ -5872,8 +5964,12 @@
     // Até 2 meses à frente: as parcelas e contas fixas já contratadas fazem
     // parte do quadro mesmo antes de a data chegar.
     var endIdx = Math.min(timeline.length - 1, curIdx + 2);
-    var slice = timeline.slice(Math.max(0, endIdx - 5), endIdx + 1);
+    // Antes só cabiam seis meses e o resto do histórico ficava inacessível.
+    // Agora o gráfico mostra TODOS os meses e desliza pro lado; ele já abre
+    // no fim (mês atual), então quem não quiser mexer não vê diferença.
+    var slice = timeline.slice(0, endIdx + 1);
     var temFuturo = slice.some(function(g){ return g.key > atual; });
+    var podeRolar = slice.length > 6;
 
     var max = slice.reduce(function(m,g){ return Math.max(m, g.total); }, 0) || 1;
     var maxIdx = slice.reduce(function(bi,g,ix){ return g.total > slice[bi].total ? ix : bi; }, 0);
@@ -5904,8 +6000,23 @@
     // Barras em HTML, não em SVG: um SVG esticado até a largura da caixa
     // engorda as barras e deforma o texto. Com flexbox a proporção fica igual
     // no celular e num monitor largo.
-    return '<div class="trend-chart">' + barras + '</div>'
+    // A barrinha é desenhada por mim, não é a do navegador: no celular a do
+    // sistema só aparece enquanto o dedo está arrastando, e aí ninguém
+    // descobre que dá pra rolar. Esta fica sempre à vista, junto das setas.
+    var controle = podeRolar
+      ? '<div class="trend-nav">'
+        + '<button type="button" class="trend-seta" data-action="trend-rolar" data-lado="-1" aria-label="Meses anteriores">‹</button>'
+        + '<div class="trend-barra"><div class="trend-barra-cursor"></div></div>'
+        + '<button type="button" class="trend-seta" data-action="trend-rolar" data-lado="1" aria-label="Meses seguintes">›</button>'
+        + '</div>'
+      : '';
+
+    return '<div class="trend-caixa">'
+      + '<div class="trend-scroll" data-trend-scroll="1"><div class="trend-chart">' + barras + '</div></div>'
+      + controle
+      + '</div>'
       + '<div class="trend-legend">Valores em reais. Toque numa barra pra ver só aquele mês.'
+        + (podeRolar ? ' Arraste pro lado (ou use as setas) pra ver os meses mais antigos — são ' + slice.length + ' no total.' : '')
         + (temFuturo ? ' Barra mais fraca = mês que ainda não chegou (parcelas e contas fixas já comprometidas).' : '')
       + '</div>';
   }
@@ -5942,7 +6053,7 @@
     var res = computeSettlement(month);
     var heroHTML;
     if (res.totalCasal === 0){
-      heroHTML = '<div class="hero-settlement neon-box acc-pink"><div class="label">Acerto entre a casa</div><div class="amount settled">Nenhum gasto do casal registrado ainda</div></div>';
+      heroHTML = '<div class="hero-settlement neon-box acc-pink"><div class="label">Acerto entre a casa</div><div class="amount settled">Nenhum gasto da casa registrado ainda</div></div>';
     } else if (res.transfers.length === 0){
       heroHTML = '<div class="hero-settlement neon-box acc-pink"><div class="label">Acerto entre a casa</div><div class="amount settled">Tudo certo — cada um pagou sua parte ✓</div></div>';
     } else {
@@ -5964,7 +6075,7 @@
     // renda de vocês está comprometido antes mesmo do mês começar.
     var totalFixo = casalList.reduce(function(s,e){ return s + (e.fixed ? e.value : 0); }, 0);
 
-    // Média mensal das contas do casal, considerando só meses já fechados ou
+    // Média mensal das contas da casa, considerando só meses já fechados ou
     // em andamento (mês futuro ainda incompleto puxaria a média pra baixo).
     var mesesFechados = expenseMonthSpan().filter(function(mk){ return mk <= currentMonthKey(); });
     var somaGeral = 0;
@@ -5978,7 +6089,7 @@
     var futuro = futureCommitment();
     var toolbarHTML = monthBarHTML('resumo-month', month, months, null, true);
 
-    // Os quatro indicadores são todos sobre as contas do casal — gasto pessoal
+    // Os quatro indicadores são todos sobre as contas da casa — gasto pessoal
     // saiu daqui e vive na aba de cada pessoa, que é de quem ele é.
     // Cada um tem cor fixa, sempre a mesma, pra virar atalho de leitura.
     var pctFixo = res.totalCasal > 0 ? Math.round(totalFixo / res.totalCasal * 100) : 0;
@@ -6001,7 +6112,7 @@
           + '<section class="resumo-block neon-box acc-blue rb-compare"><div class="section-title">👥 Quem pagou quanto</div>' + compareHTML + '</section>'
         + '</div>'
         + '<div class="resumo-col resumo-col-b">'
-          + '<section class="resumo-block neon-box acc-cyan rb-trend"><div class="section-title">📈 Contas do casal por mês</div>' + monthlyTrendHTML(month) + '</section>'
+          + '<section class="resumo-block neon-box acc-cyan rb-trend"><div class="section-title">📈 Contas da casa por mês</div>' + monthlyTrendHTML(month) + '</section>'
         + '</div>'
         + '<div class="resumo-col resumo-col-c">'
           + '<section class="resumo-block neon-box acc-green rb-cats"><div class="section-title">🧾 Contas de casa por categoria</div>' + categoryBarsHTML(byCat) + '</section>'
@@ -6027,7 +6138,7 @@
         + '</button>';
     }).join('');
     return ''
-      + '<div class="section-title">Contas do casal por ano</div>'
+      + '<div class="section-title">Contas da casa por ano</div>'
       + '<div class="meses-hint">Toque num ano pra ver o gasto mês a mês.</div>'
       + '<div class="years-list">' + cardsHTML + '</div>';
   }
@@ -6246,7 +6357,7 @@
   function renderMesesTab(){
     var years = buildCasalYearsTimeline();
     if (!years.length){
-      return '<div class="empty-state">Nenhuma conta do casal registrada ainda. Assim que vocês lançarem uma compra — à vista ou parcelada — ela aparece aqui organizada por ano e mês.</div>';
+      return '<div class="empty-state">Nenhuma conta da casa registrada ainda. Assim que vocês lançarem uma compra — à vista ou parcelada — ela aparece aqui organizada por ano e mês.</div>';
     }
     var view = state.mesesView || {mode:'years'};
 
@@ -6283,6 +6394,55 @@
     if (itemsListEl && itemsListEl.querySelectorAll('.item-row').length){
       recalcItemsTotal(itemsListEl.closest('form'));
     }
+    posicionarGraficos();
+  }
+
+  /* O gráfico de meses nasce rolado pro fim: o mês atual fica à vista, e quem
+     quiser ver 2024 arrasta pra esquerda. Se algum mês está selecionado, é ele
+     que fica centralizado. Mexo só no scroll da caixa, nunca no da página. */
+  function posicionarGraficos(){
+    var caixas = contentEl.querySelectorAll('[data-trend-scroll]');
+    for (var i = 0; i < caixas.length; i++){
+      (function(caixa){
+        var alvo = caixa.querySelector('.trend-bar.is-selected');
+        if (alvo){
+          var meio = alvo.offsetLeft - (caixa.clientWidth - alvo.offsetWidth) / 2;
+          caixa.scrollLeft = Math.max(0, meio);
+        } else {
+          caixa.scrollLeft = caixa.scrollWidth;
+        }
+        if (!caixa.dataset.ligado){
+          caixa.dataset.ligado = '1';
+          caixa.addEventListener('scroll', function(){ pintarBarraDoGrafico(caixa); }, {passive:true});
+        }
+        pintarBarraDoGrafico(caixa);
+      })(caixas[i]);
+    }
+  }
+
+  // O cursor da barrinha tem o tamanho do pedaço que está à vista e anda junto
+  // com o gráfico — é o que mostra, de relance, quanto de história ainda tem.
+  function pintarBarraDoGrafico(caixa){
+    var nav = caixa.parentNode && caixa.parentNode.querySelector('.trend-barra');
+    if (!nav) return;
+    var cursor = nav.querySelector('.trend-barra-cursor');
+    if (!cursor) return;
+    var total = caixa.scrollWidth || 1;
+    var visivel = caixa.clientWidth;
+    var frac = Math.min(1, visivel / total);
+    var andar = total - visivel;
+    var pos = andar > 0 ? (caixa.scrollLeft / andar) : 0;
+    cursor.style.width = (frac * 100).toFixed(2) + '%';
+    cursor.style.left = ((1 - frac) * pos * 100).toFixed(2) + '%';
+  }
+
+  function rolarGrafico(botao, lado){
+    var caixa = botao.closest('.trend-caixa');
+    caixa = caixa && caixa.querySelector('[data-trend-scroll]');
+    if (!caixa) return;
+    // Um "passo" é quase uma tela cheia — sobra um pedaço em comum pra pessoa
+    // não perder a referência de onde estava.
+    caixa.scrollBy({ left: lado * caixa.clientWidth * 0.8, behavior: 'smooth' });
   }
 
   /* ---------- Settings modal ---------- */
@@ -7232,6 +7392,10 @@
 
   function montarImportacao(analise, opcoes){
     var prontos = [], problemas = [], novasCats = [];
+    // O arquivo inteiro entra com um carimbo só: assim a lista não fica com
+    // 251 lançamentos disputando o topo, e a ordem dentro de cada categoria
+    // volta a ser a data, que é o que importa num histórico.
+    var carimboDaImportacao = agoraISO();
     var idx = {};
     analise.mapa.forEach(function(campo, i){ if (campo !== 'ignorar' && idx[campo] === undefined) idx[campo] = i; });
 
@@ -7282,7 +7446,7 @@
       // Em anotação por mês o nome É a descrição e a categoria ao mesmo tempo.
       if (!descricao) descricao = rotuloCat || 'Importado';
 
-      var pessoa = opcoes.pessoa;
+      var pessoa = ehPessoaDaCasa(opcoes.pessoa) ? opcoes.pessoa : (state.settings.members[0] || {}).id;
       var nomePessoa = celula('pessoa');
       if (nomePessoa){
         var achada = pessoas.filter(function(m){
@@ -7302,6 +7466,7 @@
 
       prontos.push({
         id: generateId(),
+        mexidoEm: carimboDaImportacao,
         person: pessoa,
         type: opcoes.tipo,
         category: categoria,
@@ -7374,9 +7539,12 @@
     if (analise.linhas.length > 3000){
       if (!confirm('Esse arquivo tem ' + analise.linhas.length + ' linhas. Importar tudo de uma vez pode demorar. Quer continuar?')) return;
     }
-    var eu = (sessaoUsuario && state.settings.members[0]) ? state.settings.members[0].id : (state.settings.members[0] || {}).id;
+    var eu = (state.settings.members[0] || {}).id;
     var opcoes = {
-      pessoa: state.currentTab && memberById(state.currentTab) ? state.currentTab : eu,
+      // A aba aberta pode ser "resumo", "meses", "fixas" — nenhuma delas é
+      // gente. Sem esse cuidado os lançamentos entravam em nome de "resumo" e
+      // não apareciam na aba de ninguém.
+      pessoa: ehPessoaDaCasa(state.currentTab) ? state.currentTab : eu,
       tipo: 'casal',
       categoriaPadrao: catsDaCasa()[0] || 'Outros',
       soNegativos: false,
@@ -7390,7 +7558,7 @@
     // qual categoria) — o que é do arquivo eu leio do arquivo toda vez.
     var guardadas = lerOpcoesImport();
     if (guardadas){
-      if (guardadas.pessoa && memberById(guardadas.pessoa)) opcoes.pessoa = guardadas.pessoa;
+      if (ehPessoaDaCasa(guardadas.pessoa)) opcoes.pessoa = guardadas.pessoa;
       if (guardadas.tipo === 'casal' || guardadas.tipo === 'pessoal') opcoes.tipo = guardadas.tipo;
       if (guardadas.categoriaPadrao && catsDaCasa().indexOf(guardadas.categoriaPadrao) !== -1) opcoes.categoriaPadrao = guardadas.categoriaPadrao;
     }
@@ -7887,8 +8055,8 @@
      'Toque na <b>engrenagem</b> aqui em cima e procure <b>Sua casa</b>: tem um código de 6 letras. Mande pra outra pessoa — ela cria a conta dela, digita o código, e a partir daí vocês dois veem e editam os mesmos lançamentos, na hora.',
      'Nessa mesma tela você troca os nomes (Homem e Mulher viram os nomes de vocês), muda a divisão se não for 50/50 e cadastra os cartões da casa.'],
 
-    ['Lance uma conta do casal',
-     'Abra a aba com o seu nome, deixe em <b>Contas do casal</b> e preencha categoria, descrição, valor e data.',
+    ['Lance uma conta da casa',
+     'Abra a aba com o seu nome, deixe em <b>Contas da casa</b> e preencha categoria, descrição, valor e data.',
      'Se pagou no cartão, diga se foi crédito ou débito e qual cartão. É isso que faz o app mostrar depois quanto passou em cada um.'],
 
     ['Foto da nota fiscal',
@@ -7918,7 +8086,7 @@
 
   var AJUDA_DUVIDAS = [
     ['Errei um lançamento. E agora?',
-     'Em qualquer lista, o lápis edita e a lixeira apaga. Vale pra contas do casal, gastos pessoais e contas fixas.'],
+     'Em qualquer lista, o lápis edita e a lixeira apaga. Vale pra contas da casa, gastos pessoais e contas fixas.'],
     ['Os dois precisam lançar?',
      'Não. Qualquer um lança qualquer conta — o que importa é de quem é a aba onde foi lançada, porque é isso que o acerto usa pra saber quem pagou.'],
     ['Quero outras categorias',
@@ -7934,7 +8102,7 @@
     ['Como sei o que ainda falta pagar?',
      'Conta lançada com <b>data pra frente</b> entra como <b>pendente</b> (laranja). Marcou como paga, fica <b>verde</b>. Passou do dia sem marcar, fica <b>vermelha</b> — e, ao abrir o app, aparece um aviso com o que está em aberto: dá pra tocar no nome e ir até o lançamento, marcar PAGO ali mesmo ou pedir pra ser lembrado mais tarde. Vale também pras contas fixas, mês a mês.'],
     ['Pra que serve a aba Apps extras?',
-     'São ferramentas que vêm junto com o Gestor, sem custo a mais. Hoje tem o <b>RachaFácil</b>, pra dividir a conta de um rolê entre várias pessoas (viagem, churrasco, república). Elas abrem numa tela própria e <b>não mexem nas contas da casa</b> — o que você lança lá não entra no acerto do casal.']
+     'São ferramentas que vêm junto com o Gestor, sem custo a mais. Hoje tem o <b>RachaFácil</b>, pra dividir a conta de um rolê entre várias pessoas (viagem, churrasco, república). Elas abrem numa tela própria e <b>não mexem nas contas da casa</b> — o que você lança lá não entra no acerto da casa.']
   ];
 
   function openAjudaModal(){
@@ -8645,19 +8813,19 @@
       + '<h2>🎯 Metas de gasto</h2>'
       + '<div class="note" style="margin:6px 0 14px;">Meta é um teto, não uma conta a pagar — nada trava quando passa, o app só avisa. Deixe em branco a que você não quiser usar; sem nenhuma meta preenchida, nada de meta aparece na tela.</div>'
 
-      + '<div class="field"><label>Meta geral do mês (contas do casal)</label>'
+      + '<div class="field"><label>Meta geral do mês (contas da casa)</label>'
         + '<input type="number" inputmode="decimal" min="0" step="0.01" id="meta-geral" placeholder="Ex: 7000" value="' + (metasDraft.geral ? metasDraft.geral : '') + '">'
         + '<div class="note">Neste mês vocês já estão em <strong>' + formatBRL(g.totalCasal) + '</strong>.</div></div>'
 
       + '<div class="field" style="margin-top:18px;"><label>Metas por categoria</label>'
-        + '<div class="note" style="margin:-2px 0 6px;">Conta as contas do casal — mercado, gasolina, iFood.</div>'
+        + '<div class="note" style="margin:-2px 0 6px;">Conta as contas da casa — mercado, gasolina, iFood.</div>'
         + bloco('categoria', metasDraft.categorias, g.categorias)
         + adicionar('meta-add-cat', 'Adicionar categoria…', faltandoCat, 'Criar uma categoria nova')
         + '<button type="button" class="link-gerenciar" data-action="abrir-categorias">✏️ criar, renomear ou apagar categorias</button>'
       + '</div>'
 
       + '<div class="field" style="margin-top:18px;"><label>Metas por cartão</label>'
-        + '<div class="note" style="margin:-2px 0 6px;">Conta <strong>tudo</strong> que passou no cartão no mês, do casal e pessoal — é o que vai chegar na fatura.</div>'
+        + '<div class="note" style="margin:-2px 0 6px;">Conta <strong>tudo</strong> que passou no cartão no mês, da casa e pessoal — é o que vai chegar na fatura.</div>'
         + bloco('cartao', metasDraft.cartoes, g.cartoes, listaDeCartoes().filter(function(c){ return metasDraft.cartoes[c]; }))
         + adicionar('meta-add-cartao', 'Adicionar cartão…', faltandoCartao, 'Cadastrar um cartão novo')
       + '</div>'
@@ -8910,7 +9078,7 @@
     resetPanelEl.innerHTML = ''
       + '<h2>⚠️ Zerar dados</h2>'
       + '<div class="note" style="margin:-4px 0 14px;">Marque o que você quer apagar. Essa ação não pode ser desfeita.</div>'
-      + '<label class="reset-check-row"><input type="checkbox" class="reset-check" value="casal"> Contas do casal (lançamentos e comprovantes)</label>'
+      + '<label class="reset-check-row"><input type="checkbox" class="reset-check" value="casal"> Contas da casa (lançamentos e comprovantes)</label>'
       + membersHTML
       + '<label class="reset-check-row"><input type="checkbox" class="reset-check" value="settings"> Configurações (nomes, porcentagem e cartões voltam ao padrão)</label>'
       + '<div class="field" style="margin-top:16px;"><label>Pra confirmar, digite <strong>excluir</strong> abaixo</label><input type="text" id="reset-confirm-input" placeholder="excluir" autocomplete="off"></div>'
@@ -9138,7 +9306,13 @@
     state.itemsModalCategory = category;
     state.itemsModalSort = 'recent';
     state.itemsModalGroup = false;
-    state.itemsModalMonth = 'all';
+    // Abre no mês atual, não no histórico inteiro: com anos de compra na casa,
+    // "todos os meses" mostrava centenas de itens e uma soma que não é do mês.
+    // Quem quiser o histórico troca o filtro ali mesmo.
+    var mesesQueTem = getAvailableMonths(getCategoryItems(category));
+    var mesAgora = (state.resumoMonth && state.resumoMonth !== 'all') ? state.resumoMonth : currentMonthKey();
+    state.itemsModalMonth = (mesesQueTem.indexOf(mesAgora) !== -1) ? mesAgora
+                          : (mesesQueTem.length ? mesesQueTem[0] : 'all');
     renderItemsPanel();
     itemsModalEl.classList.remove('hidden');
   }
@@ -9344,7 +9518,7 @@
       var newThumb = original.thumb;
       if (state.pendingPhoto) newThumb = state.pendingPhoto.thumb;
       else if (state.removeExistingPhoto) newThumb = null;
-      var updated = Object.assign({}, original, {category:category, description:description, value:value, date:date, thumb:newThumb}, extra);
+      var updated = Object.assign({}, original, {category:category, description:description, value:value, date:date, thumb:newThumb, mexidoEm:agoraISO()}, extra);
       state.expenses[idx] = updated;
       var savedEdit = await saveExpenses(state.expenses);
       if (!savedEdit){ state.expenses[idx] = original; alert('Não foi possível salvar as alterações.'); return; }
@@ -9357,7 +9531,7 @@
 
     var id = generateId();
     var photo = state.pendingPhoto;
-    var newExpense = Object.assign({id:id, person:memberId, type:type, category:category, description:description, value:value, date:date, thumb: photo?photo.thumb:null, paid:false}, extra);
+    var newExpense = Object.assign({id:id, person:memberId, type:type, category:category, description:description, value:value, date:date, thumb: photo?photo.thumb:null, paid:false, mexidoEm:agoraISO()}, extra);
     state.expenses.push(newExpense);
     var saved = await saveExpenses(state.expenses);
     if (!saved){ state.expenses.pop(); alert('Não foi possível salvar o gasto. Verifique se o navegador permite armazenamento local e tente novamente.'); return; }
@@ -9399,7 +9573,8 @@
       id: generateId(), person: pessoa, type: 'casal',
       category: categoria, description: descricao, value: valor, date: data,
       thumb: null, items: null, fixed: true, fixedUntil: ateQuando,
-      installment: false, installmentsTotal: null, installmentsPaid: null, paid: false
+      installment: false, installmentsTotal: null, installmentsPaid: null, paid: false,
+      mexidoEm: agoraISO()
     };
     state.expenses.push(nova);
     var ok = await saveExpenses(state.expenses);
@@ -10618,9 +10793,30 @@
       ? [ZXing.BarcodeFormat.QR_CODE]
       : [ZXing.BarcodeFormat.EAN_13, ZXing.BarcodeFormat.EAN_8, ZXing.BarcodeFormat.UPC_A, ZXing.BarcodeFormat.UPC_E,
          ZXing.BarcodeFormat.CODE_128, ZXing.BarcodeFormat.CODE_39, ZXing.BarcodeFormat.ITF, ZXing.BarcodeFormat.CODABAR]);
+    // "Se esforce mais": a ZXing passa o quadro por mais tentativas (inclusive
+    // invertido e girado). Gasta um pouco mais de processador e lê bem mais
+    // código torto, amassado ou com reflexo — que é o caso de nota de mercado.
+    hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
     scannerLeitor = new ZXing.BrowserMultiFormatReader(hints);
+    // Quadro a quadro mais rápido: meio segundo entre tentativas fazia parecer
+    // que o leitor tinha travado.
+    try { scannerLeitor.timeBetweenScansMillis = 150; } catch(e){}
 
-    var constraints = { video: { facingMode: { ideal: 'environment' } } };
+    /* Foco e resolução são o que decide se o código é lido ou não. O padrão do
+       navegador costuma abrir a câmera em 640x480 e sem pedir foco nenhum —
+       aí o código de barras fica borrado e a leitura nunca fecha. Aqui eu peço
+       a maior resolução que o aparelho der e foco contínuo. São pedidos
+       "ideal": se o celular não tiver, ele abre do jeito que conseguir em vez
+       de dar erro. */
+    var constraints = {
+      video: {
+        facingMode: { ideal: 'environment' },
+        width:  { ideal: 1920 },
+        height: { ideal: 1080 },
+        frameRate: { ideal: 30 },
+        advanced: [ {focusMode: 'continuous'}, {focusDistance: 0.1} ]
+      }
+    };
     scannerLeitor.decodeFromConstraints(constraints, scannerVideoEl, function(resultado){
       if (!resultado) return; // quadro sem código — normal, continua tentando
       var texto = (resultado.getText() || '').trim();
@@ -10631,14 +10827,136 @@
       if (formAlvo && formAlvo.isConnected) processarCodigoLido(texto, ehQR, formAlvo);
     }).then(function(){
       if (scannerLeitor){
-        scannerMsgEl.textContent = tipo === 'qr' ? 'Aponte a câmera para o QR code da nota.' : 'Aponte a câmera para o código de barras.';
+        scannerMsgEl.textContent = tipo === 'qr'
+          ? 'Aponte para o QR code da nota. Toque na tela pra focar.'
+          : 'Encaixe o código de barras na faixa. Toque na tela pra focar.';
+        prepararCameraDoLeitor(tipo);
       }
     }).catch(function(e){
       scannerMsgEl.textContent = 'Não consegui abrir a câmera' + ((e && e.name === 'NotAllowedError') ? ' — permita o acesso nas configurações do navegador e tente de novo.' : '.');
     });
   }
 
+  /* Depois que a câmera abriu, ainda dá pra pedir mais: foco contínuo (de
+     novo, agora na trilha de verdade), lanterna e zoom. Cada aparelho oferece
+     um conjunto diferente, então tudo é opcional — o que não existe some da
+     tela em vez de virar botão morto. */
+  var scannerTrilha = null;
+  var scannerLuzLigada = false;
+
+  function trilhaDoLeitor(){
+    var s = scannerVideoEl && scannerVideoEl.srcObject;
+    if (!s || !s.getVideoTracks) return null;
+    return s.getVideoTracks()[0] || null;
+  }
+
+  function prepararCameraDoLeitor(tipo){
+    scannerTrilha = trilhaDoLeitor();
+    if (!scannerTrilha || !scannerTrilha.getCapabilities) return;
+    var cap = {};
+    try { cap = scannerTrilha.getCapabilities() || {}; } catch(e){ return; }
+
+    // Foco contínuo na trilha: em vários Android o pedido só pega aqui.
+    if (cap.focusMode && cap.focusMode.indexOf('continuous') !== -1){
+      try { scannerTrilha.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }); } catch(e){}
+    }
+
+    var temAlgo = false;
+
+    // Lanterna: em código de barras de nota amassada faz mais diferença que
+    // qualquer ajuste de software.
+    if (cap.torch){
+      scannerLuzEl.classList.remove('hidden');
+      scannerLuzEl.classList.remove('ligada');
+      scannerLuzLigada = false;
+      temAlgo = true;
+    } else {
+      scannerLuzEl.classList.add('hidden');
+    }
+
+    // Zoom: código pequeno lido de longe nunca fecha. Em barras já abro com um
+    // empurrãozinho, que é como a pessoa ia usar de qualquer jeito.
+    if (cap.zoom && cap.zoom.max > cap.zoom.min){
+      scannerZoomEl.min = cap.zoom.min;
+      scannerZoomEl.max = cap.zoom.max;
+      scannerZoomEl.step = cap.zoom.step || 0.1;
+      var inicial = (tipo === 'barras')
+        ? Math.min(cap.zoom.max, cap.zoom.min + (cap.zoom.max - cap.zoom.min) * 0.25)
+        : cap.zoom.min;
+      scannerZoomEl.value = inicial;
+      try { scannerTrilha.applyConstraints({ advanced: [{ zoom: inicial }] }); } catch(e){}
+      scannerZoomWrapEl.classList.remove('hidden');
+      temAlgo = true;
+    } else {
+      scannerZoomWrapEl.classList.add('hidden');
+    }
+
+    scannerControlesEl.classList.toggle('hidden', !temAlgo);
+
+    // Dica do toque pra focar: aparece e some, pra não ficar poluindo.
+    if (scannerToqueEl){
+      scannerToqueEl.classList.add('aparece');
+      setTimeout(function(){ if (scannerToqueEl) scannerToqueEl.classList.remove('aparece'); }, 3200);
+    }
+  }
+
+  // Toque na imagem = um pedido de foco naquele instante, e volta pro contínuo
+  // logo depois. É o mesmo truque do app de câmera do celular.
+  function focarAgora(){
+    var t = scannerTrilha || trilhaDoLeitor();
+    if (!t || !t.getCapabilities) return;
+    var cap = {};
+    try { cap = t.getCapabilities() || {}; } catch(e){ return; }
+    if (!cap.focusMode) return;
+    var temManual = cap.focusMode.indexOf('manual') !== -1;
+    var temUm = cap.focusMode.indexOf('single-shot') !== -1;
+    if (!temManual && !temUm) return;
+    try {
+      t.applyConstraints({ advanced: [{ focusMode: temUm ? 'single-shot' : 'manual' }] });
+      if (scannerToqueEl){
+        scannerToqueEl.textContent = 'focando...';
+        scannerToqueEl.classList.add('aparece');
+      }
+      setTimeout(function(){
+        try {
+          if (cap.focusMode.indexOf('continuous') !== -1){
+            t.applyConstraints({ advanced: [{ focusMode: 'continuous' }] });
+          }
+        } catch(e){}
+        if (scannerToqueEl){
+          scannerToqueEl.textContent = 'toque pra focar';
+          scannerToqueEl.classList.remove('aparece');
+        }
+      }, 1200);
+    } catch(e){}
+  }
+
+  function alternarLanterna(){
+    var t = scannerTrilha || trilhaDoLeitor();
+    if (!t) return;
+    scannerLuzLigada = !scannerLuzLigada;
+    try { t.applyConstraints({ advanced: [{ torch: scannerLuzLigada }] }); } catch(e){ scannerLuzLigada = !scannerLuzLigada; return; }
+    scannerLuzEl.classList.toggle('ligada', scannerLuzLigada);
+  }
+
+  function mudarZoom(v){
+    var t = scannerTrilha || trilhaDoLeitor();
+    if (!t) return;
+    try { t.applyConstraints({ advanced: [{ zoom: Number(v) }] }); } catch(e){}
+  }
+
   function fecharLeitorAoVivo(){
+    // Apaga a lanterna antes de largar a câmera: se sair com ela acesa, o LED
+    // fica ligado depois que a tela fecha.
+    if (scannerLuzLigada){
+      var t = scannerTrilha || trilhaDoLeitor();
+      try { if (t) t.applyConstraints({ advanced: [{ torch: false }] }); } catch(e){}
+      scannerLuzLigada = false;
+    }
+    scannerTrilha = null;
+    if (scannerLuzEl){ scannerLuzEl.classList.add('hidden'); scannerLuzEl.classList.remove('ligada'); }
+    if (scannerZoomWrapEl) scannerZoomWrapEl.classList.add('hidden');
+    if (scannerControlesEl) scannerControlesEl.classList.add('hidden');
     if (scannerLeitor){
       try { scannerLeitor.reset(); } catch(e){ /* ignora falha ao encerrar */ }
       scannerLeitor = null;
@@ -10838,6 +11156,14 @@
         e.preventDefault();
         var expId = descLink.getAttribute('data-id');
         handleEditStart(expId);
+        return;
+      }
+
+      // Setas de rolar o gráfico de meses.
+      var seta = e.target.closest('[data-action="trend-rolar"]');
+      if (seta){
+        e.preventDefault();
+        rolarGrafico(seta, Number(seta.getAttribute('data-lado')) || 1);
         return;
       }
 
@@ -11381,6 +11707,9 @@
     ouvirAppExtra();
 
     scannerFecharEl.addEventListener('click', fecharLeitorAoVivo);
+    scannerVideoEl.addEventListener('click', focarAgora);
+    scannerLuzEl.addEventListener('click', alternarLanterna);
+    scannerZoomEl.addEventListener('input', function(){ mudarZoom(scannerZoomEl.value); });
     // Se a pessoa trocar de app ou minimizar o navegador com a câmera
     // aberta, fecha sozinho — senão a câmera fica ligada em segundo plano
     // gastando bateria e com o indicador de câmera aceso sem necessidade.
@@ -11617,6 +11946,11 @@
     scannerTituloEl = document.getElementById('scanner-titulo');
     scannerMsgEl = document.getElementById('scanner-msg');
     scannerFecharEl = document.getElementById('scanner-fechar');
+    scannerControlesEl = document.getElementById('scanner-controles');
+    scannerLuzEl = document.getElementById('scanner-luz');
+    scannerZoomEl = document.getElementById('scanner-zoom');
+    scannerZoomWrapEl = document.getElementById('scanner-zoom-wrap');
+    scannerToqueEl = document.getElementById('scanner-toque');
     authScreenEl = document.getElementById('auth-screen');
     authCardEl = document.getElementById('auth-card');
     syncBarEl = document.getElementById('sync-bar');
