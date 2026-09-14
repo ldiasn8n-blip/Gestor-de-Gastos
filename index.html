@@ -1984,7 +1984,12 @@
   .card-mark-sm{ width:18px; height:18px; border-radius:6px; font-size:10px; }
 
   /* Botão do filtro de cartão, no título do painel de categorias. */
-  .cats-title{ display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+  /* O título tem uma barrinha colorida (::before) que também é item do flex.
+     Com "space-between" ela ia pra esquerda, o texto pro meio e o botão pra
+     direita — o título parecia centralizado sem motivo. Agora o texto cola na
+     barrinha e só o botão é empurrado pro fim. */
+  .cats-title{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .cats-title .filtro-cartao-btn{ margin-left:auto; }
   .filtro-cartao-btn{
     display:inline-flex; align-items:center; gap:6px;
     padding:5px 10px; border-radius:99px; cursor:pointer;
@@ -2282,14 +2287,50 @@
     #content{ max-width:820px; }
     #content.wide{ max-width:none; }
 
-    /* Layout notebook: 3 colunas com distribuição simétrica
-       col-a: acerto+quem pagou | col-b: mês | col-c: categorias (lado a lado) */
+    /* ---------- Layout do Resumo no computador ----------
+       Antes eram três colunas lado a lado, e a das categorias ficava estreita
+       e comprida enquanto sobrava tarja preta embaixo das outras duas. Agora
+       são duas faixas:
+
+           ┌──────────────┬───────────────────────────┐
+           │ acerto       │                           │
+           ├──────────────┤   contas da casa por mês  │
+           │ quem pagou   │                           │
+           ├──────────────┴───────────────────────────┤
+           │      contas de casa por categoria        │  ← cresce pra baixo
+           └──────────────────────────────────────────┘
+
+       Em cima, a coluna estreita (acerto + quem pagou) e o gráfico ocupando
+       todo o resto. Embaixo, as categorias na largura inteira, crescendo pra
+       baixo conforme a casa tem mais categorias. No celular nada disso vale —
+       lá continua tudo empilhado, uma coisa embaixo da outra. */
     .resumo-grid{
-      flex-direction:row; flex-wrap:nowrap; align-items:stretch; gap:18px 22px;
+      display:grid;
+      grid-template-columns:minmax(260px, 0.82fr) minmax(0, 2fr);
+      grid-template-areas:"acerto grafico" "categorias categorias";
+      align-items:stretch;
+      gap:18px 22px;
     }
     .resumo-col{
       display:flex; flex-direction:column; gap:16px; min-width:0;
     }
+    .resumo-col-a{ grid-area:acerto; }
+    .resumo-col-b{ grid-area:grafico; }
+    .resumo-col-c{ grid-area:categorias; }
+
+    /* As duas caixas da esquerda dividem a altura da faixa de cima em partes
+       iguais, então elas terminam junto com o gráfico em vez de deixar um
+       buraco embaixo. */
+    /* "1 1 auto" e não "1 1 0": a sobra é dividida por igual ENTRE as duas,
+       partindo do tamanho natural de cada uma. Com "0" a caixa do acerto —
+       que tem um número grande — espremia a de baixo em telas menores. */
+    .resumo-col-a > .resumo-block{ flex:1 1 auto; display:flex; flex-direction:column; }
+    .resumo-col-a .rb-acerto{ justify-content:center; }
+    .resumo-col-b > .resumo-block{ flex:1 1 auto; display:flex; flex-direction:column; }
+    .resumo-col-b .trend-caixa{ flex:1 1 auto; display:flex; flex-direction:column; }
+    .resumo-col-b .trend-scroll{ flex:1 1 auto; }
+    .resumo-col-b .trend-chart{ height:100%; min-height:190px; }
+
     .resumo-col-left{
       flex:1 1 0;
       display:flex;
@@ -2304,11 +2345,7 @@
     .resumo-col-right{
       flex:1 1 0;
     }
-    .resumo-col-a{ flex:0.9 1 0; }
-    .resumo-col-b{ flex:1 1 0; }
-    .resumo-col-c{ flex:1.1 1 0; }
     .resumo-block{ padding:16px 18px 17px; }
-    .trend-chart{ height:190px; }
     .trend-cap{ font-size:11.5px; }
 
     /* Formulário do casal em duas colunas: dados da conta à esquerda,
@@ -2339,13 +2376,10 @@
     form.add-form.cols-2 .form-submit-area{ grid-column:1 / -1; margin-top:6px; }
   }
 
-  /* Tela bem larga: col-b e col-c lado a lado com simetria */
+  /* Tela bem larga: o gráfico ganha altura e as barras respiram. */
   @media (min-width:1560px){
     #shell{ max-width:1520px; }
-    .resumo-col-a{ flex:0.85 1 0; }
-    .resumo-col-b{ flex:1 1 0; min-width:0; }
-    .resumo-col-c{ flex:1 1 0; min-width:0; }
-    .trend-chart{ height:240px; }
+    .resumo-col-b .trend-chart{ min-height:240px; }
     .cat-bars{ gap:11px; }
   }
 
@@ -2362,7 +2396,7 @@
     nav.tabbar{ padding:14px 18px 28px; }
     .kpi-value{ font-size:25px; }
     .resumo-grid{ gap:20px 26px; }
-    .trend-chart{ height:270px; }
+    .resumo-col-b .trend-chart{ min-height:270px; }
     /* Formulário acompanha: com a tela larga, as duas colunas respiram. */
     form.add-form.two-col{ max-width:1180px; }
     form.add-form.cols-2{ max-width:1060px; }
