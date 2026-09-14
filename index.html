@@ -1105,6 +1105,15 @@
     padding:7px 0;
   }
   .cartao-linha .card-name-input{ flex:1; min-width:0; }
+  .cartao-ordem{ display:flex; flex-direction:column; gap:2px; flex:0 0 auto; }
+  .cartao-seta{
+    width:22px; height:16px; padding:0; line-height:1;
+    border:1px solid var(--line); background:var(--input-bg); color:var(--ink-soft);
+    border-radius:5px; font-size:8px; font-family:inherit; cursor:pointer;
+    display:grid; place-items:center;
+  }
+  .cartao-seta:hover:not(:disabled){ border-color:var(--accent); color:var(--accent-text); }
+  .cartao-seta:disabled{ opacity:.25; cursor:default; }
   .cartao-editar{
     flex:0 0 auto; padding:7px 10px; border-radius:8px;
     border:1px solid var(--line); background:transparent; color:var(--ink-soft);
@@ -1259,12 +1268,12 @@
     background:rgba(0,0,0,.55); color:#fff; font-size:13px; text-align:center; line-height:1.4; min-height:18px;
   }
 
-  #membro-modal, #ajuda-modal, #cats-modal, #metas-modal, #future-modal, #apps-modal, #cartao-modal, #agenda-modal, #tema-modal{
+  #membro-modal, #ajuda-modal, #cats-modal, #metas-modal, #future-modal, #apps-modal, #cartao-modal, #agenda-modal, #tema-modal, #fcartao-modal, #apagar-mes-modal{
     position:fixed;inset:0;background:var(--backdrop);
     display:flex;align-items:flex-end;justify-content:center;z-index:70;
     opacity:1;visibility:visible;transition:opacity .18s ease, visibility .18s ease;
   }
-  #membro-modal.hidden, #ajuda-modal.hidden, #cats-modal.hidden, #metas-modal.hidden, #future-modal.hidden, #apps-modal.hidden, #cartao-modal.hidden, #agenda-modal.hidden, #tema-modal.hidden{opacity:0;visibility:hidden;pointer-events:none;}
+  #membro-modal.hidden, #ajuda-modal.hidden, #cats-modal.hidden, #metas-modal.hidden, #future-modal.hidden, #apps-modal.hidden, #cartao-modal.hidden, #agenda-modal.hidden, #tema-modal.hidden, #fcartao-modal.hidden, #apagar-mes-modal.hidden{opacity:0;visibility:hidden;pointer-events:none;}
   #agenda-modal.hidden #agenda-panel{ transform:translateY(24px); }
   #cartao-modal.hidden #cartao-panel{ transform:translateY(24px); }
   #apps-modal.hidden #apps-panel{ transform:translateY(24px); }
@@ -1274,7 +1283,7 @@
   #future-modal.hidden #future-panel{ transform:translateY(24px); }
   #metas-modal.hidden #metas-panel{ transform:translateY(24px); }
   #tema-modal.hidden #tema-panel{ transform:translateY(24px); }
-  #membro-panel, #ajuda-panel, #cats-panel, #metas-panel, #future-panel, #apps-panel, #cartao-panel, #agenda-panel, #tema-panel{
+  #membro-panel, #ajuda-panel, #cats-panel, #metas-panel, #future-panel, #apps-panel, #cartao-panel, #agenda-panel, #tema-panel, #fcartao-panel, #apagar-mes-panel{
     background:var(--paper-raised);width:100%;max-width:480px;
     border-radius:18px 18px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));
     max-height:85vh;overflow-y:auto;box-shadow:var(--shadow-lg);
@@ -1499,6 +1508,23 @@
   .lic-desligado .lic-tag{ color:var(--alert); }
   .lic-vencido .lic-tag{ color:#FFC24F; }
   .lic-plano{ font-size:11.5px; font-weight:700; color:var(--ink-soft); margin-top:4px; }
+  /* Barra que abre e fecha a lista de acessos. Fechada, ela é o resumo. */
+  .lic-toggle{
+    width:100%; display:flex; align-items:center; gap:10px; text-align:left;
+    margin:10px 0 0; padding:11px 13px; cursor:pointer;
+    border:1px solid var(--line); border-radius:11px;
+    background:var(--input-bg); color:var(--ink); font-family:inherit; font-size:13px;
+  }
+  .lic-toggle:hover{ border-color:var(--accent); }
+  .lic-toggle.aberto{ border-color:var(--accent); background:var(--hover-soft); }
+  .lic-toggle-seta{ color:var(--accent-text); font-size:11px; flex:0 0 auto; }
+  .lic-toggle-txt{ flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
+  .lic-toggle-sub{ font-size:11.5px; color:var(--ink-soft); font-weight:600; }
+  .lic-toggle-acao{
+    flex:0 0 auto; font-size:11px; font-weight:800; letter-spacing:.03em;
+    text-transform:uppercase; color:var(--accent-text);
+  }
+
   .lic-filtros{ margin:14px 0 10px; }
   .lic-filtros input[type="text"]{
     width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:9px;
@@ -1625,7 +1651,7 @@
 
   /* Meses tab: navegação anos → meses → detalhe */
   .meses-hint{ font-size:12px;color:var(--ink-soft);margin:-4px 0 12px; }
-  .section-title-row{ display:flex;align-items:center;margin:6px 0 12px; }
+  .section-title-row{ display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:6px 0 12px; }
   .back-btn{
     border:none;background:var(--paper-raised);color:var(--ink);font-size:13px;font-weight:700;
     padding:8px 14px;border-radius:20px;cursor:pointer;font-family:inherit;box-shadow:var(--shadow-sm);
@@ -1900,7 +1926,87 @@
     font-size:11.5px; font-weight:800; line-height:1;
     font-family:inherit; letter-spacing:-0.02em;
   }
+  .card-mark-mini{ width:16px; height:16px; border-radius:5px; font-size:9px; }
   .card-mark-sm{ width:18px; height:18px; border-radius:6px; font-size:10px; }
+
+  /* Botão do filtro de cartão, no título do painel de categorias. */
+  .cats-title{ display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+  .filtro-cartao-btn{
+    display:inline-flex; align-items:center; gap:6px;
+    padding:5px 10px; border-radius:99px; cursor:pointer;
+    border:1px solid var(--line); background:var(--input-bg); color:var(--ink-soft);
+    font-family:inherit; font-size:11.5px; font-weight:700; max-width:100%;
+  }
+  .filtro-cartao-btn > span:not(.filtro-cartao-seta):not(.card-mark){
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .filtro-cartao-btn:hover{ border-color:var(--accent); color:var(--ink); }
+  .filtro-cartao-btn.ativo{ border-color:var(--accent); color:var(--accent-text); background:var(--hover-soft); }
+  .filtro-cartao-seta{ font-size:9px; opacity:.7; }
+  .filtro-cartao-aviso{
+    font-size:12px; color:var(--ink-soft); margin:0 0 10px;
+    padding:7px 10px; border-radius:9px; background:var(--input-bg);
+    border:1px solid var(--line);
+  }
+  .filtro-cartao-limpar{
+    border:none; background:none; padding:0; margin-left:4px; cursor:pointer;
+    font-family:inherit; font-size:12px; font-weight:800; color:var(--accent-text);
+    text-decoration:underline;
+  }
+  /* A janela de escolha. Cada linha já traz o total daquele cartão no
+     período, então dá pra responder "gastei quanto no Bradesco?" sem clicar. */
+  .fc-linha{
+    display:flex; align-items:center; gap:11px; width:100%; text-align:left;
+    padding:12px 13px; margin-bottom:8px; cursor:pointer;
+    border:1px solid var(--line); border-radius:12px;
+    background:var(--input-bg); color:var(--ink); font-family:inherit; font-size:14px;
+  }
+  .fc-linha:hover{ border-color:var(--accent); }
+  .fc-linha.escolhido{ border-color:var(--accent); background:var(--hover-soft); }
+  .fc-nome{ flex:1; min-width:0; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .fc-valor{ flex:0 0 auto; font-weight:800; font-variant-numeric:tabular-nums; }
+  .fc-check{ flex:0 0 auto; width:16px; color:var(--accent-text); font-weight:900; }
+  .fc-todos{ font-size:15px; }
+
+  /* Apagar as contas de um mês. O botão não compete com a navegação: fica
+     discreto até o dedo chegar nele, e só aí veste a cor de alerta. */
+  .apagar-mes-btn{
+    margin-left:auto; padding:7px 12px; border-radius:99px; cursor:pointer;
+    border:1px solid var(--line); background:transparent; color:var(--ink-soft);
+    font-family:inherit; font-size:12px; font-weight:700;
+  }
+  .apagar-mes-btn:hover{ border-color:var(--alert); color:var(--alert); background:var(--hover-soft); }
+  .desfazer-mes{ margin:0 0 12px; }
+  .am-caixa{
+    border:1px solid var(--line); border-radius:12px; padding:12px 13px; margin:12px 0 0;
+    background:var(--input-bg);
+  }
+  .am-vai{ border-color:var(--alert); }
+  .am-titulo{
+    font-size:11px; font-weight:800; letter-spacing:.05em; text-transform:uppercase;
+    color:var(--ink-soft); margin-bottom:8px;
+  }
+  .am-vai .am-titulo{ color:var(--alert); }
+  .am-linha{
+    display:flex; align-items:baseline; justify-content:space-between; gap:12px;
+    font-size:13.5px; padding:4px 0;
+  }
+  .am-linha b{ font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .am-aviso{
+    margin-top:9px; font-size:12px; line-height:1.5; color:var(--ink);
+    background:var(--hover-soft); border-radius:9px; padding:8px 10px;
+  }
+  .am-opcao{
+    display:flex; align-items:flex-start; gap:10px; cursor:pointer;
+    border:1px solid var(--line); border-radius:12px; padding:12px 13px; margin:10px 0 0;
+    font-size:13.5px; line-height:1.45;
+  }
+  .am-opcao:hover{ border-color:var(--accent); }
+  .am-opcao input{ margin-top:2px; flex:0 0 auto; width:17px; height:17px; accent-color:var(--accent); }
+  .am-opcao > span{ display:block; min-width:0; }
+  .am-sub{ display:block; font-size:12px; color:var(--ink-soft); margin-top:4px; line-height:1.5; }
+  .am-confirmar{ background:var(--alert) !important; color:#fff !important; }
+  .am-confirmar:disabled{ opacity:.45; cursor:default; }
   .card-mark-lg{ width:40px; height:40px; border-radius:12px; font-size:18px; }
   .card-caret{ margin-left:8px; color:var(--ink-soft); font-weight:700; }
   .card-row.is-open{ background:var(--hover-soft); }
@@ -2013,8 +2119,8 @@
 
   /* ---------- Tablet ---------- */
   @media (min-width:640px){
-    #settings-modal, #items-modal, #reset-modal, #future-modal, #metas-modal, #cats-modal, #ajuda-modal, #membro-modal, #apps-modal, #cartao-modal, #agenda-modal{ align-items:center; }
-    #settings-panel, #items-panel, #reset-panel, #future-panel, #metas-panel, #cats-panel, #ajuda-panel, #membro-panel, #apps-panel, #cartao-panel, #agenda-panel{ border-radius:16px; max-height:80vh; }
+    #settings-modal, #items-modal, #reset-modal, #future-modal, #metas-modal, #cats-modal, #ajuda-modal, #membro-modal, #apps-modal, #cartao-modal, #agenda-modal, #fcartao-modal, #apagar-mes-modal{ align-items:center; }
+    #settings-panel, #items-panel, #reset-panel, #future-panel, #metas-panel, #cats-panel, #ajuda-panel, #membro-panel, #apps-panel, #cartao-panel, #agenda-panel, #fcartao-panel, #apagar-mes-panel{ border-radius:16px; max-height:80vh; }
     #ajuda-panel{ max-width:560px; }
     .row2, .row2.installment-fields{ gap:14px; }
   }
@@ -2158,6 +2264,27 @@
     .cat-bars{ gap:11px; }
   }
 
+  /* ---------- Monitor grande ----------
+     Até aqui o app parava em 1520px e sobrava uma tarja preta de cada lado
+     num monitor de 1920. Agora ele ocupa a tela, com um respiro maior nas
+     bordas. O limite de 1900 existe só pra não esticar sem fim em monitor
+     ultrawide, onde a linha ficaria larga demais pra ler. */
+  @media (min-width:1600px){
+    #shell{ max-width:min(1900px, 100%); grid-template-columns:280px minmax(0,1fr); }
+    main{ padding:30px 46px 64px; }
+    header{ padding:22px 40px; }
+    header h1{ font-size:23px; }
+    nav.tabbar{ padding:14px 18px 28px; }
+    .kpi-value{ font-size:25px; }
+    .resumo-grid{ gap:20px 26px; }
+    .trend-chart{ height:270px; }
+    /* Formulário acompanha: com a tela larga, as duas colunas respiram. */
+    form.add-form.two-col{ max-width:1180px; }
+    form.add-form.cols-2{ max-width:1060px; }
+    #content{ max-width:980px; }
+    #content.wide{ max-width:none; }
+  }
+
   /* ---------- Stat grid (visão geral / próximos meses) on wider screens ---------- */
   @media (min-width:520px){
     .hero-settlement.stat-grid{
@@ -2258,6 +2385,14 @@
 
 <div id="agenda-modal" class="hidden">
   <div id="agenda-panel"></div>
+</div>
+
+<div id="fcartao-modal" class="hidden">
+  <div id="fcartao-panel"></div>
+</div>
+
+<div id="apagar-mes-modal" class="hidden">
+  <div id="apagar-mes-panel"></div>
 </div>
 
 <div id="tema-modal" class="hidden">
@@ -2727,6 +2862,7 @@
     // Mês exibido no Resumo e nas listas de cada pessoa. null = ainda não
     // escolhido, então cai no mês atual.
     resumoMonth: null,
+    resumoCartao: 'todos',
     entriesMonth: {},
     // Meses futuros marcados no indicador "Próximos meses". null = todos.
     futureMonths: null,
@@ -2752,6 +2888,8 @@
   var appsModalEl, appsPanelEl, appfullEl, appfullFrameEl, appfullNomeEl, appfullAcoesEl;
   var cartaoModalEl, cartaoPanelEl;
   var agendaModalEl, agendaPanelEl;
+  var fcartaoModalEl, fcartaoPanelEl;
+  var apagarMesModalEl, apagarMesPanelEl;
   var temaModalEl, temaPanelEl, temaBtn;
   var scannerModalEl, scannerVideoEl, scannerMiraEl, scannerTituloEl, scannerMsgEl, scannerFecharEl;
   var scannerControlesEl, scannerLuzEl, scannerZoomEl, scannerZoomWrapEl, scannerToqueEl;
@@ -4498,7 +4636,7 @@
 
   // Devolve 'paid' | 'pending' | 'overdue', ou null quando não se aplica.
   function getPaymentStatus(expense, mk){
-    if (!expense) return null;
+    if (!expense || !expense.date) return null;
     mk = mk || mesDoLancamento(expense);
     if (!temSituacao(expense, mk)) return null;
     var marca = marcaGuardada(expense, mk);
@@ -4520,6 +4658,7 @@
     var status = getPaymentStatus(expense, mk);
     if (!status || status === 'paid') return null;
     var venc = vencimentoDe(expense, mk);
+    if (!venc) return status === 'overdue' ? 'Atrasado' : 'Pendente de pagamento';
     if (status === 'overdue') return 'Atrasado · venceu ' + quandoVenceu(venc);
     return venc === todayISO()
       ? 'Pendente de pagamento · vence hoje'
@@ -5158,8 +5297,6 @@
         + '<div class="photo-row">'
           + '<label class="photo-btn">📷 Tirar foto<input type="file" accept="image/*" capture="environment" class="photo-input" style="display:none;"></label>'
           + '<label class="photo-btn">🖼️ Escolher da galeria<input type="file" accept="image/*" class="photo-input" style="display:none;"></label>'
-          + '<button type="button" class="photo-btn" data-action="scan-qr">📡 Ler QR code</button>'
-          + '<button type="button" class="photo-btn" data-action="scan-barras">📊 Ler código de barras</button>'
           + '<span class="photo-preview-slot">' + renderPhotoSlotHTML(editingExpense) + '</span>'
         + '</div>'
         + '<div class="ocr-status"></div>'
@@ -5213,8 +5350,6 @@
         + '<div class="photo-row">'
           + '<label class="photo-btn">📷 Tirar foto<input type="file" accept="image/*" capture="environment" class="photo-input" style="display:none;"></label>'
           + '<label class="photo-btn">🖼️ Escolher da galeria<input type="file" accept="image/*" class="photo-input" style="display:none;"></label>'
-          + '<button type="button" class="photo-btn" data-action="scan-qr">📡 Ler QR code</button>'
-          + '<button type="button" class="photo-btn" data-action="scan-barras">📊 Ler código de barras</button>'
           + '<span class="photo-preview-slot">' + renderPhotoSlotHTML(editingExpense) + '</span>'
         + '</div>'
         + '<div class="ocr-status"></div>'
@@ -6045,6 +6180,85 @@
     return Math.round(v).toLocaleString('pt-BR');
   }
 
+  /* ---------- Filtro de cartão do Resumo ----------
+     "Quanto eu gastei no Bradesco esse mês?" era uma pergunta que o app não
+     respondia: a lista por categoria misturava tudo. Agora ela tem um filtro
+     próprio, que começa em "todos" — quem não quiser saber de cartão nenhum
+     não vê diferença. O filtro vale só para este painel: o acerto da casa e a
+     média continuam sobre o mês inteiro, porque é isso que eles significam. */
+  var SEM_CARTAO = '__sem_cartao__';
+
+  function cartaoDoGasto(e){
+    return (e && e.card) ? e.card : SEM_CARTAO;
+  }
+
+  function filtrarPorCartao(lista, chave){
+    if (!chave || chave === 'todos') return lista;
+    return lista.filter(function(e){ return cartaoDoGasto(e) === chave; });
+  }
+
+  // As opções da janela, já com o total de cada uma no período aberto: assim a
+  // resposta aparece antes mesmo de escolher.
+  function opcoesDeCartao(lista){
+    var totais = {}, ordem = [];
+    lista.forEach(function(e){
+      var k = cartaoDoGasto(e);
+      if (totais[k] === undefined){ totais[k] = 0; ordem.push(k); }
+      totais[k] += Number(e.value) || 0;
+    });
+    // Cartão cadastrado aparece mesmo sem gasto no período (com R$ 0,00), pra
+    // a pessoa não achar que ele sumiu.
+    listaDeCartoes().forEach(function(c){
+      if (totais[c] === undefined){ totais[c] = 0; ordem.push(c); }
+    });
+    var comCartao = ordem.filter(function(k){ return k !== SEM_CARTAO; })
+      .sort(function(a,b){
+        if (totais[b] !== totais[a]) return totais[b] - totais[a];
+        return a.localeCompare(b);
+      });
+    var saida = [{ chave:'todos', rotulo:'Todos os cartões', total: lista.reduce(function(s,e){ return s + (Number(e.value)||0); }, 0) }];
+    comCartao.forEach(function(c){ saida.push({ chave:c, rotulo:c, total:totais[c] }); });
+    if (totais[SEM_CARTAO] !== undefined){
+      saida.push({ chave:SEM_CARTAO, rotulo:'Sem cartão (dinheiro, Pix, boleto)', total:totais[SEM_CARTAO] });
+    }
+    return saida;
+  }
+
+  function rotuloDoFiltroDeCartao(chave){
+    if (!chave || chave === 'todos') return 'Todos os cartões';
+    if (chave === SEM_CARTAO) return 'Sem cartão';
+    return chave;
+  }
+
+  function abrirFiltroCartao(){
+    var month = state.resumoMonth || currentMonthKey();
+    var lista = expensesFor(month).filter(function(e){ return e.type === 'casal'; });
+    var opcoes = opcoesDeCartao(lista);
+    var atual = state.resumoCartao || 'todos';
+    var quando = (month === 'all') ? 'somando todos os meses' : ('em ' + monthLabelFromKey(month));
+
+    fcartaoPanelEl.innerHTML = ''
+      + '<h2>💳 Ver gastos de qual cartão?</h2>'
+      + '<div class="note" style="margin:2px 0 14px;">Os valores são das contas da casa ' + escapeHTML(quando) + '. '
+      + 'Isso muda só a lista por categoria — o acerto entre vocês continua com o mês inteiro.</div>'
+      + opcoes.map(function(o){
+          var marca = (o.chave === 'todos') ? '<span class="fc-todos">💳</span>'
+                    : (o.chave === SEM_CARTAO ? '<span class="fc-todos">💵</span>' : cardChipHTML(o.chave, 'sm'));
+          return '<button type="button" class="fc-linha' + (o.chave === atual ? ' escolhido' : '') + '" data-fc="' + escapeHTML(o.chave) + '">'
+            + marca
+            + '<span class="fc-nome">' + escapeHTML(o.rotulo) + '</span>'
+            + '<span class="fc-valor">' + formatBRL(o.total) + '</span>'
+            + '<span class="fc-check">' + (o.chave === atual ? '✓' : '') + '</span>'
+            + '</button>';
+        }).join('')
+      + '<div class="settings-actions" style="margin-top:14px;">'
+        + '<button type="button" class="secondary-btn" data-action="fechar-filtro-cartao">Fechar</button>'
+      + '</div>';
+    fcartaoModalEl.classList.remove('hidden');
+  }
+
+  function fecharFiltroCartao(){ fcartaoModalEl.classList.add('hidden'); }
+
   function renderResumo(){
     var months = resumoAvailableMonths();
     var month = state.resumoMonth || defaultMonthKey(months);
@@ -6070,6 +6284,12 @@
 
     var casalList = expensesFor(month).filter(function(e){ return e.type==='casal'; });
     var byCat = groupByCategory(casalList);
+
+    // O painel de categorias tem o seu próprio recorte por cartão.
+    var filtroCartao = state.resumoCartao || 'todos';
+    var listaDoCartao = filtrarPorCartao(casalList, filtroCartao);
+    var byCatCartao = (filtroCartao === 'todos') ? byCat : groupByCategory(listaDoCartao);
+    var totalDoCartao = listaDoCartao.reduce(function(s,e){ return s + (Number(e.value)||0); }, 0);
 
     // Quanto do mês já está preso em conta fixa — o número que diz o quanto da
     // renda de vocês está comprometido antes mesmo do mês começar.
@@ -6115,7 +6335,21 @@
           + '<section class="resumo-block neon-box acc-cyan rb-trend"><div class="section-title">📈 Contas da casa por mês</div>' + monthlyTrendHTML(month) + '</section>'
         + '</div>'
         + '<div class="resumo-col resumo-col-c">'
-          + '<section class="resumo-block neon-box acc-green rb-cats"><div class="section-title">🧾 Contas de casa por categoria</div>' + categoryBarsHTML(byCat) + '</section>'
+          + '<section class="resumo-block neon-box acc-green rb-cats">'
+            + '<div class="section-title cats-title">'
+              + '<span>🧾 Contas de casa por categoria</span>'
+              + '<button type="button" class="filtro-cartao-btn' + (filtroCartao !== 'todos' ? ' ativo' : '') + '" data-action="abrir-filtro-cartao">'
+                + (filtroCartao === 'todos' ? '💳' : cardChipHTML(filtroCartao === SEM_CARTAO ? 'Dinheiro' : filtroCartao, 'mini'))
+                + '<span>' + escapeHTML(rotuloDoFiltroDeCartao(filtroCartao)) + '</span><span class="filtro-cartao-seta">▾</span>'
+              + '</button>'
+            + '</div>'
+            + (filtroCartao !== 'todos'
+                ? '<div class="filtro-cartao-aviso">Mostrando só <b>' + escapeHTML(rotuloDoFiltroDeCartao(filtroCartao)) + '</b> · '
+                  + formatBRL(totalDoCartao) + ' no período '
+                  + '<button type="button" class="filtro-cartao-limpar" data-action="limpar-filtro-cartao">ver todos</button></div>'
+                : '')
+            + categoryBarsHTML(byCatCartao, {vazio: filtroCartao === 'todos' ? null : 'Nenhum gasto neste cartão no período escolhido.'})
+          + '</section>'
         + '</div>'
       + '</div>';
   }
@@ -6179,10 +6413,14 @@
         ? ('<span class="installment-badge">'+(it.paid?'✅':'⏳')+' Parcela '+it.installmentLabel+'</span>')
         : '';
       // Na aba Meses a situação é a do mês daquela lista, não a do lançamento.
+      // O item desta lista é um resumo (nome, valor, parcela) — ele não tem
+      // data nem a marca de pago. Sem pegar o lançamento de verdade, a conta
+      // "vence undefined" e toda linha saía marcada como pendente.
       var mkMes = g.year + '-' + String(g.month + 1).padStart(2, '0');
-      var botoesMes = situacaoBotoesHTML(it, mkMes);
+      var real = state.expenses.find(function(x){ return x.id === baseExpenseId(it.id); });
+      var botoesMes = real ? situacaoBotoesHTML(real, mkMes) : '';
       return ''
-        + '<div class="entry month-item '+getStatusClass(it, mkMes)+(botoesMes?' tem-situacao':'')+'" data-expense-id="'+escapeHTML(it.id)+'">'
+        + '<div class="entry month-item '+(real ? getStatusClass(real, mkMes) : '')+(botoesMes?' tem-situacao':'')+'" data-expense-id="'+escapeHTML(it.id)+'">'
         + catChipHTML(it.category, 34)
         + '<div class="info"><div class="desc"><span class="desc-txt" style="cursor:pointer;" data-action="open-expense" data-id="'+escapeHTML(it.id)+'">'+escapeHTML(it.description)+'</span></div><div class="date">'+escapeHTML(it.category)+(badge?(' · '+badge):'')+'</div></div>'
         + '<div class="value">'+formatBRL(it.value)+'</div>'
@@ -6190,7 +6428,11 @@
         + '</div>';
     }).join('');
     return ''
-      + '<div class="section-title-row"><button type="button" class="back-btn" data-action="meses-back-months" data-year="'+g.year+'">‹ '+g.year+'</button></div>'
+      + '<div class="section-title-row">'
+        + '<button type="button" class="back-btn" data-action="meses-back-months" data-year="'+g.year+'">‹ '+g.year+'</button>'
+        + '<button type="button" class="apagar-mes-btn" data-action="apagar-mes" data-mes="'+g.key+'" title="Apagar as contas lançadas neste mês">🗑️ Apagar as contas deste mês</button>'
+      + '</div>'
+      + desfazerMesHTML()
       + '<div class="cat-group month-group'+(g.isCurrent?' current-month':'')+(g.isFuture?' future-month':'')+'">'
       + '<div class="cat-head"><span class="name">📅 '+label+tag+'</span><span class="total">'+formatBRL(g.total)+'</span></div>'
       + rows
@@ -6354,6 +6596,231 @@
       + pessoaisHTML;
   }
 
+
+  /* ---------- Apagar as contas de um mês ----------
+     Um mês inteiro lançado errado (importação torta, mês de teste) não se
+     desfaz item por item. Mas "apagar o mês" é mais delicado do que parece,
+     porque o que você VÊ num mês nem sempre NASCEU nele:
+
+       · parcela de uma compra de três meses atrás — apagar aqui apagaria a
+         compra inteira, inclusive as parcelas dos outros meses;
+       · conta fixa — é um lançamento só que vale pra vários meses, então
+         apagar tiraria ela também do passado.
+
+     Por isso o que some por padrão é só o que foi lançado NESTE mês. O resto
+     aparece na janela com o nome certo e é escolha sua. E dá pra desfazer. */
+
+  var MES_APAGADO_KEY = 'gastos_casa_mes_apagado';
+  var mesParaApagar = null;   // {mk, opcoes}
+
+  function contasDoMes(mk){
+    var normais = [], pessoais = [], fixasDeTras = [], parcelasDeTras = [];
+    state.expenses.forEach(function(e){
+      var mkE = monthKeyFromDate(e.date);
+      if (e.fixed){
+        // Fixa que COMEÇOU neste mês é lançamento do mês: some junto.
+        if (mkE === mk){ (e.type === 'pessoal' ? pessoais : normais).push(e); }
+        else if (fixedOccurrence(e, mk)) fixasDeTras.push(e);
+        return;
+      }
+      if (mkE === mk){ (e.type === 'pessoal' ? pessoais : normais).push(e); return; }
+      // Parcela de compra antiga que cai neste mês: fica, e eu explico.
+      if (e.installment && e.installmentsTotal && mkE && mkE < mk){
+        var d = new Date(String(e.date) + 'T00:00:00');
+        if (isNaN(d.getTime())) return;
+        var fim = addMonthsToDate(d, Number(e.installmentsTotal) - 1);
+        var mkFim = fim.getFullYear() + '-' + String(fim.getMonth() + 1).padStart(2, '0');
+        if (mk <= mkFim) parcelasDeTras.push(e);
+      }
+    });
+    return {normais:normais, pessoais:pessoais, fixasDeTras:fixasDeTras, parcelasDeTras:parcelasDeTras};
+  }
+
+  function somaDe(lista){
+    return lista.reduce(function(s, e){ return s + (Number(e.value) || 0); }, 0);
+  }
+
+  function abrirApagarMes(mk){
+    var c = contasDoMes(mk);
+    if (!c.normais.length && !c.pessoais.length && !c.fixasDeTras.length){
+      alert('Não há nada lançado neste mês pra apagar.');
+      return;
+    }
+    mesParaApagar = { mk: mk, opcoes: { pessoais:false, encerrarFixas:false } };
+    renderApagarMes();
+    apagarMesModalEl.classList.remove('hidden');
+  }
+
+  function fecharApagarMes(){
+    apagarMesModalEl.classList.add('hidden');
+    mesParaApagar = null;
+  }
+
+  function renderApagarMes(){
+    if (!mesParaApagar) return;
+    var mk = mesParaApagar.mk, o = mesParaApagar.opcoes;
+    var c = contasDoMes(mk);
+    var comParcela = c.normais.filter(function(e){ return e.installment && e.installmentsTotal > 1; });
+
+    var quantos = c.normais.length + (o.pessoais ? c.pessoais.length : 0);
+    var quanto = somaDe(c.normais) + (o.pessoais ? somaDe(c.pessoais) : 0);
+
+    apagarMesPanelEl.innerHTML = ''
+      + '<h2>🗑️ Apagar as contas de ' + escapeHTML(monthLabelFromKey(mk)) + '?</h2>'
+
+      + '<div class="am-caixa am-vai">'
+        + '<div class="am-titulo">Isto vai sair</div>'
+        + '<div class="am-linha"><span>' + c.normais.length
+          + (c.normais.length === 1 ? ' conta da casa lançada neste mês' : ' contas da casa lançadas neste mês')
+          + '</span><b>' + formatBRL(somaDe(c.normais)) + '</b></div>'
+        + (o.pessoais
+            ? '<div class="am-linha"><span>' + c.pessoais.length + (c.pessoais.length === 1 ? ' gasto pessoal' : ' gastos pessoais') + '</span><b>' + formatBRL(somaDe(c.pessoais)) + '</b></div>'
+            : '')
+        + (comParcela.length
+            ? '<div class="am-aviso">⚠️ ' + comParcela.length + (comParcela.length === 1 ? ' compra parcelada foi feita' : ' compras parceladas foram feitas')
+              + ' neste mês. Apagando, <b>todas as parcelas dela' + (comParcela.length === 1 ? '' : 's') + ' somem também</b>, inclusive as dos meses seguintes.</div>'
+            : '')
+      + '</div>'
+
+      + (c.pessoais.length
+          ? '<label class="am-opcao">'
+            + '<input type="checkbox" data-am="pessoais"' + (o.pessoais ? ' checked' : '') + '>'
+            + '<span><b>Apagar também os gastos pessoais deste mês</b>'
+            + '<span class="am-sub">' + c.pessoais.length + (c.pessoais.length === 1 ? ' lançamento' : ' lançamentos') + ' · ' + formatBRL(somaDe(c.pessoais))
+            + '. Sem marcar, só as contas da casa saem.</span></span></label>'
+          : '')
+
+      + (c.fixasDeTras.length
+          ? '<label class="am-opcao">'
+            + '<input type="checkbox" data-am="encerrarFixas"' + (o.encerrarFixas ? ' checked' : '') + '>'
+            + '<span><b>Encerrar ' + c.fixasDeTras.length + (c.fixasDeTras.length === 1 ? ' conta fixa' : ' contas fixas') + ' a partir deste mês</b>'
+            + '<span class="am-sub">' + escapeHTML(c.fixasDeTras.map(function(e){ return e.description; }).slice(0,4).join(', '))
+            + (c.fixasDeTras.length > 4 ? ' e mais ' + (c.fixasDeTras.length - 4) : '')
+            + '. Conta fixa é <b>um lançamento só</b> que vale pra vários meses, então ela não "some do mês": ou continua, ou para daqui pra frente. Os meses anteriores ficam como estão.</span></span></label>'
+          : '')
+
+      + (c.parcelasDeTras.length
+          ? '<div class="am-caixa am-fica"><div class="am-titulo">Isto fica</div>'
+            + '<div class="am-sub">' + c.parcelasDeTras.length + (c.parcelasDeTras.length === 1 ? ' parcela que cai' : ' parcelas que caem')
+            + ' neste mês é de compra' + (c.parcelasDeTras.length === 1 ? '' : 's') + ' feita' + (c.parcelasDeTras.length === 1 ? '' : 's')
+            + ' antes. Pra tirar, apague a compra no mês em que ela foi feita.</div></div>'
+          : '')
+
+      + '<div class="note" style="margin:12px 0 0;">Depois de apagar, aparece um botão pra <b>desfazer</b> aqui mesmo na aba Meses — enquanto você não apagar outro mês, dá pra voltar atrás.</div>'
+
+      + '<div class="settings-actions" style="margin-top:16px;">'
+        + '<button type="button" class="secondary-btn" data-action="apagar-mes-cancelar">Cancelar</button>'
+        + '<button type="button" class="submit-btn am-confirmar" data-action="apagar-mes-confirmar"' + (quantos ? '' : ' disabled') + '>'
+          + (quantos ? 'Apagar ' + quantos + ' · ' + formatBRL(quanto) : 'Nada selecionado')
+        + '</button>'
+      + '</div>';
+  }
+
+  async function confirmarApagarMes(){
+    if (!mesParaApagar) return;
+    var mk = mesParaApagar.mk, o = mesParaApagar.opcoes;
+    var c = contasDoMes(mk);
+
+    var apagar = c.normais.concat(o.pessoais ? c.pessoais : []);
+    var encerrar = o.encerrarFixas ? c.fixasDeTras : [];
+    if (!apagar.length && !encerrar.length) return;
+
+    // O lote anterior perde o direito de voltar agora: as fotos dele podem ir.
+    var anterior = lerMesApagado();
+    var antes = state.expenses.slice();
+    var fora = {};
+    apagar.forEach(function(e){ fora[e.id] = true; });
+
+    // "Encerrar" é dar um prazo: a fixa para no mês anterior a este.
+    var ultimoDiaAntes = fimDoMesAnterior(mk);
+    var prazosAntigos = encerrar.map(function(e){ return {id:e.id, fixedUntil:e.fixedUntil || null}; });
+
+    state.expenses = state.expenses.filter(function(e){ return !fora[e.id]; }).map(function(e){
+      if (encerrar.some(function(x){ return x.id === e.id; })){
+        return Object.assign({}, e, {fixedUntil: ultimoDiaAntes, mexidoEm: agoraISO()});
+      }
+      return e;
+    });
+
+    var ok = await saveExpenses(state.expenses);
+    if (!ok){
+      state.expenses = antes;
+      alert('Não consegui apagar agora. Nada foi alterado — tente de novo.');
+      return;
+    }
+
+    try {
+      localStorage.setItem(MES_APAGADO_KEY, JSON.stringify({
+        quando: agoraISO(), mes: mk,
+        registros: apagar,
+        prazos: prazosAntigos
+      }));
+    } catch(e){}
+
+    // Só agora as fotos do lote anterior somem de vez.
+    if (anterior && anterior.registros){
+      anterior.registros.forEach(function(e){ if (e && e.id) deleteFullReceipt(e.id); });
+    }
+
+    fecharApagarMes();
+    render();
+    avisarRapido(apagar.length
+      ? (apagar.length + (apagar.length === 1 ? ' conta apagada' : ' contas apagadas'))
+      : 'Contas fixas encerradas');
+  }
+
+  // Último dia do mês anterior a mk — é o prazo que faz uma fixa parar de
+  // aparecer a partir de mk, sem mexer no que já passou.
+  function fimDoMesAnterior(mk){
+    var p = String(mk).split('-');
+    var y = Number(p[0]), m = Number(p[1]);
+    var d = new Date(y, m - 1, 0);   // dia 0 do mês anterior = último dia dele
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  }
+
+  function lerMesApagado(){
+    try {
+      var u = JSON.parse(localStorage.getItem(MES_APAGADO_KEY) || 'null');
+      if (!u || !Array.isArray(u.registros)) return null;
+      return u;
+    } catch(e){ return null; }
+  }
+
+  function desfazerMesHTML(){
+    var u = lerMesApagado();
+    if (!u) return '';
+    var quantos = u.registros.length;
+    var fixas = (u.prazos || []).length;
+    var pedaco = [];
+    if (quantos) pedaco.push(quantos + (quantos === 1 ? ' conta' : ' contas'));
+    if (fixas) pedaco.push(fixas + (fixas === 1 ? ' conta fixa encerrada' : ' contas fixas encerradas'));
+    return '<button type="button" class="secondary-btn desfazer-mes" data-action="desfazer-mes">'
+      + '↩️ Desfazer: ' + escapeHTML(pedaco.join(' e ')) + ' de ' + escapeHTML(monthLabelFromKey(u.mes))
+      + '</button>';
+  }
+
+  async function desfazerMesApagado(){
+    var u = lerMesApagado();
+    if (!u) return;
+    var antes = state.expenses.slice();
+    var jaTem = {};
+    state.expenses.forEach(function(e){ jaTem[e.id] = true; });
+    u.registros.forEach(function(e){ if (e && e.id && !jaTem[e.id]) state.expenses.push(e); });
+    (u.prazos || []).forEach(function(p){
+      var i = state.expenses.findIndex(function(e){ return e.id === p.id; });
+      if (i !== -1) state.expenses[i] = Object.assign({}, state.expenses[i], {fixedUntil: p.fixedUntil});
+    });
+    var ok = await saveExpenses(state.expenses);
+    if (!ok){
+      state.expenses = antes;
+      alert('Não consegui devolver as contas agora. Nada foi alterado.');
+      return;
+    }
+    try { localStorage.removeItem(MES_APAGADO_KEY); } catch(e){}
+    render();
+    avisarRapido('Contas devolvidas.');
+  }
+
   function renderMesesTab(){
     var years = buildCasalYearsTimeline();
     if (!years.length){
@@ -6372,7 +6839,7 @@
       state.mesesView = {mode:'years'};
     }
 
-    return renderMesesYearsHTML(years);
+    return desfazerMesHTML() + renderMesesYearsHTML(years);
   }
 
   function render(){
@@ -6486,6 +6953,12 @@
       var cor = (d.cardColors || {})[c] || (marcaConhecida(c) ? marcaConhecida(c).cor : CARD_COLORS[hashString(c) % CARD_COLORS.length]);
       var ic = (d.cardIcons || {})[c] || (marcaConhecida(c) ? marcaConhecida(c).icone : (String(c||'?').trim().charAt(0)||'?').toUpperCase());
       return '<div class="cartao-linha">'
+        + '<span class="cartao-ordem">'
+          + '<button type="button" class="cartao-seta" data-action="subir-cartao" data-idx="'+idx+'"'
+            + (idx === 0 ? ' disabled' : '') + ' title="Subir ' + escapeHTML(c) + '">▲</button>'
+          + '<button type="button" class="cartao-seta" data-action="descer-cartao" data-idx="'+idx+'"'
+            + (idx === d.cards.length - 1 ? ' disabled' : '') + ' title="Descer ' + escapeHTML(c) + '">▼</button>'
+        + '</span>'
         + '<span class="card-mark" style="background:'+cor+';color:'+textoSobre(cor)+';box-shadow:0 0 10px '+hexToRgba(cor,0.55)+';">'+escapeHTML(ic)+'</span>'
         + '<input type="text" class="card-name-input" data-idx="'+idx+'" value="'+escapeHTML(c)+'">'
         + '<button type="button" class="cartao-editar" data-action="editar-cartao" data-idx="'+idx+'" title="Símbolo e cor de '+escapeHTML(c)+'">🎨</button>'
@@ -6499,7 +6972,8 @@
       + '<div class="pct-sum-note" id="pct-sum-note">Soma das porcentagens: '+sum+'%'+(Math.abs(sum-100)>0.5 ? ' (não precisa somar 100 — é usado de forma proporcional)':'')+'</div>'
       + '<button type="button" id="add-member-btn" class="secondary-btn">+ Adicionar pessoa</button>'
       + '<div class="field" style="margin-top:18px;"><label>Cartões cadastrados</label>'
-        + '<div class="note" style="margin:-2px 0 8px;">O 🎨 abre o símbolo e a cor do cartão — é como ele aparece nas listas e nos gráficos.</div>'
+        + '<div class="note" style="margin:-2px 0 8px;">O 🎨 abre o símbolo e a cor do cartão — é como ele aparece nas listas e nos gráficos. '
+        + 'As setas ▲▼ mudam a ordem: <strong>o primeiro da lista é o que já vem escolhido</strong> na hora de lançar um gasto, então deixe no topo o que você mais usa.</div>'
         + cardRows + '</div>'
       + '<button type="button" id="add-card-btn" class="secondary-btn">+ Adicionar cartão</button>'
       + contaSectionHTML()
@@ -6702,8 +7176,13 @@
 
   /* ---------- Painel de vendas (só o administrador vê) ---------- */
 
+  // Com ?__teste na URL o painel aparece mesmo sem conta de administrador,
+  // só pra o teste automático conseguir abrir e fechar a lista. Numa abertura
+  // normal do app a regra de sempre continua valendo.
+  var MODO_TESTE = location.search.indexOf('__teste') >= 0;
+
   function licencasSectionHTML(){
-    if (!modoNuvem() || !souAdmin) return '';
+    if (!MODO_TESTE && (!modoNuvem() || !souAdmin)) return '';
     return '<div class="field" style="margin-top:22px;"><label>🎟️ Links de acesso (vendas)</label>'
       + '<div class="note" style="margin:-2px 0 10px;">Cada link vale por <strong>um cadastro</strong>. Depois de usado, ele não serve mais pra ninguém. Desligar ou deixar vencer <strong>não apaga nada</strong>: os lançamentos da casa ficam guardados e voltam inteiros quando o acesso é religado.</div>'
       + '<div class="field"><label>Tipo de acesso</label>'
@@ -6718,6 +7197,7 @@
       + '<div class="field"><label>Pra quem é? (só você vê)</label><input type="text" id="lic-obs" placeholder="Ex: João e Marina — vendido 09/09, R$ 1.200"></div>'
       + '<button type="button" id="btn-gerar-licenca" class="secondary-btn">+ Gerar link novo</button>'
       + '<div id="lic-novo"></div>'
+      + '<button type="button" id="lic-toggle" class="lic-toggle" style="display:none;"></button>'
       + licencaFiltrosHTML()
       + '<div id="lic-lista" class="lic-lista"><div class="note">Carregando...</div></div>'
       + '</div>';
@@ -6727,6 +7207,10 @@
   // filtro de plano e de situação. Fica escondido enquanto não faz falta.
   var licFiltro = {busca:'', plano:'', status:''};
   var licencasCache = null;
+  // Com 13 acessos vendidos a lista ocupava a tela inteira de Configurações e
+  // enterrava tudo que vem depois. Agora ela nasce fechada: fica só a linha
+  // com a contagem, e quem quiser ver a lista clica nela.
+  var licAberto = false;
 
   function licencaFiltrosHTML(){
     return '<div class="lic-filtros" id="lic-filtros" style="display:none;">'
@@ -6804,11 +7288,38 @@
     if (!alvo || !licencasCache) return;
 
     var todas = licencasCache;
+    var botao = settingsPanelEl.querySelector('#lic-toggle');
     if (!todas.length){
       if (caixaFiltros) caixaFiltros.style.display = 'none';
+      if (botao) botao.style.display = 'none';
       alvo.innerHTML = '<div class="note">Nenhum link gerado ainda.</div>';
       return;
     }
+
+    // A contagem de cada situação vai no próprio botão: fechado, ele já conta
+    // o que interessa sem precisar abrir.
+    if (botao){
+      var porSituacao = {livre:0, usado:0, vencido:0, desligado:0};
+      todas.forEach(function(l){ porSituacao[situacaoLicenca(l)]++; });
+      var pedacos = [];
+      if (porSituacao.usado)     pedacos.push(porSituacao.usado + ' em uso');
+      if (porSituacao.livre)     pedacos.push(porSituacao.livre + (porSituacao.livre > 1 ? ' disponíveis' : ' disponível'));
+      if (porSituacao.vencido)   pedacos.push(porSituacao.vencido + ' vencido' + (porSituacao.vencido > 1 ? 's' : ''));
+      if (porSituacao.desligado) pedacos.push(porSituacao.desligado + ' desligado' + (porSituacao.desligado > 1 ? 's' : ''));
+      botao.style.display = 'flex';
+      botao.className = 'lic-toggle' + (licAberto ? ' aberto' : '');
+      botao.innerHTML = '<span class="lic-toggle-seta">' + (licAberto ? '▾' : '▸') + '</span>'
+        + '<span class="lic-toggle-txt"><b>' + todas.length + ' acesso' + (todas.length > 1 ? 's' : '') + ' gerado' + (todas.length > 1 ? 's' : '') + '</b>'
+        + (pedacos.length ? '<span class="lic-toggle-sub">' + escapeHTML(pedacos.join(' · ')) + '</span>' : '') + '</span>'
+        + '<span class="lic-toggle-acao">' + (licAberto ? 'esconder' : 'ver a lista') + '</span>';
+    }
+
+    if (!licAberto){
+      if (caixaFiltros) caixaFiltros.style.display = 'none';
+      alvo.innerHTML = '';
+      return;
+    }
+
     // Menos de 4 acessos não precisam de filtro nenhum.
     if (caixaFiltros) caixaFiltros.style.display = todas.length >= 4 ? 'block' : 'none';
 
@@ -10725,6 +11236,14 @@
     window.__testProcessar = function(texto, ehQR, formEl){
       return processarCodigoLido(texto, ehQR, formEl);
     };
+    // O painel de vendas só existe com conta na nuvem e como administrador —
+    // coisa que o teste automático não tem. Esta porta finge a lista de
+    // acessos pra dar pra conferir que ela abre e fecha do jeito certo.
+    window.__testLicencas = function(lista){
+      licencasCache = lista;
+      licAberto = false;
+      pintarListaLicencas();
+    };
   }
 
   async function scanCodigoENota(file, formEl){
@@ -11056,12 +11575,6 @@
       var remExisting = e.target.closest('[data-action="remove-existing-photo"]');
       if (remExisting){ state.removeExistingPhoto = true; refreshPhotoSlot(remExisting.closest('form')); return; }
 
-      var scanQr = e.target.closest('[data-action="scan-qr"]');
-      if (scanQr){ abrirLeitorAoVivo('qr', scanQr.closest('form')); return; }
-
-      var scanBarras = e.target.closest('[data-action="scan-barras"]');
-      if (scanBarras){ abrirLeitorAoVivo('barras', scanBarras.closest('form')); return; }
-
       var cancelEdit = e.target.closest('[data-action="cancel-edit"]');
       if (cancelEdit){ state.editingId = null; state.pendingPhoto = null; state.removeExistingPhoto = false; render(); return; }
 
@@ -11158,6 +11671,13 @@
         handleEditStart(expId);
         return;
       }
+
+      var apagarMesBtn = e.target.closest('[data-action="apagar-mes"]');
+      if (apagarMesBtn){ abrirApagarMes(apagarMesBtn.getAttribute('data-mes')); return; }
+      if (e.target.closest('[data-action="desfazer-mes"]')){ desfazerMesApagado(); return; }
+
+      if (e.target.closest('[data-action="abrir-filtro-cartao"]')){ abrirFiltroCartao(); return; }
+      if (e.target.closest('[data-action="limpar-filtro-cartao"]')){ state.resumoCartao = 'todos'; render(); return; }
 
       // Setas de rolar o gráfico de meses.
       var seta = e.target.closest('[data-action="trend-rolar"]');
@@ -11536,11 +12056,33 @@
       }
       if (e.target.closest('[data-action="desfazer-import"]')){ desfazerUltimaImport(); return; }
 
+      // Ordem dos cartões: quem está no topo é o que o app já oferece primeiro.
+      var sobe = e.target.closest('[data-action="subir-cartao"]');
+      var desce = e.target.closest('[data-action="descer-cartao"]');
+      if (sobe || desce){
+        var deOnde = Number((sobe || desce).getAttribute('data-idx'));
+        var praOnde = deOnde + (sobe ? -1 : 1);
+        var lista = state.settingsDraft && state.settingsDraft.cards;
+        if (lista && praOnde >= 0 && praOnde < lista.length){
+          var guardado = lista[deOnde];
+          lista[deOnde] = lista[praOnde];
+          lista[praOnde] = guardado;
+          renderSettingsModal();
+          // Depois do redesenho o botão é outro elemento: devolve o foco pro
+          // mesmo cartão, na posição nova, pra dar pra clicar de novo seguido.
+          var volta = settingsPanelEl.querySelector('[data-action="' + (sobe ? 'subir' : 'descer') + '-cartao"][data-idx="' + praOnde + '"]');
+          if (volta && !volta.disabled) volta.focus();
+        }
+        return;
+      }
+
       var edCartao = e.target.closest('[data-action="editar-cartao"]');
       if (edCartao){ openCartaoModal(Number(edCartao.getAttribute('data-idx'))); return; }
       if (e.target.closest('#save-settings-btn')){ saveSettingsAndClose(); return; }
       if (e.target.closest('#cancel-settings-btn')){ closeSettingsModal(); return; }
       if (e.target.closest('#btn-gerar-licenca')){ acaoGerarLicenca(); return; }
+
+      if (e.target.closest('#lic-toggle')){ licAberto = !licAberto; pintarListaLicencas(); return; }
       var copiarLink = e.target.closest('[data-action="copiar-link"]');
       if (copiarLink){
         var link = baseDoSite() + '?convite=' + copiarLink.getAttribute('data-codigo');
@@ -11718,6 +12260,30 @@
     });
 
     agendaModalEl.addEventListener('click', function(e){ if (e.target === agendaModalEl) fecharAgenda(); });
+
+    apagarMesModalEl.addEventListener('click', function(e){ if (e.target === apagarMesModalEl) fecharApagarMes(); });
+    apagarMesPanelEl.addEventListener('click', function(e){
+      if (e.target.closest('[data-action="apagar-mes-cancelar"]')){ fecharApagarMes(); return; }
+      if (e.target.closest('[data-action="apagar-mes-confirmar"]')){ confirmarApagarMes(); return; }
+    });
+    apagarMesPanelEl.addEventListener('change', function(e){
+      var cx = e.target.closest('[data-am]');
+      if (cx && mesParaApagar){
+        mesParaApagar.opcoes[cx.getAttribute('data-am')] = cx.checked;
+        renderApagarMes();
+      }
+    });
+
+    fcartaoModalEl.addEventListener('click', function(e){ if (e.target === fcartaoModalEl) fecharFiltroCartao(); });
+    fcartaoPanelEl.addEventListener('click', function(e){
+      if (e.target.closest('[data-action="fechar-filtro-cartao"]')){ fecharFiltroCartao(); return; }
+      var linha = e.target.closest('[data-fc]');
+      if (linha){
+        state.resumoCartao = linha.getAttribute('data-fc');
+        fecharFiltroCartao();
+        render();
+      }
+    });
     agendaPanelEl.addEventListener('click', function(e){
       if (e.target.closest('[data-action="fechar-agenda"]')){ fecharAgenda(); return; }
       if (e.target.closest('[data-action="usar-agenda"]')){ usarDataDaAgenda(); return; }
@@ -11937,6 +12503,10 @@
     cartaoPanelEl = document.getElementById('cartao-panel');
     agendaModalEl = document.getElementById('agenda-modal');
     agendaPanelEl = document.getElementById('agenda-panel');
+    fcartaoModalEl = document.getElementById('fcartao-modal');
+    fcartaoPanelEl = document.getElementById('fcartao-panel');
+    apagarMesModalEl = document.getElementById('apagar-mes-modal');
+    apagarMesPanelEl = document.getElementById('apagar-mes-panel');
     temaModalEl = document.getElementById('tema-modal');
     temaPanelEl = document.getElementById('tema-panel');
     temaBtn = document.getElementById('tema-btn');
