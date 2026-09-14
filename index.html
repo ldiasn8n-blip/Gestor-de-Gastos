@@ -583,6 +583,29 @@
   #modal-overdue .modal-caixa{
     width:min(520px, 100%); max-height:86vh; overflow-y:auto;
   }
+  #modal-overdue #overdue-quando.hidden{ display:none; }
+  .cob-grupo{
+    font-size:11px; font-weight:800; letter-spacing:.05em; text-transform:uppercase;
+    margin:12px 0 6px;
+  }
+  .cob-grupo:first-child{ margin-top:0; }
+  .cob-grupo-vencida{ color:var(--status-overdue); }
+  .cob-grupo-hoje{ color:var(--status-pending); }
+  /* Vence hoje ainda não é atraso: veste laranja, não vermelho. */
+  .cob-linha.cob-hoje{
+    border-color:var(--status-pending-soft); border-left-color:var(--status-pending);
+    background:var(--status-pending-soft);
+  }
+  .cob-linha.cob-hoje .cob-valor{ color:var(--status-pending); }
+  .cob-quando-txt{ font-size:13px; font-weight:700; color:var(--ink); margin:0 0 8px; }
+  .cob-quando-linha{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .cob-quando-linha input[type="time"]{
+    flex:1 1 120px; min-width:0; padding:9px 10px; border-radius:9px; font-size:15px;
+    border:1px solid var(--line); background:var(--input-bg); color:var(--ink);
+    font-family:inherit;
+  }
+  .cob-quando-linha button{ flex:0 0 auto; padding:9px 15px; font-size:13.5px; }
+  .cob-quando-nota{ font-size:11.5px; color:var(--ink-soft); line-height:1.5; margin-top:8px; }
 
   .manual-adjust-field{
     padding:12px; border-radius:10px; width:100%;
@@ -1268,12 +1291,12 @@
     background:rgba(0,0,0,.55); color:#fff; font-size:13px; text-align:center; line-height:1.4; min-height:18px;
   }
 
-  #membro-modal, #ajuda-modal, #cats-modal, #metas-modal, #future-modal, #apps-modal, #cartao-modal, #agenda-modal, #tema-modal, #fcartao-modal, #apagar-mes-modal{
+  #membro-modal, #ajuda-modal, #cats-modal, #metas-modal, #future-modal, #apps-modal, #cartao-modal, #agenda-modal, #tema-modal, #fcartao-modal, #apagar-mes-modal, #nota-modal{
     position:fixed;inset:0;background:var(--backdrop);
     display:flex;align-items:flex-end;justify-content:center;z-index:70;
     opacity:1;visibility:visible;transition:opacity .18s ease, visibility .18s ease;
   }
-  #membro-modal.hidden, #ajuda-modal.hidden, #cats-modal.hidden, #metas-modal.hidden, #future-modal.hidden, #apps-modal.hidden, #cartao-modal.hidden, #agenda-modal.hidden, #tema-modal.hidden, #fcartao-modal.hidden, #apagar-mes-modal.hidden{opacity:0;visibility:hidden;pointer-events:none;}
+  #membro-modal.hidden, #ajuda-modal.hidden, #cats-modal.hidden, #metas-modal.hidden, #future-modal.hidden, #apps-modal.hidden, #cartao-modal.hidden, #agenda-modal.hidden, #tema-modal.hidden, #fcartao-modal.hidden, #apagar-mes-modal.hidden, #nota-modal.hidden{opacity:0;visibility:hidden;pointer-events:none;}
   #agenda-modal.hidden #agenda-panel{ transform:translateY(24px); }
   #cartao-modal.hidden #cartao-panel{ transform:translateY(24px); }
   #apps-modal.hidden #apps-panel{ transform:translateY(24px); }
@@ -1283,7 +1306,7 @@
   #future-modal.hidden #future-panel{ transform:translateY(24px); }
   #metas-modal.hidden #metas-panel{ transform:translateY(24px); }
   #tema-modal.hidden #tema-panel{ transform:translateY(24px); }
-  #membro-panel, #ajuda-panel, #cats-panel, #metas-panel, #future-panel, #apps-panel, #cartao-panel, #agenda-panel, #tema-panel, #fcartao-panel, #apagar-mes-panel{
+  #membro-panel, #ajuda-panel, #cats-panel, #metas-panel, #future-panel, #apps-panel, #cartao-panel, #agenda-panel, #tema-panel, #fcartao-panel, #apagar-mes-panel, #nota-panel{
     background:var(--paper-raised);width:100%;max-width:480px;
     border-radius:18px 18px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));
     max-height:85vh;overflow-y:auto;box-shadow:var(--shadow-lg);
@@ -1968,6 +1991,37 @@
   .fc-check{ flex:0 0 auto; width:16px; color:var(--accent-text); font-weight:900; }
   .fc-todos{ font-size:15px; }
 
+  /* "Lançar uma conta nova aqui", no pé da janela de itens. */
+  .lancar-aqui{
+    margin-top:16px; padding:12px 13px; border-radius:12px;
+    border:1px solid var(--line); background:var(--input-bg);
+  }
+  .lancar-aqui-txt{ font-size:13px; color:var(--ink); margin-bottom:10px; }
+  .lancar-aqui-linha{ display:flex; align-items:flex-end; gap:9px; flex-wrap:wrap; }
+  .lancar-aqui-linha label{
+    flex:1 1 130px; min-width:0; display:flex; flex-direction:column; gap:4px;
+    font-size:11.5px; color:var(--ink-soft);
+  }
+  .lancar-aqui-linha select{
+    width:100%; padding:8px 9px; border-radius:9px; font-size:13.5px;
+    border:1px solid var(--line); background:var(--paper-raised); color:var(--ink);
+    font-family:inherit;
+  }
+  .lancar-btn{ flex:0 0 auto; padding:9px 16px; font-size:13.5px; }
+
+  /* Janela de colar o link / a página da nota fiscal. */
+  #nota-texto{
+    width:100%; padding:11px 12px; border-radius:10px; resize:vertical;
+    border:1px solid var(--line); background:var(--input-bg); color:var(--ink);
+    font-family:inherit; font-size:13.5px; line-height:1.5;
+  }
+  #nota-abrir.hidden{ display:none !important; }
+  .nota-recado{ font-size:12.5px; line-height:1.5; margin-top:10px; }
+  .nota-recado:empty{ display:none; }
+  .nota-ok{ color:var(--status-paid); }
+  .nota-aviso{ color:var(--status-pending); }
+  .nota-fail{ color:var(--status-overdue); }
+
   /* Apagar as contas de um mês. O botão não compete com a navegação: fica
      discreto até o dedo chegar nele, e só aí veste a cor de alerta. */
   .apagar-mes-btn{
@@ -2119,8 +2173,8 @@
 
   /* ---------- Tablet ---------- */
   @media (min-width:640px){
-    #settings-modal, #items-modal, #reset-modal, #future-modal, #metas-modal, #cats-modal, #ajuda-modal, #membro-modal, #apps-modal, #cartao-modal, #agenda-modal, #fcartao-modal, #apagar-mes-modal{ align-items:center; }
-    #settings-panel, #items-panel, #reset-panel, #future-panel, #metas-panel, #cats-panel, #ajuda-panel, #membro-panel, #apps-panel, #cartao-panel, #agenda-panel, #fcartao-panel, #apagar-mes-panel{ border-radius:16px; max-height:80vh; }
+    #settings-modal, #items-modal, #reset-modal, #future-modal, #metas-modal, #cats-modal, #ajuda-modal, #membro-modal, #apps-modal, #cartao-modal, #agenda-modal, #fcartao-modal, #apagar-mes-modal, #nota-modal{ align-items:center; }
+    #settings-panel, #items-panel, #reset-panel, #future-panel, #metas-panel, #cats-panel, #ajuda-panel, #membro-panel, #apps-panel, #cartao-panel, #agenda-panel, #fcartao-panel, #apagar-mes-panel, #nota-panel{ border-radius:16px; max-height:80vh; }
     #ajuda-panel{ max-width:560px; }
     .row2, .row2.installment-fields{ gap:14px; }
   }
@@ -2395,6 +2449,24 @@
   <div id="apagar-mes-panel"></div>
 </div>
 
+<div id="nota-modal" class="hidden">
+  <div id="nota-panel">
+    <h2>🔗 Trazer os dados da nota</h2>
+    <div class="note" style="margin:2px 0 12px;">
+      Leu o QR da nota no celular e abriu o site da Sefaz? Cole aqui.
+      <b>Só o link</b> já traz a data e identifica a loja.
+      Pra trazer <b>os itens</b>, copie a página inteira da nota (segurar o dedo → Selecionar tudo → Copiar) e cole aqui.
+    </div>
+    <textarea id="nota-texto" rows="6" placeholder="Cole aqui o link da nota ou o texto da página..."></textarea>
+    <a id="nota-abrir" class="secondary-btn hidden" href="#" target="_blank" rel="noopener" style="display:block;text-align:center;margin-top:8px;">↗️ Abrir a nota pra copiar a página</a>
+    <div id="nota-recado" class="nota-recado"></div>
+    <div class="settings-actions" style="margin-top:14px;">
+      <button type="button" class="secondary-btn" data-action="nota-cancelar">Cancelar</button>
+      <button type="button" class="submit-btn" data-action="nota-usar" style="background:var(--neon2);color:var(--accent-ink);">Usar</button>
+    </div>
+  </div>
+</div>
+
 <div id="tema-modal" class="hidden">
   <div id="tema-panel"></div>
 </div>
@@ -2451,10 +2523,19 @@
 <div class="modal hidden" id="modal-overdue" style="z-index:9999;">
   <div class="modal-caixa" style="background:var(--paper); padding:20px; border-radius:12px; box-shadow:var(--shadow-lg);">
     <div class="cob-titulo" style="font-size:18px; font-weight:700; color:var(--status-overdue); margin-bottom:12px;">⏰ Contas que passaram do dia</div>
-    <div id="overdue-list" style="margin-bottom:16px; max-height:300px; overflow-y:auto;"></div>
-    <div style="display:flex; gap:8px;">
-      <button type="button" id="overdue-remind-later" class="secondary-btn" style="flex:1;">⏰ Me lembre mais tarde</button>
-      <button type="button" id="overdue-close" class="submit-btn" style="flex:1; background:var(--neon2); color:#181712;">OK</button>
+    <div id="overdue-list" style="margin-bottom:14px; max-height:min(46vh, 430px); overflow-y:auto;"></div>
+    <div id="overdue-quando">
+      <div class="cob-quando-txt">Não dá pra resolver agora? Escolha quando eu te lembro.</div>
+      <div class="cob-quando-linha">
+        <input type="time" id="overdue-hora" step="300">
+        <button type="button" id="overdue-remind-later" class="secondary-btn" data-action="lembrete-confirmar">⏰ Me lembre nesse horário</button>
+        <button type="button" class="secondary-btn" data-action="lembrete-amanha">🌙 Amanhã</button>
+      </div>
+      <div class="cob-quando-nota">O aviso chega se o app estiver aberto em alguma aba. Com tudo fechado, ele te espera e aparece assim que você abrir.</div>
+      <div id="overdue-recado" class="cob-quando-nota"></div>
+    </div>
+    <div style="display:flex; gap:8px; margin-top:12px;">
+      <button type="button" id="overdue-close" class="submit-btn" style="flex:1; background:var(--neon2); color:#181712;">OK, já vi</button>
     </div>
   </div>
 </div>
@@ -2863,6 +2944,7 @@
     // escolhido, então cai no mês atual.
     resumoMonth: null,
     resumoCartao: 'todos',
+    novoLancamento: null,
     entriesMonth: {},
     // Meses futuros marcados no indicador "Próximos meses". null = todos.
     futureMonths: null,
@@ -2890,6 +2972,7 @@
   var agendaModalEl, agendaPanelEl;
   var fcartaoModalEl, fcartaoPanelEl;
   var apagarMesModalEl, apagarMesPanelEl;
+  var notaModalEl;
   var temaModalEl, temaPanelEl, temaBtn;
   var scannerModalEl, scannerVideoEl, scannerMiraEl, scannerTituloEl, scannerMsgEl, scannerFecharEl;
   var scannerControlesEl, scannerLuzEl, scannerZoomEl, scannerZoomWrapEl, scannerToqueEl;
@@ -4709,16 +4792,27 @@
      dois anteriores: conta que venceu há mais de três meses não é lembrete,
      é histórico. */
   function contasAtrasadas(){
+    return contasParaLembrar().filter(function(c){ return c.situacao === 'overdue'; });
+  }
+
+  /* O que o lembrete tem a dizer: o que já venceu e o que vence HOJE. Varre o
+     mês atual e os dois anteriores — conta que venceu há mais de três meses
+     não é lembrete, é histórico. */
+  function contasParaLembrar(){
     var fora = [];
+    var hoje = todayISO();
     var meses = [monthKeyAdd(currentMonthKey(), -2), monthKeyAdd(currentMonthKey(), -1), currentMonthKey()];
     meses.forEach(function(mk){
       materializedForMonth(mk).forEach(function(e){
-        if (getPaymentStatus(e, mk) !== 'overdue') return;
+        var sit = getPaymentStatus(e, mk);
+        var venc = vencimentoDe(e, mk);
+        var hoje_e_o_dia = (sit === 'pending' && venc === hoje);
+        if (sit !== 'overdue' && !hoje_e_o_dia) return;
         fora.push({
           id: baseExpenseId(e.id), mes: mk,
           descricao: e.description, categoria: e.category,
           valor: e.value, pessoa: e.person, tipo: e.type,
-          vence: vencimentoDe(e, mk)
+          vence: venc, situacao: hoje_e_o_dia ? 'hoje' : 'overdue'
         });
       });
     });
@@ -4970,6 +5064,25 @@
   // Um só lugar define as formas de pagamento, pros dois formulários dizerem
   // a mesma coisa. "Pix, dinheiro ou boleto" é o que sobra: sai da conta, mas
   // não pertence a cartão nenhum.
+  /* Como a pessoa mais paga. Fica neste navegador (não sobe pro servidor),
+     porque é preferência de quem está usando o aparelho, não da casa: no
+     celular dela pode ser crédito e no notebook dele, Pix. */
+  var PAGAMENTO_PADRAO_KEY = 'gastos_casa_pagamento_padrao';
+
+  function pagamentoPadrao(tipo){
+    try {
+      var v = localStorage.getItem(PAGAMENTO_PADRAO_KEY);
+      if (v === 'credito' || v === 'debito' || v === 'outro') return v;
+    } catch(e){}
+    return tipo === 'pessoal' ? 'credito' : 'outro';
+  }
+  function guardarPagamentoPadrao(v){
+    try {
+      if (v) localStorage.setItem(PAGAMENTO_PADRAO_KEY, v);
+      else localStorage.removeItem(PAGAMENTO_PADRAO_KEY);
+    } catch(e){}
+  }
+
   function paymentMethodSelectHTML(selected, incluirOutro){
     var opcoes = [];
     if (incluirOutro) opcoes.push(['outro', '💸 Pix, dinheiro ou boleto']);
@@ -5253,7 +5366,7 @@
     // Conta de casa costuma sair por pix/boleto, então esse é o padrão aqui —
     // mas quem paga o mercado no cartão precisa poder dizer qual, senão o
     // quadro "Contas por cartão" do Resumo fica cego pras contas da casa.
-    var paymentMethod = editingExpense ? (editingExpense.paymentMethod || 'outro') : 'outro';
+    var paymentMethod = editingExpense ? (editingExpense.paymentMethod || 'outro') : pagamentoPadrao('casal');
     var usaCartao = (paymentMethod === 'credito' || paymentMethod === 'debito');
     var card = cardSelectHTML(editingExpense ? editingExpense.card : null);
     var existingItems = (editingExpense && Array.isArray(editingExpense.items)) ? editingExpense.items : [];
@@ -5297,6 +5410,7 @@
         + '<div class="photo-row">'
           + '<label class="photo-btn">📷 Tirar foto<input type="file" accept="image/*" capture="environment" class="photo-input" style="display:none;"></label>'
           + '<label class="photo-btn">🖼️ Escolher da galeria<input type="file" accept="image/*" class="photo-input" style="display:none;"></label>'
+          + '<button type="button" class="photo-btn" data-action="colar-nota">🔗 Colar link da nota</button>'
           + '<span class="photo-preview-slot">' + renderPhotoSlotHTML(editingExpense) + '</span>'
         + '</div>'
         + '<div class="ocr-status"></div>'
@@ -5313,7 +5427,7 @@
   function renderPersonalFormHTML(memberId, editingExpense){
     var cat = categorySelectHTML(editingExpense ? editingExpense.category : null);
     var member = memberById(memberId);
-    var paymentMethod = editingExpense ? (editingExpense.paymentMethod || 'credito') : 'credito';
+    var paymentMethod = editingExpense ? (editingExpense.paymentMethod || 'credito') : pagamentoPadrao('pessoal');
     var isCredito = paymentMethod === 'credito';
     var usaCartao = (paymentMethod === 'credito' || paymentMethod === 'debito');
     var isInstallment = editingExpense ? !!editingExpense.installment : false;
@@ -5350,6 +5464,7 @@
         + '<div class="photo-row">'
           + '<label class="photo-btn">📷 Tirar foto<input type="file" accept="image/*" capture="environment" class="photo-input" style="display:none;"></label>'
           + '<label class="photo-btn">🖼️ Escolher da galeria<input type="file" accept="image/*" class="photo-input" style="display:none;"></label>'
+          + '<button type="button" class="photo-btn" data-action="colar-nota">🔗 Colar link da nota</button>'
           + '<span class="photo-preview-slot">' + renderPhotoSlotHTML(editingExpense) + '</span>'
         + '</div>'
         + '<div class="ocr-status"></div>'
@@ -6862,6 +6977,7 @@
       recalcItemsTotal(itemsListEl.closest('form'));
     }
     posicionarGraficos();
+    aplicarNovoLancamento();
   }
 
   /* O gráfico de meses nasce rolado pro fim: o mês atual fica à vista, e quem
@@ -6976,6 +7092,14 @@
         + 'As setas ▲▼ mudam a ordem: <strong>o primeiro da lista é o que já vem escolhido</strong> na hora de lançar um gasto, então deixe no topo o que você mais usa.</div>'
         + cardRows + '</div>'
       + '<button type="button" id="add-card-btn" class="secondary-btn">+ Adicionar cartão</button>'
+      + '<div class="field" style="margin-top:18px;"><label>Como você mais paga</label>'
+        + '<div class="note" style="margin:-2px 0 8px;">É o que já vem escolhido em <b>Como foi pago</b> quando você abre o formulário. '
+        + 'Vale só neste navegador — no celular de cada um pode ser diferente.</div>'
+        + '<select id="pagamento-padrao-select">'
+          + [['outro','💸 Pix, dinheiro ou boleto'],['credito','💳 Crédito'],['debito','💵 Débito']].map(function(o){
+              return '<option value="'+o[0]+'"'+(pagamentoPadrao('casal') === o[0] ? ' selected' : '')+'>'+o[1]+'</option>';
+            }).join('')
+        + '</select></div>'
       + contaSectionHTML()
       + licencasSectionHTML()
       + backupSectionHTML()
@@ -9827,6 +9951,51 @@
     renderItemsPanel();
     itemsModalEl.classList.remove('hidden');
   }
+  // Quem paga vem pré-escolhido: a aba aberta, se for de uma pessoa; senão a
+  // última escolha feita aqui; senão o primeiro da casa.
+  var ultimaPessoaLancar = null;
+  function lancarPessoaPadrao(){
+    if (ehPessoaDaCasa(state.currentTab)) return state.currentTab;
+    if (ehPessoaDaCasa(ultimaPessoaLancar)) return ultimaPessoaLancar;
+    return (state.settings.members[0] || {}).id;
+  }
+
+  // Fecha a janela e abre o formulário da pessoa escolhida, já na categoria.
+  function lancarNestaCategoria(categoria){
+    var selPessoa = itemsPanelEl.querySelector('#lancar-pessoa');
+    var selTipo = itemsPanelEl.querySelector('#lancar-tipo');
+    var pessoa = (selPessoa && ehPessoaDaCasa(selPessoa.value)) ? selPessoa.value : lancarPessoaPadrao();
+    var tipo = (selTipo && selTipo.value === 'pessoal') ? 'pessoal' : 'casal';
+    if (!pessoa) return;
+    ultimaPessoaLancar = pessoa;
+    closeItemsModal();
+    state.editingId = null;
+    state.pendingPhoto = null;
+    state.removeExistingPhoto = false;
+    state.currentTab = pessoa;
+    state.subTab[pessoa] = tipo;
+    state.novoLancamento = { member: pessoa, category: categoria };
+    render();
+  }
+
+  /* Depois que a tela é montada: deixa a categoria escolhida, leva a pessoa
+     até o formulário e põe o cursor na descrição — pra ela só digitar. */
+  function aplicarNovoLancamento(){
+    var pedido = state.novoLancamento;
+    if (!pedido) return;
+    state.novoLancamento = null;
+    var form = contentEl.querySelector('form.add-form');
+    if (!form || form.getAttribute('data-member') !== pedido.member) return;
+    var sel = form.querySelector('.category-select');
+    if (sel && pedido.category){
+      var existe = [].slice.call(sel.options).some(function(o){ return o.value === pedido.category; });
+      if (existe){ sel.value = pedido.category; sel.dispatchEvent(new Event('change', {bubbles:true})); }
+    }
+    form.scrollIntoView({block:'start', behavior:'smooth'});
+    var desc = form.querySelector('.description-input');
+    if (desc) setTimeout(function(){ try { desc.focus({preventScroll:true}); } catch(e){ desc.focus(); } }, 260);
+  }
+
   function closeItemsModal(){
     itemsModalEl.classList.add('hidden');
     state.itemsModalCategory = null;
@@ -9878,6 +10047,27 @@
       + '</label>'
       + '<div class="items-filter-total" style="display:block;margin-bottom:8px;">'+displayItems.length+(displayItems.length===1?' item':' itens')+' · '+formatBRL(total)+'</div>'
       + '<div class="items-list-view">' + rows + '</div>'
+      // Olhar o gasto de uma categoria e querer lançar mais um ali é o gesto
+      // seguinte mais comum. Antes tinha que fechar, achar a aba da pessoa e
+      // escolher a categoria de novo — três passos pra um que já era óbvio.
+      + '<div class="lancar-aqui">'
+        + '<div class="lancar-aqui-txt">Lançar uma conta nova em <b>' + escapeHTML(category) + '</b></div>'
+        + '<div class="lancar-aqui-linha">'
+          + '<label>Quem paga'
+            + '<select id="lancar-pessoa">'
+              + state.settings.members.map(function(m){
+                  return '<option value="' + escapeHTML(m.id) + '"' + (m.id === lancarPessoaPadrao() ? ' selected' : '') + '>' + escapeHTML(m.name) + '</option>';
+                }).join('')
+            + '</select></label>'
+          + '<label>Vai pra'
+            + '<select id="lancar-tipo">'
+              + '<option value="casal">Contas da casa</option>'
+              + '<option value="pessoal">Gastos pessoais</option>'
+            + '</select></label>'
+          + '<button type="button" class="submit-btn lancar-btn" data-action="lancar-nesta-categoria" data-cat="' + escapeHTML(category) + '"'
+            + ' style="background:var(--neon2);color:var(--accent-ink);">+ Adicionar</button>'
+        + '</div>'
+      + '</div>'
       + '<button type="button" id="close-items-btn" class="secondary-btn" style="margin-top:14px;">Fechar</button>';
   }
 
@@ -11218,6 +11408,157 @@
   // Decide o que fazer com um texto decodificado de QR code/código de
   // barras, venha ele da foto da nota (scanCodigoENota) ou do leitor com
   // câmera ao vivo (abrirLeitorAoVivo) — as duas leituras caem aqui.
+
+  /* ---------- Ler a página da nota fiscal (NFC-e) ----------
+     No celular, apontar a câmera pro QR da nota abre o site da Sefaz — não
+     abre o nosso app. Então o caminho que funciona de verdade é o contrário:
+     a pessoa copia dali (o link, ou a página inteira) e cola aqui.
+
+     Duas coisas dão certo com o que ela colar:
+       · só o LINK — dele sai a chave de acesso de 44 dígitos, e da chave saem
+         a data, o CNPJ e a loja (se a casa já conhecer esse CNPJ). Isso
+         funciona sem internet nenhuma;
+       · o TEXTO da página — daí saem os itens, um por um, com quantidade,
+         unidade e valor, do mesmo jeito que a foto da nota preenche.
+
+     Tentar buscar a página sozinho quase sempre esbarra no CORS: o site do
+     estado não autoriza um site de fora a ler a página dele. A gente tenta
+     mesmo assim (alguns liberam), e quando não dá, a janela explica e oferece
+     o botão de abrir a nota pra copiar. */
+
+  // Formato da página da Sefaz, item por item:
+  //   LIMAO TAHITI kg (Código: 112 ) Qtde.:0,326 UN: KG Vl. Unit.: 14,99 Vl. Total 4,89
+  var ITEM_NFCE_RE = new RegExp(
+    '([^\\n(]{2,90}?)\\s*\\(\\s*C[oó]digo\\s*:?\\s*([\\w.\\-]+)\\s*\\)' +   // nome (código)
+    '[\\s\\S]{0,40}?Qtde\\.?\\s*:?\\s*([\\d.,]+)' +                          // Qtde
+    '[\\s\\S]{0,30}?UN\\.?\\s*:?\\s*([A-Za-zÇç]{1,6})' +                     // UN
+    '[\\s\\S]{0,40}?Vl\\.?\\s*Unit\\.?\\s*:?\\s*([\\d.,]+)' +                // Vl. Unit.
+    '[\\s\\S]{0,60}?Vl\\.?\\s*Total\\s*:?\\s*R?\\$?\\s*([\\d.,]+)',          // Vl. Total
+    'gi');
+
+  function lerPaginaDaNota(texto){
+    var t = String(texto || '').replace(/ /g, ' ');
+    var res = { itens: [], total: null, loja: null, cnpj: null, data: null, quantos: null };
+
+    ITEM_NFCE_RE.lastIndex = 0;
+    var m;
+    while ((m = ITEM_NFCE_RE.exec(t)) !== null){
+      var nome = m[1].replace(/\s+/g, ' ').trim().replace(/^[-–·•\d.\s]+/, '');
+      var qtd = parseBRLNumber(m[3]);
+      var un = String(m[4] || '').toUpperCase();
+      var valor = parseBRLNumber(m[6]);
+      if (!nome || valor == null || valor <= 0) continue;
+      var porPeso = (un === 'KG' || un === 'G' || un === 'L' || un === 'ML');
+      res.itens.push({
+        position: res.itens.length + 1,
+        description: nome.slice(0, 90),
+        units: porPeso ? null : (qtd != null ? Math.round(qtd) : null),
+        weight: porPeso ? qtd : null,
+        value: valor,
+        confidence: 'alta'          // veio do documento, não de leitura de imagem
+      });
+      if (res.itens.length > 400) break;
+    }
+
+    var mt = t.match(/Valor\s*a\s*pagar[^\d]{0,20}([\d.,]+)/i)
+          || t.match(/Valor\s*total[^\d]{0,20}([\d.,]+)/i);
+    if (mt) res.total = parseBRLNumber(mt[1]);
+
+    var mq = t.match(/Qtd\.?\s*total\s*de\s*itens\s*:?\s*(\d+)/i);
+    if (mq) res.quantos = Number(mq[1]);
+
+    var mc = t.match(/CNPJ\s*:?\s*([\d]{2}\.?[\d]{3}\.?[\d]{3}\/?[\d]{4}-?[\d]{2})/i);
+    if (mc){
+      res.cnpj = mc[1].replace(/\D/g, '');
+      // O nome da loja é a linha logo acima do CNPJ.
+      var antes = t.slice(0, mc.index).split(/\n/).filter(function(l){ return l.trim(); });
+      for (var i = antes.length - 1; i >= 0 && i >= antes.length - 3; i--){
+        var cand = antes[i].replace(/\s+/g, ' ').trim();
+        if (cand.length >= 4 && /[A-Za-zÀ-ÿ]{3}/.test(cand) && !/CNPJ|DOCUMENTO|AUXILIAR|CONSUMIDOR/i.test(cand)){
+          res.loja = cand.slice(0, 60);
+          break;
+        }
+      }
+    }
+
+    var md = t.match(/(?:Emiss[aã]o|Data)\s*:?\s*(\d{2})\/(\d{2})\/(\d{4})/i) || t.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+    if (md) res.data = md[3] + '-' + md[2] + '-' + md[1];
+
+    return res;
+  }
+
+  /* ---------- A janela de colar ---------- */
+
+  var notaFormAtual = null;
+
+  function abrirColarNota(formEl){
+    if (!formEl){ alert('Abra o formulário de uma despesa antes.'); return; }
+    notaFormAtual = formEl;
+    var campo = document.getElementById('nota-texto');
+    if (campo) campo.value = '';
+    var recado = document.getElementById('nota-recado');
+    if (recado){ recado.textContent = ''; recado.className = 'nota-recado'; }
+    var abrir = document.getElementById('nota-abrir');
+    if (abrir) abrir.classList.add('hidden');
+    notaModalEl.classList.remove('hidden');
+    if (campo) setTimeout(function(){ campo.focus(); }, 120);
+  }
+
+  function fecharColarNota(){
+    notaModalEl.classList.add('hidden');
+    notaFormAtual = null;
+  }
+
+  function recadoDaNota(txt, tipo){
+    var el = document.getElementById('nota-recado');
+    if (!el) return;
+    el.innerHTML = txt;
+    el.className = 'nota-recado nota-' + (tipo || 'ok');
+  }
+
+  async function usarNotaColada(){
+    var campo = document.getElementById('nota-texto');
+    var formEl = notaFormAtual;
+    var bruto = campo ? campo.value.trim() : '';
+    if (!bruto){ recadoDaNota('Cole o link da nota ou o texto da página.', 'fail'); return; }
+    if (!formEl || !formEl.isConnected){ fecharColarNota(); return; }
+
+    var url = (bruto.match(/https?:\/\/\S+/i) || [])[0] || null;
+    var soOLink = url && bruto.replace(url, '').trim().length < 30;
+
+    // 1) Texto da página colado: os itens saem daqui e é o caminho que sempre
+    //    funciona, porque não depende de o site do estado deixar a gente ler.
+    if (!soOLink){
+      var lido = lerPaginaDaNota(bruto);
+      if (lido.itens.length){
+        var parsed = {
+          date: lido.data, total: lido.total, storeName: lido.loja,
+          storeCategory: null, itemCountPrinted: lido.quantos,
+          items: lido.itens, rawText: bruto
+        };
+        var conhecida = lido.cnpj ? lojaConhecidaPorCNPJ(lido.cnpj) : null;
+        if (conhecida) parsed.storeName = conhecida;
+        if (lido.cnpj) formEl.dataset.cnpjNota = lido.cnpj;
+        applyOcrResult(formEl, parsed, { silencioSeVazio: true, semTextoLido: true, origemTxt: ' (colado da nota)' });
+        fecharColarNota();
+        setCodeStatus(formEl, '🧾 ' + lido.itens.length + (lido.itens.length === 1 ? ' item lido' : ' itens lidos')
+          + ' da nota' + (lido.total != null ? ' · total ' + formatBRL(lido.total) : '')
+          + '. Confira antes de salvar.', 'ok');
+        return;
+      }
+      if (!url){
+        recadoDaNota('Não achei itens nem link nesse texto. Copie a <b>página inteira</b> da nota (ou só o link dela) e cole de novo.', 'fail');
+        return;
+      }
+      recadoDaNota('Não achei os itens no texto, mas achei o link — vou tentar por ele.', 'aviso');
+    }
+
+    // 2) Só o link: a chave de acesso já entrega data, CNPJ e loja conhecida,
+    //    e a busca da página é tentada (costuma ser barrada pelo CORS).
+    fecharColarNota();
+    await processarCodigoLido(url, true, formEl);
+  }
+
   async function processarCodigoLido(texto, ehQR, formEl){
     if (/^https?:\/\//i.test(texto)){
       await lerNotaPorLinkQR(texto, formEl);
@@ -11589,6 +11930,9 @@
         return;
       }
 
+      var colarNota = e.target.closest('[data-action="colar-nota"]');
+      if (colarNota){ abrirColarNota(colarNota.closest('form')); return; }
+
       var addItemBtn = e.target.closest('[data-action="add-item"]');
       if (addItemBtn){
         var formAI = addItemBtn.closest('form');
@@ -11902,14 +12246,6 @@
         });
       }
 
-      var remindLaterBtn = document.getElementById('overdue-remind-later');
-      if (remindLaterBtn){
-        remindLaterBtn.addEventListener('click', function(){
-          // Até amanhã: lembrar de novo daqui a uma hora seria a mesma praga.
-          adiarCobranca(20);
-          overdueModal.classList.add('hidden');
-        });
-      }
 
       // PAGO na linha, tocar no nome pra ir até a conta, e ligar o aviso do navegador.
       overdueModal.addEventListener('click', function(ev){
@@ -11930,6 +12266,9 @@
         }
         var quero = ev.target.closest('[data-action="cobranca-avisar"]');
         if (quero){ pedirPermissaoDeAviso(); quero.remove(); return; }
+
+        if (ev.target.closest('[data-action="lembrete-confirmar"]')){ confirmarLembrete(false); return; }
+        if (ev.target.closest('[data-action="lembrete-amanha"]')){ confirmarLembrete(true); return; }
       });
 
       var closeBtn = document.getElementById('overdue-close');
@@ -11957,6 +12296,8 @@
 
     itemsModalEl.addEventListener('click', function(e){ if (e.target === itemsModalEl) closeItemsModal(); });
     itemsPanelEl.addEventListener('click', function(e){
+      var lancar = e.target.closest('[data-action="lancar-nesta-categoria"]');
+      if (lancar){ lancarNestaCategoria(lancar.getAttribute('data-cat')); return; }
       if (e.target.closest('#close-items-btn')){ closeItemsModal(); }
     });
     itemsPanelEl.addEventListener('change', function(e){
@@ -12261,6 +12602,21 @@
 
     agendaModalEl.addEventListener('click', function(e){ if (e.target === agendaModalEl) fecharAgenda(); });
 
+    notaModalEl.addEventListener('click', function(e){
+      if (e.target === notaModalEl){ fecharColarNota(); return; }
+      if (e.target.closest('[data-action="nota-cancelar"]')){ fecharColarNota(); return; }
+      if (e.target.closest('[data-action="nota-usar"]')){ usarNotaColada(); return; }
+    });
+    // Colou um link: já mostra o botão de abrir a nota pra copiar a página.
+    notaModalEl.addEventListener('input', function(e){
+      if (!e.target.matches('#nota-texto')) return;
+      var url = (e.target.value.match(/https?:\/\/\S+/i) || [])[0];
+      var abrir = document.getElementById('nota-abrir');
+      if (!abrir) return;
+      if (url){ abrir.href = url; abrir.classList.remove('hidden'); }
+      else abrir.classList.add('hidden');
+    });
+
     apagarMesModalEl.addEventListener('click', function(e){ if (e.target === apagarMesModalEl) fecharApagarMes(); });
     apagarMesPanelEl.addEventListener('click', function(e){
       if (e.target.closest('[data-action="apagar-mes-cancelar"]')){ fecharApagarMes(); return; }
@@ -12434,6 +12790,10 @@
         }
         return;
       }
+      if (e.target.matches('#pagamento-padrao-select')){
+        guardarPagamentoPadrao(e.target.value);
+        return;
+      }
       if (e.target.matches('#import-input')){
         var arq = e.target.files && e.target.files[0];
         e.target.value = '';                 // permite escolher o mesmo arquivo de novo
@@ -12507,6 +12867,7 @@
     fcartaoPanelEl = document.getElementById('fcartao-panel');
     apagarMesModalEl = document.getElementById('apagar-mes-modal');
     apagarMesPanelEl = document.getElementById('apagar-mes-panel');
+    notaModalEl = document.getElementById('nota-modal');
     temaModalEl = document.getElementById('tema-modal');
     temaPanelEl = document.getElementById('tema-panel');
     temaBtn = document.getElementById('tema-btn');
@@ -12661,55 +13022,134 @@
       return !!ate && new Date().getTime() < Number(ate);
     } catch(e){ return false; }
   }
-  function adiarCobranca(horas){
-    try { localStorage.setItem(SONECA_KEY, String(new Date().getTime() + horas * 3600 * 1000)); }
-    catch(e){}
+  function checkAndShowOverdueNotification(){
+    var lista = contasParaLembrar();
+    if (!lista.length) return;
+    if (sonecaAtiva()){
+      // Dormindo: não abre a janela, mas religa o despertador — se a aba ficar
+      // aberta até a hora escolhida, o aviso aparece sozinho.
+      religarDespertador();
+      return;
+    }
+    avisarNoNavegador(lista);
+    abrirCobranca(lista);
   }
 
-  function checkAndShowOverdueNotification(){
-    var lista = contasAtrasadas();
-    if (!lista.length) return;
-    avisarNoNavegador(lista);
-    if (sonecaAtiva()) return;
-    abrirCobranca(lista);
+  /* Despertador da soneca. Enquanto esta aba estiver aberta, na hora marcada
+     chega o aviso do navegador e a janela volta. Com tudo fechado não tem
+     como: um site de arquivo único não roda em segundo plano — aí o lembrete
+     espera e aparece assim que o app abrir. */
+  var despertador = null;
+  function religarDespertador(){
+    if (despertador){ clearTimeout(despertador); despertador = null; }
+    var ate = 0;
+    try { ate = Number(localStorage.getItem(SONECA_KEY) || 0); } catch(e){}
+    var falta = ate - new Date().getTime();
+    if (!ate || falta <= 0 || falta > 12 * 3600 * 1000) return;   // além de 12h não vale prender timer
+    despertador = setTimeout(function(){
+      despertador = null;
+      var lista = contasParaLembrar();
+      if (!lista.length) return;
+      avisarNoNavegador(lista);
+      abrirCobranca(lista);
+    }, falta + 500);
+  }
+
+  // "Me lembre mais tarde" com hora escolhida. Se a hora já passou hoje, vale
+  // pra amanhã — é o que a pessoa quer dizer quando marca 08:00 às 22h.
+  function adiarPara(hhmm, amanha){
+    var p = String(hhmm || '').split(':');
+    var h = Number(p[0]), m = Number(p[1]);
+    if (isNaN(h) || isNaN(m)) return false;
+    var quando = new Date();
+    quando.setSeconds(0, 0);
+    quando.setHours(h, m);
+    if (amanha || quando.getTime() <= new Date().getTime() + 30000){
+      quando.setDate(quando.getDate() + 1);
+    }
+    try { localStorage.setItem(SONECA_KEY, String(quando.getTime())); } catch(e){}
+    pedirPermissaoDeAviso();
+    religarDespertador();
+    return quando;
+  }
+
+  // Sugestão de horário: daqui a duas horas, redondo.
+  function horaSugerida(){
+    var d = new Date();
+    d.setHours(d.getHours() + 2, 0, 0, 0);
+    return String(d.getHours()).padStart(2,'0') + ':00';
   }
 
   function abrirCobranca(lista){
     var modal = document.getElementById('modal-overdue');
     var alvo = document.getElementById('overdue-list');
     if (!modal || !alvo) return;
+
+    var vencidas = lista.filter(function(c){ return c.situacao === 'overdue'; });
+    var deHoje   = lista.filter(function(c){ return c.situacao === 'hoje'; });
     var total = lista.reduce(function(s, c){ return s + c.valor; }, 0);
+
+    function linha(c){
+      return '<div class="cob-linha' + (c.situacao === 'hoje' ? ' cob-hoje' : '') + '">'
+        + '<button type="button" class="cob-txt" data-action="ir-para-conta"'
+          + ' data-id="' + escapeHTML(c.id) + '" data-person="' + escapeHTML(c.pessoa) + '"'
+          + ' data-type="' + escapeHTML(c.tipo) + '" data-mes="' + c.mes + '">'
+          + '<span class="cob-nome">' + escapeHTML(c.descricao) + '</span>'
+          + '<span class="cob-quando">' + escapeHTML(c.categoria) + ' · '
+            + (c.situacao === 'hoje' ? 'vence hoje' : 'venceu ' + escapeHTML(quandoVenceu(c.vence))) + '</span>'
+        + '</button>'
+        + '<span class="cob-valor">' + formatBRL(c.valor) + '</span>'
+        + '<button type="button" class="cob-pago" data-action="cobranca-pago"'
+          + ' data-id="' + escapeHTML(c.id) + '" data-mes="' + c.mes + '">PAGO</button>'
+        + '</div>';
+    }
 
     alvo.innerHTML = ''
       + '<div class="note" style="margin:0 0 12px;">Toque no nome pra ver o lançamento, ou marque como paga aqui mesmo.</div>'
-      + lista.map(function(c){
-          return '<div class="cob-linha">'
-            + '<button type="button" class="cob-txt" data-action="ir-para-conta"'
-              + ' data-id="' + escapeHTML(c.id) + '" data-person="' + escapeHTML(c.pessoa) + '"'
-              + ' data-type="' + escapeHTML(c.tipo) + '" data-mes="' + c.mes + '">'
-              + '<span class="cob-nome">' + escapeHTML(c.descricao) + '</span>'
-              + '<span class="cob-quando">' + escapeHTML(c.categoria) + ' · venceu ' + escapeHTML(quandoVenceu(c.vence)) + '</span>'
-            + '</button>'
-            + '<span class="cob-valor">' + formatBRL(c.valor) + '</span>'
-            + '<button type="button" class="cob-pago" data-action="cobranca-pago"'
-              + ' data-id="' + escapeHTML(c.id) + '" data-mes="' + c.mes + '">PAGO</button>'
-            + '</div>';
-        }).join('')
+      + (vencidas.length
+          ? '<div class="cob-grupo cob-grupo-vencida">' + vencidas.length
+            + (vencidas.length === 1 ? ' conta passou do dia' : ' contas passaram do dia') + '</div>' + vencidas.map(linha).join('')
+          : '')
+      + (deHoje.length
+          ? '<div class="cob-grupo cob-grupo-hoje">' + deHoje.length
+            + (deHoje.length === 1 ? ' conta vence hoje' : ' contas vencem hoje') + '</div>' + deHoje.map(linha).join('')
+          : '')
       + (lista.length > 1
           ? '<div class="cob-total"><span>Total em aberto</span><b>' + formatBRL(total) + '</b></div>'
-          : '')
-      + (podePedirAviso()
-          ? '<button type="button" class="secondary-btn" data-action="cobranca-avisar" style="margin-top:12px;">'
-            + '🔔 Quero ser avisado no navegador quando vencer</button>'
           : '');
+
+    // A escolha do lembrete já vem preenchida com um horário razoável.
+    var quando = modal.querySelector('#overdue-quando');
+    if (quando){
+      var campo = quando.querySelector('#overdue-hora');
+      if (campo) campo.value = horaSugerida();
+      var recado = quando.querySelector('#overdue-recado');
+      if (recado) recado.textContent = '';
+    }
 
     var titulo = modal.querySelector('.cob-titulo');
     if (titulo){
-      titulo.textContent = lista.length === 1
-        ? '⏰ Uma conta passou do dia'
-        : '⏰ ' + lista.length + ' contas passaram do dia';
+      titulo.textContent = vencidas.length
+        ? (vencidas.length === 1 && !deHoje.length ? '⏰ Uma conta passou do dia' : '⏰ Contas pra resolver')
+        : (deHoje.length === 1 ? '🔔 Uma conta vence hoje' : '🔔 ' + deHoje.length + ' contas vencem hoje');
     }
     modal.classList.remove('hidden');
+  }
+
+  function confirmarLembrete(amanha){
+    var caixa = document.getElementById('overdue-quando');
+    var campo = caixa && caixa.querySelector('#overdue-hora');
+    var hora = amanha ? ((campo && campo.value) || '08:00') : (campo && campo.value);
+    if (!hora){ if (campo) campo.focus(); return; }
+    var quando = adiarPara(hora, !!amanha);
+    if (!quando){ alert('Escolha um horário válido.'); return; }
+    var modal = document.getElementById('modal-overdue');
+    if (modal) modal.classList.add('hidden');
+    var dia = (quando.toDateString() === new Date().toDateString()) ? 'hoje' : 'amanhã';
+    var aviso = (typeof Notification !== 'undefined' && Notification.permission === 'granted')
+      ? ' Se o app estiver aberto, você recebe o aviso.'
+      : '';
+    avisarRapido('Aviso ' + dia + ' às ' + String(quando.getHours()).padStart(2,'0') + ':' + String(quando.getMinutes()).padStart(2,'0') + '.' + aviso);
   }
 
   // Leva a pessoa até o lançamento: troca de aba, abre a edição e rola até ele.
