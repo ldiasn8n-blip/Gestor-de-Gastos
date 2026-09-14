@@ -206,6 +206,14 @@
     border-radius:50%;
     transition:background-color .15s ease, color .15s ease;
   }
+  /* Com a aba Avisos são sete botões. No celular estreito eles encolhem um
+     pouco pra caberem todos — antes o último ficava cortado na borda e dava a
+     impressão de que não existia. */
+  @media (max-width:480px){
+    nav.tabbar button{ min-width:0; padding-left:2px; padding-right:2px; font-size:10px; gap:3px; }
+    nav.tabbar button .ic{ width:30px; height:30px; font-size:15px; }
+    .tab-selo{ top:0; right:2px; min-width:15px; height:15px; font-size:9px; line-height:15px; }
+  }
   nav.tabbar button.active{font-weight:700;color:var(--ink);}
   nav.tabbar button.active .ic{
     background:var(--neon2);
@@ -589,14 +597,37 @@
     margin:12px 0 6px;
   }
   .cob-grupo:first-child{ margin-top:0; }
-  .cob-grupo-vencida{ color:var(--status-overdue); }
-  .cob-grupo-hoje{ color:var(--status-pending); }
   /* Vence hoje ainda não é atraso: veste laranja, não vermelho. */
   .cob-linha.cob-hoje{
     border-color:var(--status-pending-soft); border-left-color:var(--status-pending);
     background:var(--status-pending-soft);
   }
   .cob-linha.cob-hoje .cob-valor{ color:var(--status-pending); }
+  /* Vence nos próximos dias: só um lembrete, sem cor de alarme. */
+  .cob-linha.cob-breve{
+    border-color:var(--line); border-left-color:var(--ink-soft);
+    background:var(--input-bg);
+  }
+  .cob-linha.cob-breve .cob-valor{ color:var(--ink); }
+  .cob-grupo-overdue{ color:var(--status-overdue); }
+  .cob-grupo-hoje{ color:var(--status-pending); }
+  .cob-grupo-breve{ color:var(--ink-soft); }
+
+  /* Selo com o número de avisos, na aba. */
+  .tab-btn{ position:relative; }
+  .tab-selo{
+    position:absolute; top:2px; right:6px; min-width:17px; height:17px; padding:0 4px;
+    border-radius:99px; background:var(--status-overdue); color:#fff;
+    font-size:10px; font-weight:800; line-height:17px; text-align:center;
+  }
+  .avisos-kpis{ margin-bottom:14px; }
+  .avisos-limpo{
+    text-align:center; padding:44px 20px;
+    border:1px solid var(--line); border-radius:14px; background:var(--paper-raised);
+  }
+  .avisos-limpo-ic{ font-size:38px; line-height:1; }
+  .avisos-limpo-txt{ font-size:16px; font-weight:700; color:var(--ink); margin:12px 0 6px; }
+  .avisos-limpo .note{ max-width:380px; margin:0 auto; }
   .cob-quando-txt{ font-size:13px; font-weight:700; color:var(--ink); margin:0 0 8px; }
   .cob-quando-linha{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
   .cob-quando-linha input[type="time"]{
@@ -2453,9 +2484,9 @@
   <div id="nota-panel">
     <h2>🔗 Trazer os dados da nota</h2>
     <div class="note" style="margin:2px 0 12px;">
-      Leu o QR da nota no celular e abriu o site da Sefaz? Cole aqui.
-      <b>Só o link</b> já traz a data e identifica a loja.
-      Pra trazer <b>os itens</b>, copie a página inteira da nota (segurar o dedo → Selecionar tudo → Copiar) e cole aqui.
+      Leu o QR da nota no celular e abriu o site da Sefaz? <b>Cole o link aqui</b> — eu abro a nota e trago os itens, a loja, a data e o total.
+      Se não rolar (Sefaz fora do ar, nota antiga), copie a página inteira dela
+      (segurar o dedo → Selecionar tudo → Copiar) e cole aqui que eu leio do texto.
     </div>
     <textarea id="nota-texto" rows="6" placeholder="Cole aqui o link da nota ou o texto da página..."></textarea>
     <a id="nota-abrir" class="secondary-btn hidden" href="#" target="_blank" rel="noopener" style="display:block;text-align:center;margin-top:8px;">↗️ Abrir a nota pra copiar a página</a>
@@ -2523,7 +2554,8 @@
 <div class="modal hidden" id="modal-overdue" style="z-index:9999;">
   <div class="modal-caixa" style="background:var(--paper); padding:20px; border-radius:12px; box-shadow:var(--shadow-lg);">
     <div class="cob-titulo" style="font-size:18px; font-weight:700; color:var(--status-overdue); margin-bottom:12px;">⏰ Contas que passaram do dia</div>
-    <div id="overdue-list" style="margin-bottom:14px; max-height:min(46vh, 430px); overflow-y:auto;"></div>
+    <div id="overdue-list" style="max-height:min(46vh, 430px); overflow-y:auto;"></div>
+    <div id="overdue-total" style="margin-bottom:14px;"></div>
     <div id="overdue-quando">
       <div class="cob-quando-txt">Não dá pra resolver agora? Escolha quando eu te lembro.</div>
       <div class="cob-quando-linha">
@@ -4798,26 +4830,84 @@
   /* O que o lembrete tem a dizer: o que já venceu e o que vence HOJE. Varre o
      mês atual e os dois anteriores — conta que venceu há mais de três meses
      não é lembrete, é histórico. */
+  // Quantos dias faltam pro vencimento (negativo = já passou).
+  var DIAS_DE_AVISO = 2;   // "me avise com dois dias de antecedência"
+
+  function diasAte(iso){
+    var hoje = new Date(todayISO() + 'T00:00:00');
+    var d = new Date(String(iso) + 'T00:00:00');
+    if (isNaN(d.getTime())) return null;
+    return Math.round((d - hoje) / 86400000);
+  }
+
   function contasParaLembrar(){
     var fora = [];
-    var hoje = todayISO();
-    var meses = [monthKeyAdd(currentMonthKey(), -2), monthKeyAdd(currentMonthKey(), -1), currentMonthKey()];
+    var meses = [monthKeyAdd(currentMonthKey(), -2), monthKeyAdd(currentMonthKey(), -1),
+                 currentMonthKey(), monthKeyAdd(currentMonthKey(), 1)];
     meses.forEach(function(mk){
       materializedForMonth(mk).forEach(function(e){
         var sit = getPaymentStatus(e, mk);
+        if (sit !== 'overdue' && sit !== 'pending') return;
         var venc = vencimentoDe(e, mk);
-        var hoje_e_o_dia = (sit === 'pending' && venc === hoje);
-        if (sit !== 'overdue' && !hoje_e_o_dia) return;
+        var faltam = diasAte(venc);
+        var situacao = null;
+        if (sit === 'overdue') situacao = 'overdue';
+        else if (faltam === 0) situacao = 'hoje';
+        // Conta do mês que vem só entra quando está mesmo na janela de aviso —
+        // senão o app apontaria o aluguel do mês seguinte o mês inteiro.
+        else if (faltam !== null && faltam > 0 && faltam <= DIAS_DE_AVISO) situacao = 'breve';
+        if (!situacao) return;
         fora.push({
           id: baseExpenseId(e.id), mes: mk,
           descricao: e.description, categoria: e.category,
           valor: e.value, pessoa: e.person, tipo: e.type,
-          vence: venc, situacao: hoje_e_o_dia ? 'hoje' : 'overdue'
+          vence: venc, faltam: faltam, situacao: situacao
         });
       });
     });
     fora.sort(function(a,b){ return String(a.vence).localeCompare(String(b.vence)); });
     return fora;
+  }
+
+  // "vence amanhã", "vence em 2 dias" — o texto que a linha mostra.
+  function quandoVence(c){
+    if (c.situacao === 'overdue') return 'venceu ' + quandoVenceu(c.vence);
+    if (c.situacao === 'hoje') return 'vence hoje';
+    if (c.faltam === 1) return 'vence amanhã';
+    return 'vence em ' + c.faltam + ' dias';
+  }
+
+  /* Uma linha do aviso. A janela que abre junto com o app e a aba Avisos usam
+     exatamente a mesma — assim as duas se comportam igual e só existe um lugar
+     pra mexer quando algo muda. */
+  function avisoLinhaHTML(c){
+    return '<div class="cob-linha cob-' + c.situacao + '">'
+      + '<button type="button" class="cob-txt" data-action="ir-para-conta"'
+        + ' data-id="' + escapeHTML(c.id) + '" data-person="' + escapeHTML(c.pessoa) + '"'
+        + ' data-type="' + escapeHTML(c.tipo) + '" data-mes="' + c.mes + '">'
+        + '<span class="cob-nome">' + escapeHTML(c.descricao) + '</span>'
+        + '<span class="cob-quando">' + escapeHTML(c.categoria) + ' · ' + escapeHTML(quandoVence(c)) + '</span>'
+      + '</button>'
+      + '<span class="cob-valor">' + formatBRL(c.valor) + '</span>'
+      + '<button type="button" class="cob-pago" data-action="cobranca-pago"'
+        + ' data-id="' + escapeHTML(c.id) + '" data-mes="' + c.mes + '">PAGO</button>'
+      + '</div>';
+  }
+
+  // Os três grupos, na ordem da urgência, cada um com o seu cabeçalho.
+  function gruposDeAvisoHTML(lista){
+    var grupos = [
+      ['overdue', 'conta passou do dia', 'contas passaram do dia'],
+      ['hoje',    'conta vence hoje',    'contas vencem hoje'],
+      ['breve',   'conta vence logo',    'contas vencem nos próximos dias']
+    ];
+    return grupos.map(function(g){
+      var doGrupo = lista.filter(function(c){ return c.situacao === g[0]; });
+      if (!doGrupo.length) return '';
+      return '<div class="cob-grupo cob-grupo-' + g[0] + '">'
+        + doGrupo.length + ' ' + (doGrupo.length === 1 ? g[1] : g[2]) + '</div>'
+        + doGrupo.map(avisoLinhaHTML).join('');
+    }).join('');
   }
 
   // "venceu hoje", "venceu ontem", "venceu há 5 dias", "venceu em 03/08".
@@ -4917,6 +5007,13 @@
         + '<span class="ic member-badge" style="background:' + m.color + ';">' + escapeHTML((m.name||'?').charAt(0).toUpperCase()) + '</span>'
         + '<span>' + escapeHTML(m.name) + '</span></button>';
     });
+    // Avisos: o que está vencido, o que vence hoje e o que vence nos próximos
+    // dias. O número na aba é o que dá pra ver sem entrar.
+    var quantosAvisos = contasParaLembrar().length;
+    html += '<button data-tab="avisos" class="tab-btn' + (state.currentTab==='avisos' ? ' active' : '') + '">'
+      + '<span class="ic">🔔</span><span>Avisos</span>'
+      + (quantosAvisos ? '<span class="tab-selo">' + quantosAvisos + '</span>' : '')
+      + '</button>';
     // Apps extras não é uma aba de conteúdo: ela abre uma janela e a aba que
     // estava aberta continua onde estava.
     html += '<button data-apps="1" class="tab-btn">'
@@ -4934,6 +5031,9 @@
     } else if (state.currentTab === 'fixas'){
       headerTitleEl.textContent = 'Contas fixas';
       headerSubEl.textContent = 'O que se repete todo mês';
+    } else if (state.currentTab === 'avisos'){
+      headerTitleEl.textContent = 'Avisos';
+      headerSubEl.textContent = 'O que vence agora e o que vem aí';
     } else {
       var m = memberById(state.currentTab);
       headerTitleEl.textContent = m.name;
@@ -6936,6 +7036,38 @@
     avisarRapido('Contas devolvidas.');
   }
 
+  /* ---------- Aba Avisos ----------
+     A mesma lista da janela que abre junto com o app, num lugar fixo: quem
+     fechou a janela sem resolver não precisa esperar a próxima abertura pra
+     achar de novo o que está vencendo. */
+  function renderAvisosTab(){
+    var lista = contasParaLembrar();
+    if (!lista.length){
+      return '<div class="avisos-limpo">'
+        + '<div class="avisos-limpo-ic">✅</div>'
+        + '<div class="avisos-limpo-txt">Nada vencendo por aqui.</div>'
+        + '<div class="note">Eu aviso ' + DIAS_DE_AVISO + ' dias antes de cada conta vencer, e continuo avisando '
+        + 'enquanto ela não for marcada como paga.</div>'
+        + '</div>';
+    }
+
+    var total = lista.reduce(function(s,c){ return s + c.valor; }, 0);
+    var vencidas = lista.filter(function(c){ return c.situacao === 'overdue'; });
+    var emAberto = vencidas.reduce(function(s,c){ return s + c.valor; }, 0);
+
+    return ''
+      + '<div class="kpi-row avisos-kpis">'
+        + kpiTileHTML('Pra resolver', formatBRL(total), lista.length + (lista.length === 1 ? ' conta' : ' contas') + ' na janela de aviso', 'acc-amber')
+        + kpiTileHTML('Já passou do dia', formatBRL(emAberto), vencidas.length + (vencidas.length === 1 ? ' conta atrasada' : ' contas atrasadas'), 'acc-pink')
+      + '</div>'
+      + '<section class="resumo-block neon-box acc-amber">'
+        + '<div class="section-title">🔔 O que precisa de você</div>'
+        + '<div class="note" style="margin:0 0 12px;">Toque no nome pra abrir o lançamento, ou marque como paga aqui mesmo. '
+        + 'Aviso com ' + DIAS_DE_AVISO + ' dias de antecedência.</div>'
+        + gruposDeAvisoHTML(lista)
+      + '</section>';
+  }
+
   function renderMesesTab(){
     var years = buildCasalYearsTimeline();
     if (!years.length){
@@ -6969,6 +7101,7 @@
     if (state.currentTab === 'resumo') contentEl.innerHTML = renderResumo();
     else if (state.currentTab === 'meses') contentEl.innerHTML = renderMesesTab();
     else if (state.currentTab === 'fixas') contentEl.innerHTML = renderFixasTab();
+    else if (state.currentTab === 'avisos') contentEl.innerHTML = renderAvisosTab();
     else contentEl.innerHTML = renderMemberTab(state.currentTab);
     // Se o formulário renderizado já tem itens (ex: editando uma conta com
     // itens salvos), mostra o total dos itens desde já, não só depois de mexer.
@@ -11227,6 +11360,24 @@
     return out;
   }
 
+  /* O servidor do app busca a página da nota. O navegador não pode fazer
+     isso sozinho — a Sefaz não autoriza um site de fora a ler a página dela
+     (regra do navegador, não erro nosso). O servidor não tem essa trava, então
+     ele busca, limpa e devolve o texto. O arquivo que faz isso é o api/nota.js
+     (vai no projeto do Vercel). Se ele não estiver lá, este caminho falha em
+     silêncio e o app segue pro plano B, que é a pessoa colar a página. */
+  var BUSCADOR_DE_NOTA = '/api/nota';
+
+  async function buscarNotaNoServidor(url){
+    var base = (MODO_TESTE && window.__testBuscador) ? window.__testBuscador : BUSCADOR_DE_NOTA;
+    var resp = await fetchComTimeout(base + '?url=' + encodeURIComponent(url), 15000);
+    var dados = await resp.json();
+    if (!resp.ok || !dados || !dados.ok || !dados.texto){
+      throw new Error((dados && dados.erro) || ('servidor respondeu ' + resp.status));
+    }
+    return dados.texto;
+  }
+
   async function lerNotaPorLinkQR(url, formEl){
     var linkAbrir = ' <a href="' + escapeHTML(url) + '" target="_blank" rel="noopener">Abrir a nota</a> pra conferir.';
 
@@ -11244,29 +11395,69 @@
         achou ? 'ok' : 'fail');
       return;
     }
-    setCodeStatus(formEl, (achou ? achou + ' Buscando o resto...' : '🔗 QR code da nota encontrado — buscando os dados...'), 'loading');
+    setCodeStatus(formEl, (achou ? achou + ' Buscando os itens na nota...' : '🔗 Link da nota reconhecido — buscando os itens...'), 'loading');
+
+    /* Duas tentativas, nesta ordem:
+       1ª) pelo servidor do app (api/nota.js) — é a que funciona de verdade;
+       2ª) direto do navegador — só dá certo no estado que libera CORS, mas
+           custa quase nada tentar e às vezes salva. */
+    var texto = null, motivo = '';
     try {
-      var resp = await fetchComTimeout(url, 8000);
-      if (!formEl.isConnected) return;
-      if (!resp.ok) throw new Error('http ' + resp.status);
-      var html = await resp.text();
-      var texto = textoDeHTML(html);
-      var parsed = parseReceiptText(texto);
-      var preencheu = applyOcrResult(formEl, parsed, {
-        silencioSeVazio: true, semTextoLido: true, origemTxt: ' (lido pelo QR da nota)'
-      });
-      if (!preencheu){
-        setCodeStatus(formEl, (achou || '🔗 QR lido') + ', mas a página da nota não trouxe os itens.' + linkAbrir, achou ? 'ok' : 'fail');
-      }
-    } catch(e){
-      if (!formEl.isConnected) return;
-      // Comum: o site do estado não libera acesso direto do navegador (CORS)
-      // ou demorou demais. Mesmo assim o que veio da chave já está preenchido.
-      setCodeStatus(formEl, achou
-        ? achou + ' A página da nota não abriu daqui, então os itens ficam por sua conta.' + linkAbrir
-        : '🔗 QR code lido, mas não consegui abrir os dados automaticamente aqui.' + linkAbrir,
-        achou ? 'ok' : 'fail');
+      texto = await buscarNotaNoServidor(url);
+    } catch(e1){
+      motivo = String((e1 && e1.message) || e1 || '');
+      try {
+        var resp = await fetchComTimeout(url, 8000);
+        if (resp.ok) texto = await resp.text();
+      } catch(e2){ /* barrado pelo navegador, como esperado */ }
     }
+    if (!formEl.isConnected) return;
+
+    if (texto){
+      // O texto pode vir limpo (do servidor) ou como HTML cru (do navegador).
+      var limpo = /<[a-z!][\s\S]*>/i.test(texto) ? textoDeHTML(texto) : texto;
+
+      // Primeiro o leitor feito pra página da Sefaz, que entende o formato
+      // "PRODUTO (Código: 000) Qtde.:1 UN: UN Vl. Unit.: 0,00 Vl. Total 0,00".
+      // Se ele não achar nada, cai no leitor do recibo impresso.
+      var daPagina = lerPaginaDaNota(limpo);
+      var parsed;
+      if (daPagina.itens.length){
+        parsed = {
+          date: daPagina.data, total: daPagina.total, storeName: daPagina.loja,
+          storeCategory: null, itemCountPrinted: daPagina.quantos,
+          items: daPagina.itens, rawText: limpo
+        };
+        var jaConheco = daPagina.cnpj ? lojaConhecidaPorCNPJ(daPagina.cnpj) : null;
+        if (jaConheco) parsed.storeName = jaConheco;
+        if (daPagina.cnpj) formEl.dataset.cnpjNota = daPagina.cnpj;
+      } else {
+        parsed = parseReceiptText(limpo);
+      }
+
+      var preencheu = applyOcrResult(formEl, parsed, {
+        silencioSeVazio: true, semTextoLido: true, origemTxt: ' (buscado na nota)'
+      });
+      if (preencheu){
+        var quantos = (parsed.items || []).length;
+        setCodeStatus(formEl, '🧾 Nota aberta e lida' + (quantos ? ' — ' + quantos + (quantos === 1 ? ' item' : ' itens') : '')
+          + (parsed.total != null ? ' · total ' + formatBRL(parsed.total) : '')
+          + '. Confira antes de salvar.', 'ok');
+        return;
+      }
+      setCodeStatus(formEl, (achou || '🔗 Link lido') + ', mas a página da nota não trouxe os itens.' + linkAbrir, achou ? 'ok' : 'fail');
+      return;
+    }
+
+    // Nem pelo servidor nem pelo navegador. Diz o porquê e mostra o plano B.
+    var explica = /403|só busco/.test(motivo) ? ' (esse endereço não é de nota fiscal do governo)'
+                : /demorou/.test(motivo)      ? ' (a Sefaz demorou demais)'
+                : /404|Unexpected|JSON/.test(motivo) ? ' (o buscador do servidor não está instalado)'
+                : '';
+    setCodeStatus(formEl, (achou ? achou + ' ' : '')
+      + 'Não consegui abrir a página da nota' + explica + '.'
+      + ' Toque em <b>Colar link da nota</b> e cole o <b>texto da página</b> — aí eu leio os itens.'
+      + linkAbrir, achou ? 'ok' : 'fail');
   }
 
   /* Preenche o que a chave garante e devolve o recado do que foi usado.
@@ -12016,6 +12207,20 @@
         return;
       }
 
+      // Na aba Avisos as linhas são as mesmas da janela — os dois botões
+      // precisam funcionar aqui também.
+      var pagoAviso = e.target.closest('[data-action="cobranca-pago"]');
+      if (pagoAviso){
+        marcarPagamento(pagoAviso.getAttribute('data-id'), pagoAviso.getAttribute('data-mes'), 'paid');
+        return;
+      }
+      var irAviso = e.target.closest('[data-action="ir-para-conta"]');
+      if (irAviso){
+        irParaConta(irAviso.getAttribute('data-id'), irAviso.getAttribute('data-person'),
+                    irAviso.getAttribute('data-type'), irAviso.getAttribute('data-mes'));
+        return;
+      }
+
       var apagarMesBtn = e.target.closest('[data-action="apagar-mes"]');
       if (apagarMesBtn){ abrirApagarMes(apagarMesBtn.getAttribute('data-mes')); return; }
       if (e.target.closest('[data-action="desfazer-mes"]')){ desfazerMesApagado(); return; }
@@ -12254,8 +12459,14 @@
           marcarPagamento(pago.getAttribute('data-id'), pago.getAttribute('data-mes'), 'paid');
           var linha = pago.closest('.cob-linha');
           if (linha) linha.remove();
-          // Resolveu tudo? A janela não tem mais o que dizer.
-          if (!overdueModal.querySelector('.cob-linha')) overdueModal.classList.add('hidden');
+          // Redesenha só o resto da janela: assim o total e os cabeçalhos de
+          // grupo acompanham o que sobrou, em vez de mentir.
+          var sobrou = contasParaLembrar();
+          if (!sobrou.length || !overdueModal.querySelector('.cob-linha')){
+            overdueModal.classList.add('hidden');
+          } else {
+            abrirCobranca(sobrou);
+          }
           return;
         }
         var ir = ev.target.closest('[data-action="ir-para-conta"]');
@@ -13089,34 +13300,18 @@
     var deHoje   = lista.filter(function(c){ return c.situacao === 'hoje'; });
     var total = lista.reduce(function(s, c){ return s + c.valor; }, 0);
 
-    function linha(c){
-      return '<div class="cob-linha' + (c.situacao === 'hoje' ? ' cob-hoje' : '') + '">'
-        + '<button type="button" class="cob-txt" data-action="ir-para-conta"'
-          + ' data-id="' + escapeHTML(c.id) + '" data-person="' + escapeHTML(c.pessoa) + '"'
-          + ' data-type="' + escapeHTML(c.tipo) + '" data-mes="' + c.mes + '">'
-          + '<span class="cob-nome">' + escapeHTML(c.descricao) + '</span>'
-          + '<span class="cob-quando">' + escapeHTML(c.categoria) + ' · '
-            + (c.situacao === 'hoje' ? 'vence hoje' : 'venceu ' + escapeHTML(quandoVenceu(c.vence))) + '</span>'
-        + '</button>'
-        + '<span class="cob-valor">' + formatBRL(c.valor) + '</span>'
-        + '<button type="button" class="cob-pago" data-action="cobranca-pago"'
-          + ' data-id="' + escapeHTML(c.id) + '" data-mes="' + c.mes + '">PAGO</button>'
-        + '</div>';
-    }
-
     alvo.innerHTML = ''
       + '<div class="note" style="margin:0 0 12px;">Toque no nome pra ver o lançamento, ou marque como paga aqui mesmo.</div>'
-      + (vencidas.length
-          ? '<div class="cob-grupo cob-grupo-vencida">' + vencidas.length
-            + (vencidas.length === 1 ? ' conta passou do dia' : ' contas passaram do dia') + '</div>' + vencidas.map(linha).join('')
-          : '')
-      + (deHoje.length
-          ? '<div class="cob-grupo cob-grupo-hoje">' + deHoje.length
-            + (deHoje.length === 1 ? ' conta vence hoje' : ' contas vencem hoje') + '</div>' + deHoje.map(linha).join('')
-          : '')
-      + (lista.length > 1
-          ? '<div class="cob-total"><span>Total em aberto</span><b>' + formatBRL(total) + '</b></div>'
-          : '');
+      + gruposDeAvisoHTML(lista);
+
+    // O total fica FORA da caixa que rola: senão, com a lista cheia, ele nasce
+    // abaixo da dobra e some justamente quando mais importa.
+    var caixaTotal = document.getElementById('overdue-total');
+    if (caixaTotal){
+      caixaTotal.innerHTML = lista.length > 1
+        ? '<div class="cob-total"><span>Total em aberto</span><b>' + formatBRL(total) + '</b></div>'
+        : '';
+    }
 
     // A escolha do lembrete já vem preenchida com um horário razoável.
     var quando = modal.querySelector('#overdue-quando');
@@ -13130,8 +13325,8 @@
     var titulo = modal.querySelector('.cob-titulo');
     if (titulo){
       titulo.textContent = vencidas.length
-        ? (vencidas.length === 1 && !deHoje.length ? '⏰ Uma conta passou do dia' : '⏰ Contas pra resolver')
-        : (deHoje.length === 1 ? '🔔 Uma conta vence hoje' : '🔔 ' + deHoje.length + ' contas vencem hoje');
+        ? (vencidas.length === 1 && lista.length === 1 ? '⏰ Uma conta passou do dia' : '⏰ Contas pra resolver')
+        : (deHoje.length ? '🔔 Contas pra pagar hoje' : '🔔 Contas chegando');
     }
     modal.classList.remove('hidden');
   }
