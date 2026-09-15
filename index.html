@@ -1322,12 +1322,12 @@
     background:rgba(0,0,0,.55); color:#fff; font-size:13px; text-align:center; line-height:1.4; min-height:18px;
   }
 
-  #membro-modal, #ajuda-modal, #cats-modal, #metas-modal, #future-modal, #apps-modal, #cartao-modal, #agenda-modal, #tema-modal, #fcartao-modal, #apagar-mes-modal, #nota-modal{
+  #membro-modal, #ajuda-modal, #cats-modal, #metas-modal, #future-modal, #apps-modal, #cartao-modal, #agenda-modal, #tema-modal, #fcartao-modal, #apagar-mes-modal, #nota-modal, #ajuste-modal{
     position:fixed;inset:0;background:var(--backdrop);
     display:flex;align-items:flex-end;justify-content:center;z-index:70;
     opacity:1;visibility:visible;transition:opacity .18s ease, visibility .18s ease;
   }
-  #membro-modal.hidden, #ajuda-modal.hidden, #cats-modal.hidden, #metas-modal.hidden, #future-modal.hidden, #apps-modal.hidden, #cartao-modal.hidden, #agenda-modal.hidden, #tema-modal.hidden, #fcartao-modal.hidden, #apagar-mes-modal.hidden, #nota-modal.hidden{opacity:0;visibility:hidden;pointer-events:none;}
+  #membro-modal.hidden, #ajuda-modal.hidden, #cats-modal.hidden, #metas-modal.hidden, #future-modal.hidden, #apps-modal.hidden, #cartao-modal.hidden, #agenda-modal.hidden, #tema-modal.hidden, #fcartao-modal.hidden, #apagar-mes-modal.hidden, #nota-modal.hidden, #ajuste-modal.hidden{opacity:0;visibility:hidden;pointer-events:none;}
   #agenda-modal.hidden #agenda-panel{ transform:translateY(24px); }
   #cartao-modal.hidden #cartao-panel{ transform:translateY(24px); }
   #apps-modal.hidden #apps-panel{ transform:translateY(24px); }
@@ -1337,7 +1337,7 @@
   #future-modal.hidden #future-panel{ transform:translateY(24px); }
   #metas-modal.hidden #metas-panel{ transform:translateY(24px); }
   #tema-modal.hidden #tema-panel{ transform:translateY(24px); }
-  #membro-panel, #ajuda-panel, #cats-panel, #metas-panel, #future-panel, #apps-panel, #cartao-panel, #agenda-panel, #tema-panel, #fcartao-panel, #apagar-mes-panel, #nota-panel{
+  #membro-panel, #ajuda-panel, #cats-panel, #metas-panel, #future-panel, #apps-panel, #cartao-panel, #agenda-panel, #tema-panel, #fcartao-panel, #apagar-mes-panel, #nota-panel, #ajuste-panel{
     background:var(--paper-raised);width:100%;max-width:480px;
     border-radius:18px 18px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));
     max-height:85vh;overflow-y:auto;box-shadow:var(--shadow-lg);
@@ -2046,6 +2046,39 @@
   .lancar-btn{ flex:0 0 auto; padding:9px 16px; font-size:13.5px; }
 
   /* Janela de colar o link / a página da nota fiscal. */
+  /* O valor de uma conta fixa vira botão: é por ele que se ajusta o mês. */
+  .value.valor-fixo{
+    border:1px dashed var(--line); background:transparent; color:inherit;
+    font-family:inherit; font-size:inherit; font-weight:inherit;
+    padding:3px 7px; border-radius:8px; cursor:pointer;
+    display:inline-flex; align-items:center; gap:5px; white-space:nowrap;
+  }
+  .value.valor-fixo:hover{ border-color:var(--accent); border-style:solid; color:var(--accent-text); }
+  .value.valor-fixo.ajustado{ border-style:solid; border-color:var(--accent-line); }
+  .parcela-selo{
+    display:inline-block; padding:1px 7px; border-radius:99px;
+    background:var(--hover-soft); border:1px solid var(--line);
+    font-size:11px; font-weight:700; color:var(--ink-soft);
+  }
+  .valor-fixo-lapis{ font-size:10px; opacity:.55; }
+  /* No celular a linha é apertada: o botão encolhe pra não roubar espaço da
+     descrição, mas a borda tracejada continua dizendo que dá pra tocar. */
+  @media (max-width:560px){
+    .value.valor-fixo{ padding:2px 5px; gap:3px; }
+    .valor-fixo-lapis{ font-size:8px; }
+  }
+  .cob-valor-ajusta{
+    border:1px dashed rgba(255,255,255,.25); background:transparent; color:inherit;
+    font-size:14px; font-weight:800; font-variant-numeric:tabular-nums;
+    font-family:inherit; padding:2px 6px; border-radius:7px; cursor:pointer;
+    display:inline-flex; align-items:center; gap:4px; white-space:nowrap; flex:0 0 auto;
+  }
+  .cob-valor-ajusta:hover{ border-style:solid; border-color:currentColor; }
+  #ajuste-valor{
+    width:100%; padding:11px 12px; border-radius:10px; font-size:17px; font-weight:700;
+    border:1px solid var(--line); background:var(--input-bg); color:var(--ink);
+    font-family:inherit;
+  }
   #nota-texto{
     width:100%; padding:11px 12px; border-radius:10px; resize:vertical;
     border:1px solid var(--line); background:var(--input-bg); color:var(--ink);
@@ -2209,8 +2242,8 @@
 
   /* ---------- Tablet ---------- */
   @media (min-width:640px){
-    #settings-modal, #items-modal, #reset-modal, #future-modal, #metas-modal, #cats-modal, #ajuda-modal, #membro-modal, #apps-modal, #cartao-modal, #agenda-modal, #fcartao-modal, #apagar-mes-modal, #nota-modal{ align-items:center; }
-    #settings-panel, #items-panel, #reset-panel, #future-panel, #metas-panel, #cats-panel, #ajuda-panel, #membro-panel, #apps-panel, #cartao-panel, #agenda-panel, #fcartao-panel, #apagar-mes-panel, #nota-panel{ border-radius:16px; max-height:80vh; }
+    #settings-modal, #items-modal, #reset-modal, #future-modal, #metas-modal, #cats-modal, #ajuda-modal, #membro-modal, #apps-modal, #cartao-modal, #agenda-modal, #fcartao-modal, #apagar-mes-modal, #nota-modal, #ajuste-modal{ align-items:center; }
+    #settings-panel, #items-panel, #reset-panel, #future-panel, #metas-panel, #cats-panel, #ajuda-panel, #membro-panel, #apps-panel, #cartao-panel, #agenda-panel, #fcartao-panel, #apagar-mes-panel, #nota-panel, #ajuste-panel{ border-radius:16px; max-height:80vh; }
     #ajuda-panel{ max-width:560px; }
     .row2, .row2.installment-fields{ gap:14px; }
   }
@@ -2512,6 +2545,10 @@
 
 <div id="apagar-mes-modal" class="hidden">
   <div id="apagar-mes-panel"></div>
+</div>
+
+<div id="ajuste-modal" class="hidden">
+  <div id="ajuste-panel"></div>
 </div>
 
 <div id="nota-modal" class="hidden">
@@ -3039,6 +3076,7 @@
   var fcartaoModalEl, fcartaoPanelEl;
   var apagarMesModalEl, apagarMesPanelEl;
   var notaModalEl;
+  var ajusteModalEl, ajustePanelEl;
   var temaModalEl, temaPanelEl, temaBtn;
   var scannerModalEl, scannerVideoEl, scannerMiraEl, scannerTituloEl, scannerMsgEl, scannerFecharEl;
   var scannerControlesEl, scannerLuzEl, scannerZoomEl, scannerZoomWrapEl, scannerToqueEl;
@@ -3493,6 +3531,7 @@
       fixed: !!e.fixed,
       fixo_ate: e.fixedUntil || null,
       pagamento: e.pagamento || null,
+      valores: e.valores || null,
       installment: !!e.installment,
       installments_total: e.installmentsTotal == null ? null : Number(e.installmentsTotal),
       installments_paid: e.installmentsPaid == null ? null : Number(e.installmentsPaid),
@@ -3517,6 +3556,7 @@
       fixed: !!r.fixed,
       fixedUntil: r.fixo_ate || null,
       pagamento: (r.pagamento && typeof r.pagamento === 'object') ? r.pagamento : null,
+      valores: (r.valores && typeof r.valores === 'object') ? r.valores : null,
       installment: !!r.installment,
       installmentsTotal: r.installments_total,
       installmentsPaid: r.installments_paid,
@@ -3532,7 +3572,7 @@
   function assinaturaGasto(e){
     return JSON.stringify([e.person, e.type, e.category, e.description, Number(e.value)||0,
       e.date, e.thumb || null, e.items || null, !!e.fixed, e.fixedUntil || null,
-      e.pagamento || null, !!e.installment,
+      e.pagamento || null, e.valores || null, !!e.installment,
       e.installmentsTotal == null ? null : Number(e.installmentsTotal),
       e.installmentsPaid == null ? null : Number(e.installmentsPaid),
       e.paymentMethod || null, e.card || null, !!e.demo,
@@ -4533,7 +4573,9 @@
       if (!c.installment){
         var key = purchaseDate.getFullYear() + '-' + String(purchaseDate.getMonth()+1).padStart(2,'0');
         addTo(key, purchaseDate.getFullYear(), purchaseDate.getMonth(), {
-          id:e.id, description:e.description, category:e.category, value:e.value, installmentLabel:null, paid:true
+          id:e.id, description:e.description, category:e.category, value:e.value,
+          installmentLabel: e.parcelaDe ? (e.parcelaDe.n + '/' + e.parcelaDe.total) : null,
+          paid: e.parcelaDe ? (monthKeyFromDate(e.date) <= currentMonthKey()) : true
         });
       } else {
         for (var k = 1; k <= c.total; k++){
@@ -4628,7 +4670,9 @@
      A cópia tem id "original@2026-10" — é assim que editar ou excluir uma
      repetição sabe voltar pro lançamento de verdade. */
 
-  function baseExpenseId(id){ return String(id || '').split('@')[0]; }
+  // 'id@2026-09' (repetição de conta fixa) e 'id#2026-09' (parcela) apontam
+  // pro mesmo lançamento de verdade.
+  function baseExpenseId(id){ return String(id || '').split(/[@#]/)[0]; }
 
   // Último mês em que um gasto fixo ainda vale. Sem prazo, devolve null.
   function fixedEndMonth(e){
@@ -4647,6 +4691,31 @@
     return Math.max(0, mesesEntre(de, fim) + 1);
   }
 
+  /* ---------- Conta fixa com valor que muda ----------
+     Luz, água e gás são fixas no sentido que importa (vêm todo mês, no mesmo
+     dia, sem você lançar), mas o valor muda: 160 num mês, 187,45 no outro.
+     Antes o app repetia o mesmo número pra sempre e o Resumo mentia.
+
+     Agora cada conta fixa guarda os valores que já vieram, mês a mês:
+
+         e.valores = {'2026-08': 160.00, '2026-09': 187.45}
+
+     O que não tem ajuste continua valendo o valor de sempre (e.value) — que é
+     o caso de aluguel, internet, seguro, a maioria delas. Ou seja: quem não
+     precisar disso não vê diferença nenhuma. */
+
+  function valorDoMes(e, mk){
+    if (!e) return 0;
+    var base = Number(e.value) || 0;
+    if (!e.fixed || !e.valores || !mk) return base;
+    var v = e.valores[mk];
+    return (typeof v === 'number' && isFinite(v)) ? v : base;
+  }
+
+  function temAjusteNoMes(e, mk){
+    return !!(e && e.fixed && e.valores && typeof e.valores[mk] === 'number');
+  }
+
   function fixedOccurrence(e, mk){
     if (!e.fixed) return null;
     var inicio = monthKeyFromDate(e.date);
@@ -4654,11 +4723,18 @@
     // Conta fixa com prazo para de aparecer depois do mês combinado.
     var fim = fixedEndMonth(e);
     if (fim && mk > fim) return null;
-    if (mk === inicio) return e;
+    if (mk === inicio){
+      // Mesmo no mês em que ela nasceu o valor pode ter sido ajustado.
+      if (!temAjusteNoMes(e, mk)) return e;
+      var oMes = Object.assign({}, e);
+      oMes.value = valorDoMes(e, mk);
+      return oMes;
+    }
     var dia = parseInt(String(e.date).slice(8,10), 10) || 1;
     var copia = Object.assign({}, e);
     copia.id = e.id + '@' + mk;
     copia.date = dateInMonth(mk, dia);
+    copia.value = valorDoMes(e, mk);
     copia.virtual = true;
     // Garantir que sempre tem o campo paid
     if (copia.paid === undefined) copia.paid = false;
@@ -4680,10 +4756,68 @@
   // Dois meses à frente é o mesmo horizonte de "previsto" usado no gráfico.
   function fixedHorizon(){ return monthKeyAdd(currentMonthKey(), 2); }
 
+  /* ---------- Compra parcelada: cada parcela no mês dela ----------
+     Antes a compra inteira ficava no mês em que foi feita e sumia dos meses
+     seguintes — só o gráfico da aba Meses espalhava as parcelas, então a lista
+     e o gráfico discordavam. Agora a parcela cai no mês em que ela vence, com
+     o valor DELA, e é isso que entra na conta daquele mês. É como a fatura do
+     cartão funciona de verdade.
+
+     A divisão é feita em centavos, e a última parcela fica com a sobra: 4x de
+     R$ 100,01 tem que somar exatamente R$ 400,05, não R$ 400,04. */
+
+  function ehParcelada(e){
+    return !!(e && e.installment && Number(e.installmentsTotal) > 1);
+  }
+
+  function valorDaParcela(e, n){
+    var total = Math.max(1, Number(e.installmentsTotal) || 1);
+    var centavos = Math.round((Number(e.value) || 0) * 100);
+    var base = Math.floor(centavos / total);
+    var sobra = centavos - base * total;
+    // A sobra vai toda na última: assim a soma fecha no centavo.
+    return (n === total ? base + sobra : base) / 100;
+  }
+
+  // Qual parcela cai no mês mk (1..total), ou 0 se nenhuma.
+  function parcelaNoMes(e, mk){
+    var inicio = monthKeyFromDate(e.date);
+    if (!inicio || mk < inicio) return 0;
+    var total = Math.max(1, Number(e.installmentsTotal) || 1);
+    var n = mesesEntre(inicio, mk) + 1;
+    return (n >= 1 && n <= total) ? n : 0;
+  }
+
+  function installmentOccurrence(e, mk){
+    var n = parcelaNoMes(e, mk);
+    if (!n) return null;
+    var inicio = monthKeyFromDate(e.date);
+    var copia = Object.assign({}, e);
+    copia.value = valorDaParcela(e, n);
+    // A partir daqui ela é um gasto comum do valor da parcela: quem soma
+    // dinheiro não precisa saber que veio de um parcelamento.
+    copia.installment = false;
+    copia.installmentsTotal = null;
+    copia.installmentsPaid = null;
+    copia.parcelaDe = { n: n, total: Math.max(1, Number(e.installmentsTotal) || 1), valorCheio: Number(e.value) || 0 };
+    if (mk !== inicio){
+      copia.id = e.id + '#' + mk;
+      copia.date = dateInMonth(mk, parseInt(String(e.date).slice(8,10), 10) || 1);
+      copia.virtual = true;
+      copia.thumb = null;          // o comprovante fica na compra, no mês dela
+    }
+    return copia;
+  }
+
   function materializedForMonth(mk){
     var out = [];
     var limite = fixedHorizon();
     state.expenses.forEach(function(e){
+      if (!e.fixed && ehParcelada(e)){
+        var parc = installmentOccurrence(e, mk);
+        if (parc) out.push(parc);
+        return;
+      }
       if (e.fixed){
         // O mês de origem entra sempre; as repetições param no horizonte
         // (e antes disso, no prazo, se a pessoa tiver posto um).
@@ -4707,6 +4841,14 @@
     var primeiro = keys[0];
     var ultimo = keys[keys.length - 1];
     if (ultimo < atual) ultimo = atual;
+    // Compra em 12x feita hoje tem parcela caindo daqui a quase um ano: o
+    // intervalo tem que ir até lá, senão a última parcela não existe pra
+    // ninguém.
+    state.expenses.forEach(function(e){
+      if (!ehParcelada(e)) return;
+      var fim = monthKeyAdd(monthKeyFromDate(e.date), Math.max(1, Number(e.installmentsTotal) || 1) - 1);
+      if (fim > ultimo) ultimo = fim;
+    });
     if (mesesAdiante){
       var limite = monthKeyAdd(atual, mesesAdiante);
       if (limite > ultimo) ultimo = limite;
@@ -4773,6 +4915,9 @@
     mk = mk || mesDoLancamento(e);
     if (marcaGuardada(e, mk)) return true;
     if (e.fixed) return mk >= currentMonthKey();
+    // Parcela do mês atual em diante pode ser marcada como paga, igual conta
+    // fixa. Parcela velha é histórico, não cobrança.
+    if (e.parcelaDe) return mk >= currentMonthKey();
     return String(e.date) > todayISO();
   }
 
@@ -4894,7 +5039,7 @@
         fora.push({
           id: baseExpenseId(e.id), mes: mk,
           descricao: e.description, categoria: e.category,
-          valor: e.value, pessoa: e.person, tipo: e.type,
+          valor: e.value, pessoa: e.person, tipo: e.type, fixa: !!e.fixed,
           vence: venc, faltam: faltam, situacao: situacao
         });
       });
@@ -4922,7 +5067,11 @@
         + '<span class="cob-nome">' + escapeHTML(c.descricao) + '</span>'
         + '<span class="cob-quando">' + escapeHTML(c.categoria) + ' · ' + escapeHTML(quandoVence(c)) + '</span>'
       + '</button>'
-      + '<span class="cob-valor">' + formatBRL(c.valor) + '</span>'
+      + (c.fixa
+          ? '<button type="button" class="cob-valor cob-valor-ajusta" data-action="ajustar-valor-mes"'
+            + ' data-id="' + escapeHTML(c.id) + '" data-mes="' + c.mes + '" title="Veio outro valor? Toque pra ajustar">'
+            + formatBRL(c.valor) + '<span class="valor-fixo-lapis">✎</span></button>'
+          : '<span class="cob-valor">' + formatBRL(c.valor) + '</span>')
       + '<button type="button" class="cob-pago" data-action="cobranca-pago"'
         + ' data-id="' + escapeHTML(c.id) + '" data-mes="' + c.mes + '">PAGO</button>'
       + '</div>';
@@ -5614,6 +5763,17 @@
 
   // Cabeçalho da categoria. Quando não há parcela pendurada, os dois números
   // são o mesmo — aí mostra um só, pra não inventar informação.
+  /* "Parcela 2 de 4 · compra de R$ 200,00" — a linha precisa dizer as duas
+     coisas: o que sai NESTE mês (o valor à direita) e de que compra ela veio. */
+  function seloParcelaHTML(e){
+    if (!e || !e.parcelaDe) return '';
+    var p = e.parcelaDe;
+    var faltam = p.total - p.n;
+    return '<span class="parcela-selo">🧾 Parcela ' + p.n + '/' + p.total + '</span>'
+      + ' · compra de ' + formatBRL(p.valorCheio)
+      + (faltam > 0 ? ' · faltam ' + faltam : ' · última');
+  }
+
   function totalDoGrupoHTML(g){
     if (!(g.futuro > 0.005)) return '<span class="total">'+formatBRL(g.total)+'</span>';
     return '<span class="total total-duplo">'
@@ -5633,9 +5793,11 @@
           ? '<img class="thumb" src="'+e.thumb+'" data-action="view-receipt" data-id="'+e.id+'">'
           : '<div class="thumb-placeholder" style="background:'+hexToRgba(catColor(e.category),0.15)+';color:'+catColor(e.category)+';">'+catIcon(e.category)+'</div>';
         var c = casalCalc(e);
-        var detailLine = c.installment
-          ? (' · '+c.total+'x de '+formatBRL(c.parcelValue)+' · ✅ '+c.paid+' pagas'+(c.remaining>0?(' · ⏳ '+c.remaining+' restantes'):''))
-          : (e.fixed ? ' · ' + seloFixoHTML(e) : '');
+        var detailLine = e.parcelaDe
+          ? (' · ' + seloParcelaHTML(e))
+          : (c.installment
+              ? (' · '+c.total+'x de '+formatBRL(c.parcelValue)+' · ✅ '+c.paid+' pagas'+(c.remaining>0?(' · ⏳ '+c.remaining+' restantes'):''))
+              : (e.fixed ? ' · ' + seloFixoHTML(e) : ''));
         var mkLinha = monthKeyFromDate(e.date);
         var botoes = situacaoBotoesHTML(e, mkLinha);
         return ''
@@ -5643,7 +5805,7 @@
           + thumb
           + '<div class="info"><div class="desc"><span class="desc-txt">'+escapeHTML(e.description)+'</span></div>'
             + '<div class="date">'+formatDateBR(e.date)+detailLine+'</div></div>'
-          + '<div class="value">'+formatBRL(e.value)+'</div>'
+          + valorDaLinhaHTML(e, mkLinha)
           + '<button class="edit" data-action="edit-expense" data-id="'+e.id+'">✏️</button>'
           + '<button class="del" data-action="delete-expense" data-id="'+e.id+'">🗑️</button>'
           + botoes
@@ -5671,7 +5833,9 @@
     // Agora o débito também guarda o cartão, e existe a opção "pix/dinheiro":
     // a etiqueta tem que dizer os três casos, senão um pix aparece como crédito.
     var cardLabel = e.card ? (' — ' + escapeHTML(e.card)) : '';
-    var detailLine = c.installment
+    var detailLine = e.parcelaDe
+      ? seloParcelaHTML(e)
+      : c.installment
       ? (c.total + 'x de ' + formatBRL(c.parcelValue) + ' · ✅ ' + c.paid + ' pagas · ⏳ ' + c.remaining + ' restantes' + (c.remainingValue>0.005 ? (' · Falta ' + formatBRL(c.remainingValue)) : ''))
       : (e.paymentMethod === 'debito' ? 'Débito · pago'
          : (e.paymentMethod === 'outro' ? 'Pix, dinheiro ou boleto · pago' : 'Crédito à vista · pago'))
@@ -6756,7 +6920,8 @@
         if (mk < inicio) return;
         var fim = fixedEndMonth(e);
         if (fim && mk > fim) return;
-        total += e.value;
+        // Mês que já tem valor ajustado entra com ele; o resto, com o de sempre.
+        total += valorDoMes(e, mk);
       });
     }
     return total;
@@ -6769,18 +6934,23 @@
         + '<div class="empty-state">Nenhuma conta fixa ainda. Cadastre a primeira aí em cima — aluguel, internet, seguro, condomínio.<br><br>Ela passa a aparecer sozinha em todos os meses, e você nunca mais digita a mesma conta duas vezes.</div>';
     }
 
+    // Os números desta aba são do MÊS ATUAL: quem ajustou a luz deste mês vê
+    // o valor que veio, não o de sempre.
+    var mkAgora = currentMonthKey();
+    function somaDoMes(lista){
+      return lista.reduce(function(s,e){ return s + valorDoMes(e, mkAgora); }, 0);
+    }
+
     var daCasa = fixos.filter(function(e){ return e.type === 'casal'; });
-    var totalCasa = daCasa.reduce(function(s,e){ return s + e.value; }, 0);
+    var totalCasa = somaDoMes(daCasa);
 
     // Quanto cada pessoa banca das contas fixas da casa.
     var porPessoa = state.settings.members.map(function(m){
-      var v = daCasa.filter(function(e){ return e.person === m.id; })
-                    .reduce(function(s,e){ return s + e.value; }, 0);
+      var v = somaDoMes(daCasa.filter(function(e){ return e.person === m.id; }));
       return {nome:m.name, cor:m.color, valor:v};
     }).filter(function(p){ return p.valor > 0; });
 
-    var totalPessoais = fixos.filter(function(e){ return e.type === 'pessoal'; })
-                             .reduce(function(s,e){ return s + e.value; }, 0);
+    var totalPessoais = somaDoMes(fixos.filter(function(e){ return e.type === 'pessoal'; }));
 
     var temPrazo = fixos.some(function(e){ return !!fixedEndMonth(e); });
 
@@ -6808,9 +6978,9 @@
 
     function listaFixos(itens, titulo, accent){
       if (!itens.length) return '';
-      var total = itens.reduce(function(s,e){ return s + e.value; }, 0);
       var mkAtual = currentMonthKey();
-      var linhas = itens.slice().sort(function(a,b){ return b.value - a.value; }).map(function(e){
+      var total = itens.reduce(function(s,e){ return s + valorDoMes(e, mkAtual); }, 0);
+      var linhas = itens.slice().sort(function(a,b){ return valorDoMes(b, mkAtual) - valorDoMes(a, mkAtual); }).map(function(e){
         var dono = memberById(e.person);
         // Aqui a situação é sempre a do mês corrente: é a parcela que está
         // pra vencer (ou vencida) agora.
@@ -6821,7 +6991,7 @@
             + '<div class="date">'+escapeHTML(e.category)+' · paga por '+escapeHTML(dono ? dono.name : '?')
             + ' · desde '+escapeHTML(monthLabelFromKey(monthKeyFromDate(e.date)))
             + prazoNaListaHTML(e)+'</div></div>'
-          + '<div class="value">'+formatBRL(e.value)+'</div>'
+          + valorDaLinhaHTML(e, mkAtual)
           + '<button class="edit" data-action="edit-fixed" data-id="'+e.id+'" data-person="'+escapeHTML(e.person)+'" data-type="'+e.type+'">✏️</button>'
           + '<button class="del" data-action="delete-expense" data-id="'+e.id+'">🗑️</button>'
           + botoesFixa
@@ -7074,6 +7244,125 @@
      A mesma lista da janela que abre junto com o app, num lugar fixo: quem
      fechou a janela sem resolver não precisa esperar a próxima abertura pra
      achar de novo o que está vencendo. */
+
+  /* ---------- Ajustar o valor de uma conta fixa num mês ----------
+     A conta chegou com outro valor. Aqui ela arruma só aquele mês; o valor de
+     sempre continua o mesmo pros outros, a não ser que a pessoa marque que
+     dali pra frente é esse o novo valor. */
+
+  var ajusteAtual = null;   // {id, mk}
+
+  // O botão do valor, quando o gasto é fixo. Nos outros continua texto puro —
+  // gasto comum se edita pelo lápis, não tem "valor deste mês".
+  function valorDaLinhaHTML(e, mk){
+    if (!e || !e.fixed){
+      return '<div class="value">' + formatBRL(e ? e.value : 0) + '</div>';
+    }
+    var base = baseExpenseId(e.id);
+    var ajustado = temAjusteNoMes(acharGasto(base), mk);
+    return '<button type="button" class="value valor-fixo' + (ajustado ? ' ajustado' : '') + '"'
+      + ' data-action="ajustar-valor-mes" data-id="' + escapeHTML(base) + '" data-mes="' + escapeHTML(mk || '') + '"'
+      + ' title="' + (ajustado ? 'Valor ajustado neste mês — toque pra mudar' : 'Veio outro valor? Toque pra ajustar só este mês') + '">'
+      + formatBRL(valorDoMes(acharGasto(base) || e, mk))
+      + '<span class="valor-fixo-lapis">' + (ajustado ? '●' : '✎') + '</span>'
+      + '</button>';
+  }
+
+  function acharGasto(id){
+    var alvo = baseExpenseId(id);
+    return state.expenses.filter(function(e){ return e.id === alvo; })[0] || null;
+  }
+
+  function abrirAjusteDeValor(id, mk){
+    var e = acharGasto(id);
+    if (!e) return;
+    mk = mk || currentMonthKey();
+    ajusteAtual = { id: e.id, mk: mk };
+
+    var atual = valorDoMes(e, mk);
+    var ajustado = temAjusteNoMes(e, mk);
+
+    ajustePanelEl.innerHTML = ''
+      + '<h2>' + catChipHTML(e.category, 26) + ' ' + escapeHTML(e.description) + '</h2>'
+      + '<div class="note" style="margin:2px 0 14px;">Quanto veio em <b>' + escapeHTML(monthLabelFromKey(mk)) + '</b>?'
+      + ' Isso muda <b>só este mês</b> — os outros continuam com o valor de sempre ('
+      + formatBRL(e.value) + ').</div>'
+      + '<div class="field"><label>Valor deste mês (R$)</label>'
+        + '<input type="number" inputmode="decimal" id="ajuste-valor" step="0.01" min="0" placeholder="0,00" value="' + (atual ? Number(atual).toFixed(2) : '') + '"></div>'
+      + '<label class="am-opcao" style="margin-top:4px;">'
+        + '<input type="checkbox" id="ajuste-daqui">'
+        + '<span><b>É o novo valor daqui pra frente</b>'
+        + '<span class="am-sub">Marque quando o valor mudou de vez (reajuste do aluguel, plano novo). '
+        + 'Sem marcar, só ' + escapeHTML(monthLabelFromKey(mk)) + ' muda.</span></span></label>'
+      + (ajustado
+          ? '<button type="button" class="secondary-btn" data-action="ajuste-limpar" style="margin-top:10px;">'
+            + '↩️ Voltar pro valor de sempre (' + formatBRL(e.value) + ')</button>'
+          : '')
+      + '<div class="settings-actions" style="margin-top:16px;">'
+        + '<button type="button" class="secondary-btn" data-action="ajuste-cancelar">Cancelar</button>'
+        + '<button type="button" class="submit-btn" data-action="ajuste-salvar" style="background:var(--neon2);color:var(--accent-ink);">Salvar</button>'
+      + '</div>';
+    ajusteModalEl.classList.remove('hidden');
+    var campo = document.getElementById('ajuste-valor');
+    if (campo) setTimeout(function(){ campo.focus(); campo.select(); }, 120);
+  }
+
+  function fecharAjusteDeValor(){
+    ajusteModalEl.classList.add('hidden');
+    ajusteAtual = null;
+  }
+
+  async function salvarAjusteDeValor(){
+    if (!ajusteAtual) return;
+    var e = acharGasto(ajusteAtual.id);
+    if (!e){ fecharAjusteDeValor(); return; }
+    var campo = document.getElementById('ajuste-valor');
+    var daqui = document.getElementById('ajuste-daqui');
+    var novo = parseFloat(campo ? campo.value : '');
+    if (isNaN(novo) || novo < 0){ alert('Digite o valor que veio neste mês.'); return; }
+
+    var antes = JSON.parse(JSON.stringify({v: e.value, m: e.valores || null}));
+    if (daqui && daqui.checked){
+      // Mudou de vez: o valor de sempre passa a ser este, e os ajustes de
+      // meses ANTERIORES ficam (eles são o histórico do que já veio).
+      e.value = novo;
+      var limpo = {};
+      Object.keys(e.valores || {}).forEach(function(k){ if (k < ajusteAtual.mk) limpo[k] = e.valores[k]; });
+      e.valores = Object.keys(limpo).length ? limpo : null;
+    } else {
+      var mapa = Object.assign({}, e.valores || {});
+      mapa[ajusteAtual.mk] = novo;
+      e.valores = mapa;
+    }
+    e.mexidoEm = agoraISO();
+
+    var ok = await saveExpenses(state.expenses);
+    if (!ok){
+      e.value = antes.v; e.valores = antes.m;
+      alert('Não consegui salvar agora. Nada foi alterado.');
+      return;
+    }
+    fecharAjusteDeValor();
+    render();
+    avisarRapido('Valor de ' + monthLabelFromKey(ajusteAtual ? ajusteAtual.mk : currentMonthKey()) + ' atualizado.');
+  }
+
+  async function limparAjusteDeValor(){
+    if (!ajusteAtual) return;
+    var e = acharGasto(ajusteAtual.id);
+    if (!e){ fecharAjusteDeValor(); return; }
+    var antes = e.valores ? JSON.parse(JSON.stringify(e.valores)) : null;
+    var mapa = Object.assign({}, e.valores || {});
+    delete mapa[ajusteAtual.mk];
+    e.valores = Object.keys(mapa).length ? mapa : null;
+    e.mexidoEm = agoraISO();
+    var ok = await saveExpenses(state.expenses);
+    if (!ok){ e.valores = antes; alert('Não consegui salvar agora.'); return; }
+    fecharAjusteDeValor();
+    render();
+    avisarRapido('Voltou pro valor de sempre.');
+  }
+
   function renderAvisosTab(){
     var lista = contasParaLembrar();
     if (!lista.length){
@@ -12241,6 +12530,13 @@
         return;
       }
 
+      var ajustar = e.target.closest('[data-action="ajustar-valor-mes"]');
+      if (ajustar){
+        e.preventDefault();
+        abrirAjusteDeValor(ajustar.getAttribute('data-id'), ajustar.getAttribute('data-mes'));
+        return;
+      }
+
       // Na aba Avisos as linhas são as mesmas da janela — os dois botões
       // precisam funcionar aqui também.
       var pagoAviso = e.target.closest('[data-action="cobranca-pago"]');
@@ -12507,6 +12803,12 @@
         if (ir){
           irParaConta(ir.getAttribute('data-id'), ir.getAttribute('data-person'),
                       ir.getAttribute('data-type'), ir.getAttribute('data-mes'));
+          return;
+        }
+        var ajustaAqui = ev.target.closest('[data-action="ajustar-valor-mes"]');
+        if (ajustaAqui){
+          overdueModal.classList.add('hidden');
+          abrirAjusteDeValor(ajustaAqui.getAttribute('data-id'), ajustaAqui.getAttribute('data-mes'));
           return;
         }
         var quero = ev.target.closest('[data-action="cobranca-avisar"]');
@@ -12847,6 +13149,16 @@
 
     agendaModalEl.addEventListener('click', function(e){ if (e.target === agendaModalEl) fecharAgenda(); });
 
+    ajusteModalEl.addEventListener('click', function(e){
+      if (e.target === ajusteModalEl){ fecharAjusteDeValor(); return; }
+      if (e.target.closest('[data-action="ajuste-cancelar"]')){ fecharAjusteDeValor(); return; }
+      if (e.target.closest('[data-action="ajuste-salvar"]')){ salvarAjusteDeValor(); return; }
+      if (e.target.closest('[data-action="ajuste-limpar"]')){ limparAjusteDeValor(); return; }
+    });
+    ajustePanelEl.addEventListener('keydown', function(e){
+      if (e.key === 'Enter' && e.target.matches('#ajuste-valor')){ e.preventDefault(); salvarAjusteDeValor(); }
+    });
+
     notaModalEl.addEventListener('click', function(e){
       if (e.target === notaModalEl){ fecharColarNota(); return; }
       if (e.target.closest('[data-action="nota-cancelar"]')){ fecharColarNota(); return; }
@@ -13113,6 +13425,8 @@
     apagarMesModalEl = document.getElementById('apagar-mes-modal');
     apagarMesPanelEl = document.getElementById('apagar-mes-panel');
     notaModalEl = document.getElementById('nota-modal');
+    ajusteModalEl = document.getElementById('ajuste-modal');
+    ajustePanelEl = document.getElementById('ajuste-panel');
     temaModalEl = document.getElementById('tema-modal');
     temaPanelEl = document.getElementById('tema-panel');
     temaBtn = document.getElementById('tema-btn');
