@@ -2644,18 +2644,24 @@
 </div>
 
 <!--
-  Tesseract.js faz a leitura automática (OCR) das notas fiscais direto no
-  navegador da pessoa, sem precisar de servidor nem de chave de API.
-  Se o CDN não carregar por algum motivo, o app detecta isso e cai de volta
-  pro preenchimento manual — a leitura automática nunca trava o resto do site.
+  DUAS FERRAMENTAS QUE NÃO SÃO BAIXADAS AQUI, DE PROPÓSITO
 
-  A ZXing lê, na mesma foto, QR code (o da nota fiscal eletrônica) e código de
-  barras (EAN de produto) — também 100% no navegador. Se o CDN não carregar,
-  o app só deixa de tentar essa leitura extra; OCR e preenchimento manual
-  continuam funcionando normalmente.
+  Tesseract.js (lê o texto da foto da nota) e ZXing (lê o QR code dentro dessa
+  mesma foto) ficavam nesta lista, e por isso eram baixadas TODA vez que alguém
+  abria o app — mesmo quem nunca fotografa nota nenhuma e só digita os gastos
+  na mão, que é a maioria. Juntas elas pesam mais do que o app inteiro.
+
+  Agora elas são baixadas na primeira vez que a pessoa toca em "Tirar foto" ou
+  "Escolher da galeria", e ficam prontas dali em diante. Quem nunca fotografa
+  uma nota nunca baixa nenhuma das duas. Quem fotografa espera uma vez só.
+  Quem está sem internet, ou numa rede que bloqueia o CDN, recebe o mesmo
+  recado educado de antes e preenche na mão — nada trava.
+
+  Veja "carregarDeFora" lá dentro do programa.
+
+  A Supabase continua aqui porque ela é precisa logo na abertura, pra saber
+  quem está entrando.
 -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.0.4/tesseract.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.20.0/umd/index.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/dist/umd/supabase.min.js"></script>
 
 <script>
@@ -3295,6 +3301,64 @@
 
   function modoNuvem(){ return !!(supa && casaId); }
 
+  /* ---------- Lembrar qual é a casa, no próprio aparelho ----------
+     Antes, a primeira coisa que o app fazia ao abrir era PERGUNTAR ao servidor
+     qual é a casa da pessoa. Sem sinal essa pergunta falha, e o app mandava ela
+     pra tela de "criar ou entrar numa casa" — com os gastos dela inteiros aqui
+     no aparelho, sem ninguém olhar.
+     Guardando o número da casa aqui, o app abre na hora, com o que está salvo,
+     e só depois vai conferir com a nuvem. Guardamos junto o dono da sessão: se
+     outra pessoa entrar neste mesmo celular, a casa lembrada não vale pra ela. */
+  var CASA_KEY = 'gastos_casa_casa';
+
+  function lembrarCasa(id){
+    if (!storageAvailable || !id) return;
+    try {
+      localStorage.setItem(CASA_KEY, JSON.stringify({
+        id: id,
+        usuario: (sessaoUsuario && sessaoUsuario.id) || null
+      }));
+    } catch(e){}
+  }
+
+  function casaLembrada(){
+    if (!storageAvailable) return null;
+    try {
+      var g = JSON.parse(localStorage.getItem(CASA_KEY) || 'null');
+      if (!g || !g.id) return null;
+      var euAgora = (sessaoUsuario && sessaoUsuario.id) || null;
+      // Casa gravada por outra conta neste aparelho não serve.
+      if (g.usuario && euAgora && g.usuario !== euAgora) return null;
+      return g.id;
+    } catch(e){ return null; }
+  }
+
+  function esquecerCasa(){
+    if (!storageAvailable) return;
+    try { localStorage.removeItem(CASA_KEY); } catch(e){}
+  }
+
+  /* Distingue "está sem internet" de "o servidor recusou". A diferença importa:
+     sem internet a gente segue usando o que está no aparelho; recusa de verdade
+     (conta errada, permissão) precisa aparecer pra pessoa. */
+  function ehFalhaDeRede(e){
+    try { if (typeof navigator !== 'undefined' && navigator.onLine === false) return true; } catch(_){}
+    var m = String((e && (e.message || e.msg)) || e || '').toLowerCase();
+    return /failed to fetch|network|fetch|load failed|timeout|timed out|abort|offline|conex/.test(m);
+  }
+
+  // Quando a internet voltar, tenta de novo sozinho — sem a pessoa recarregar.
+  var esperandoInternet = false;
+  function tentarDeNovoQuandoVoltar(){
+    if (esperandoInternet) return;
+    esperandoInternet = true;
+    window.addEventListener('online', function reconectar(){
+      window.removeEventListener('online', reconectar);
+      esperandoInternet = false;
+      depoisDeEntrar(true);
+    });
+  }
+
   function lerConviteDaURL(){
     try {
       var p = new URLSearchParams(location.search);
@@ -3863,6 +3927,7 @@
       localStorage.removeItem('gastos_casa_expenses');
       localStorage.removeItem('gastos_casa_settings');
       localStorage.removeItem('gastos_casa_fila');
+      localStorage.removeItem(CASA_KEY);
     } catch(e){}
     location.reload();
   }
@@ -4002,11 +4067,58 @@
     }
   }
 
-  // Já logado: acha a casa da pessoa, ou pede pra criar/entrar numa.
-  async function depoisDeEntrar(){
+  /* Abre a tela AGORA, com o que está guardado no aparelho, sem esperar
+     resposta nenhuma da internet. Só funciona se o app já esteve aqui antes
+     (tem casa lembrada e configurações salvas) — na primeira vez não tem o que
+     mostrar mesmo, e aí a abertura continua como era.
+     Devolve true se conseguiu montar a tela. */
+  async function abrirDoCache(){
+    if (!storageAvailable) return false;
+    var idCasa = casaLembrada();
+    if (!idCasa) return false;
+
+    var guardado = lerCache('gastos_casa_settings', null);
+    if (!guardado || !Array.isArray(guardado.members) || !guardado.members.length) return false;
+
+    try {
+      // casaId ainda está nulo de propósito: assim loadSettings e loadExpenses
+      // leem do aparelho, sem tocar na rede. Só depois entramos em modo nuvem.
+      state.settings = await loadSettings();
+      state.expenses = normalizeExpenses(await loadExpenses());
+      casaId = idCasa;
+      // O "retrato do servidor" começa igual ao que está salvo. É o que já
+      // tinha subido da última vez; o que ainda não subiu está na fila, que é
+      // guardada à parte e não se perde.
+      refazerEspelho(state.expenses);
+      ensureSubTabDefaults();
+      invalidateCustomColors();
+      esconderAuth();
+      loadingEl.style.display = 'none';
+      render();
+      atualizarAvisoSync();
+      checkAndShowOverdueNotification();
+      return true;
+    } catch(e){
+      console.error('abrirDoCache', e);
+      casaId = null;
+      return false;
+    }
+  }
+
+  /* Já logado: acha a casa da pessoa, ou pede pra criar/entrar numa.
+     "jaAbriu" diz que a tela já está na frente da pessoa, montada com o que
+     estava salvo. Quando está, nada aqui pode tirar ela do ar por falta de
+     sinal: no máximo desistimos em silêncio e tentamos quando a internet voltar. */
+  async function depoisDeEntrar(jaAbriu){
     try {
       casaId = await descobrirCasa();
     } catch(e){
+      if (jaAbriu && ehFalhaDeRede(e)){
+        // Sem sinal: segue usando o aparelho. O que ela mexer entra na fila.
+        atualizarAvisoSync();
+        tentarDeNovoQuandoVoltar();
+        return;
+      }
       mostrarAuth('casa', traduzirErroAuth(e.message));
       return;
     }
@@ -4016,16 +4128,22 @@
         try {
           casaId = await resgatarLicenca(conviteDoLink, 'Gastos da Casa');
           limparConvite();
-          await carregarTudoDaNuvem();
+          lembrarCasa(casaId);
+          await carregarTudoDaNuvem(jaAbriu);
           return;
         } catch(e){
           mostrarAuth('casa', traduzirErroAuth(e.message));
           return;
         }
       }
+      // O servidor respondeu e disse que esta conta não tem casa nenhuma:
+      // o que estava lembrado no aparelho não vale mais.
+      esquecerCasa();
       mostrarAuth('casa');
       return;
     }
+
+    lembrarCasa(casaId);
 
     await conferirAcesso();
     if (acessoInfo && (acessoInfo.vencido || acessoInfo.ativa === false)){
@@ -4033,12 +4151,14 @@
       return;
     }
 
-    await carregarTudoDaNuvem();
+    await carregarTudoDaNuvem(jaAbriu);
   }
 
-  async function carregarTudoDaNuvem(){
+  async function carregarTudoDaNuvem(jaAbriu){
     esconderAuth();
-    loadingEl.style.display = '';
+    // Se a tela já abriu com o que estava salvo, não volta pra rodinha de
+    // carregando: a pessoa usa o app enquanto a nuvem responde por baixo.
+    if (!jaAbriu) loadingEl.style.display = '';
     state.settings = await loadSettings();
     state.expenses = await loadExpenses();
     ensureSubTabDefaults();
@@ -11438,14 +11558,85 @@
     holder.querySelector('pre').textContent = String(rawText).trim();
   }
 
+  /* ---------- Baixar as ferramentas de leitura só quando precisa ----------
+     Nenhuma das duas vem junto com o app. Elas são buscadas na hora em que
+     alguém vai de fato ler uma nota — e uma vez só: depois de baixadas, ficam
+     na memória do navegador até a pessoa fechar a aba, e no cache dele por
+     muito mais tempo que isso.
+
+     Se a busca falhar (sem internet, CDN fora do ar, rede de empresa que
+     bloqueia), a gente devolve "não deu" e esquece a tentativa — assim, na
+     próxima foto, que pode ser noutra rede, ele tenta de novo em vez de
+     desistir pra sempre. Quem chama sempre trata o "não deu": o app cai no
+     preenchimento manual, como já fazia. */
+  var DE_FORA = {
+    tesseract: {
+      url: 'https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.0.4/tesseract.min.js',
+      pronta: function(){ return typeof Tesseract !== 'undefined'; }
+    },
+    zxing: {
+      url: 'https://cdn.jsdelivr.net/npm/@zxing/library@0.20.0/umd/index.min.js',
+      pronta: function(){ return typeof ZXing !== 'undefined'; }
+    }
+  };
+  var baixandoDeFora = {};
+
+  function carregarDeFora(nome){
+    var lib = DE_FORA[nome];
+    if (!lib) return Promise.resolve(false);
+    if (lib.pronta()) return Promise.resolve(true);
+    // Já tem um download desse mesmo em andamento: espera o mesmo, em vez de
+    // começar um segundo. (A foto dispara os dois caminhos ao mesmo tempo.)
+    if (baixandoDeFora[nome]) return baixandoDeFora[nome];
+
+    var tag = document.createElement('script');
+    baixandoDeFora[nome] = new Promise(function(resolve){
+      var jaRespondeu = false;
+      function terminar(){
+        if (jaRespondeu) return;
+        jaRespondeu = true;
+        resolve(lib.pronta());
+      }
+      tag.src = lib.url;
+      tag.async = true;
+      tag.onload = terminar;
+      tag.onerror = terminar;
+      // Rede que aceita a conexão e nunca responde existe. 25 segundos e a
+      // gente desiste com o recado de sempre, em vez de deixar a pessoa
+      // olhando "lendo a nota..." pra sempre.
+      setTimeout(terminar, 25000);
+      document.head.appendChild(tag);
+    }).then(function(deu){
+      if (!deu){
+        delete baixandoDeFora[nome];
+        try { if (tag.parentNode) tag.parentNode.removeChild(tag); } catch(e){}
+      }
+      return deu;
+    });
+
+    return baixandoDeFora[nome];
+  }
+
+  /* Começa a baixar sem esperar resposta. Chamado no momento em que a pessoa
+     toca em "Tirar foto" — enquanto ela enquadra e tira a foto, o download já
+     está andando. Quando a foto chega, quase sempre está tudo pronto. */
+  function adiantarLeitores(){
+    carregarDeFora('tesseract');
+    carregarDeFora('zxing');
+  }
+
   async function runReceiptOCR(imageSource, formEl){
     if (!formEl || !formEl.isConnected) return;
-    if (typeof Tesseract === 'undefined'){
+    // O aviso vem antes da busca de propósito: se a ferramenta ainda estiver
+    // baixando, a pessoa vê "lendo a nota" e não uma tela parada.
+    setOcrStatus(formEl, '🔎 Lendo a nota automaticamente...', 'loading');
+    if (!(await carregarDeFora('tesseract'))){
       console.warn('Tesseract.js indisponível — leitura automática desativada.');
+      if (!formEl.isConnected) return;
       setOcrStatus(formEl, '⚠️ Leitura automática indisponível agora — preencha manualmente.', 'fail');
       return;
     }
-    setOcrStatus(formEl, '🔎 Lendo a nota automaticamente...', 'loading');
+    if (!formEl.isConnected) return;
     var worker = null;
     try {
       // Usamos o worker diretamente (em vez do atalho Tesseract.recognize) pra
@@ -12102,11 +12293,14 @@
   }
 
   async function scanCodigoENota(file, formEl){
-    if (typeof ZXing === 'undefined'){
+    if (!formEl || !formEl.isConnected) return;
+    // Esta é um extra em cima do OCR: se não vier, a leitura do texto e o
+    // preenchimento manual seguem iguais. Por isso aqui nem tem recado na tela.
+    if (!(await carregarDeFora('zxing'))){
       console.warn('ZXing indisponível — leitura de QR code/código de barras desativada.');
       return;
     }
-    if (!formEl || !formEl.isConnected) return;
+    if (!formEl.isConnected) return;
     var url = URL.createObjectURL(file);
     try {
       var hints = new Map();
@@ -12141,13 +12335,13 @@
   var scannerLeitor = null;
   var scannerFormAtual = null;
 
-  function abrirLeitorAoVivo(tipo, formEl){
-    if (typeof ZXing === 'undefined'){
-      alert('A leitura de código não está disponível agora — tente de novo em instantes, ou use a foto da nota normalmente.');
-      return;
-    }
+  async function abrirLeitorAoVivo(tipo, formEl){
     if (!formEl){
       alert('Abra o formulário de uma despesa antes de usar o leitor.');
+      return;
+    }
+    if (!(await carregarDeFora('zxing'))){
+      alert('A leitura de código não está disponível agora — tente de novo em instantes, ou use a foto da nota normalmente.');
       return;
     }
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
@@ -12378,6 +12572,14 @@
   /* ---------- Event wiring ---------- */
 
   function wireEvents(){
+    /* Toque em "Tirar foto" / "Escolher da galeria": começa a baixar as
+       ferramentas de leitura JÁ, enquanto a câmera do celular ainda está
+       abrindo. Em captura (o "true" no fim) pra valer mesmo que algum outro
+       clique pare a propagação no caminho. */
+    document.addEventListener('click', function(e){
+      if (e.target && e.target.closest && e.target.closest('.photo-btn')) adiantarLeitores();
+    }, true);
+
     tabbarEl.addEventListener('click', function(e){
       if (e.target.closest('[data-apps]')){ openAppsModal(); return; }
       var btn = e.target.closest('[data-tab]');
@@ -13462,8 +13664,20 @@
         return;
       }
       sessaoUsuario = ses.user;
-      await conferirSeAdmin();
-      await depoisDeEntrar();
+
+      // Abre JÁ, com o que está guardado aqui. Antes o app segurava a tela até
+      // o servidor responder três perguntas seguidas — e sem sinal mandava a
+      // pessoa pra tela de "criar ou entrar numa casa", com os gastos dela
+      // inteiros no aparelho. Agora a nuvem só corrige o que já está na tela.
+      var jaAbriu = await abrirDoCache();
+
+      // Saber se você é administrador não pode segurar a abertura: quando a
+      // resposta chegar, o botão aparece sozinho.
+      conferirSeAdmin().then(function(){
+        if (souAdmin && shellEl && !shellEl.classList.contains('hidden')) render();
+      });
+
+      await depoisDeEntrar(jaAbriu);
       return;
     }
 
@@ -13581,15 +13795,22 @@
       return !!ate && new Date().getTime() < Number(ate);
     } catch(e){ return false; }
   }
+  // A janela de lembretes abre UMA vez por abertura do app. Agora o app abre
+  // duas vezes na prática (primeiro com o que está salvo, depois quando a nuvem
+  // responde), e sem isto a pessoa veria a mesma janela duas vezes seguidas.
+  var cobrancaMostrada = false;
+
   function checkAndShowOverdueNotification(){
     var lista = contasParaLembrar();
     if (!lista.length) return;
+    if (cobrancaMostrada) return;
     if (sonecaAtiva()){
       // Dormindo: não abre a janela, mas religa o despertador — se a aba ficar
       // aberta até a hora escolhida, o aviso aparece sozinho.
       religarDespertador();
       return;
     }
+    cobrancaMostrada = true;
     avisarNoNavegador(lista);
     abrirCobranca(lista);
   }
