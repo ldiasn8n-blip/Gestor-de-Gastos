@@ -837,6 +837,15 @@
   #settings-panel h2{font-size:17px;margin:0 0 14px;}
   #settings-panel .field, #metas-panel .field{margin-bottom:14px;}
   #settings-panel label, #metas-panel label{display:block;font-size:12px;color:var(--ink-soft);margin-bottom:6px;}
+  /* O painel do cartão ganhou campos de escolher (dono, fechamento,
+     vencimento). Sem isto o rótulo ficava colado na mesma linha da caixinha,
+     porque a regra de cima não alcançava este painel. */
+  #cartao-panel .field{ margin-bottom:14px; }
+  #cartao-panel .field > label{ display:block; font-size:12px; color:var(--ink-soft); margin-bottom:6px; }
+  #cartao-panel .field select{
+    width:100%; padding:10px; border:1px solid var(--line); border-radius:8px;
+    font-size:16px; font-family:inherit; background:var(--input-bg); color:var(--ink);
+  }
   #settings-panel input[type="text"],
   #metas-panel input[type="text"],
   #metas-panel input[type="number"],
@@ -2132,6 +2141,15 @@
   .am-confirmar:disabled{ opacity:.45; cursor:default; }
   .card-mark-lg{ width:40px; height:40px; border-radius:12px; font-size:18px; }
   .card-caret{ margin-left:8px; color:var(--ink-soft); font-weight:700; }
+  .fatura-selo{
+    display:inline-block; padding:1px 7px; border-radius:999px;
+    background:var(--hover-soft); border:1px solid var(--line);
+    color:var(--ink-soft); font-size:11px; font-weight:600;
+    max-width:100%; white-space:normal; overflow-wrap:anywhere;
+  }
+  .cartao-resumo{
+    font-size:11.5px; color:var(--ink-soft); margin:-4px 0 10px 46px; line-height:1.35;
+  }
   .card-row.is-open{ background:var(--hover-soft); }
   .card-row.is-open .card-caret{ color:var(--accent-text); }
   .card-open{
@@ -2995,6 +3013,10 @@
         {id:'mulher', name:'Mulher', percentage:50, color:PALETTE[1]}
       ],
       cards: DEFAULT_CARDS.slice(),
+      cardIcons: {}, cardColors: {},
+      // Dia em que cada cartão fecha e vence, e de quem ele é. Vazio = o app
+      // se comporta exatamente como antes destas datas existirem.
+      cardFechamento: {}, cardVencimento: {}, cardDono: {},
       // A lista de categorias passou a ser da casa: dá pra criar, renomear e
       // apagar. Começa com as de fábrica, e cada casa molda a sua.
       categories: CATEGORIES.map(function(c){ return c.id; }),
@@ -3203,7 +3225,28 @@
     return (Number(q)||0).toLocaleString('pt-BR', {maximumFractionDigits:3, minimumFractionDigits:0});
   }
 
+  /* "Hoje" passa por aqui, num lugar só.
+     No uso normal é o relógio do aparelho, e ponto. A única exceção é o teste
+     automático: com ?__teste&__hoje=2026-09-12 na URL, o app passa a achar que
+     hoje é esse dia. Sem isso, toda bateria que fala de "conta que ainda vai
+     vencer" quebra sozinha quando o calendário anda — o teste passava dia 15 e
+     falhava dia 21 sem ninguém ter mexido em nada.
+     Só vale junto com ?__teste: numa abertura normal do app isto não existe. */
+  var HOJE_FIXO = (function(){
+    try {
+      if (location.search.indexOf('__teste') < 0) return null;
+      var m = /[?&]__hoje=(\d{4}-\d{2}-\d{2})/.exec(location.search);
+      return m ? m[1] : null;
+    } catch(e){ return null; }
+  })();
+
+  function agora(){
+    if (HOJE_FIXO) return new Date(HOJE_FIXO + 'T12:00:00');
+    return new Date();
+  }
+
   function todayISO(){
+    if (HOJE_FIXO) return HOJE_FIXO;
     var d = new Date();
     var m = String(d.getMonth()+1).padStart(2,'0');
     var day = String(d.getDate()).padStart(2,'0');
@@ -3594,6 +3637,7 @@
       items: e.items || null,
       fixed: !!e.fixed,
       fixo_ate: e.fixedUntil || null,
+      fatura_mes: e.faturaMes || null,
       pagamento: e.pagamento || null,
       valores: e.valores || null,
       installment: !!e.installment,
@@ -3619,6 +3663,7 @@
       items: r.items || null,
       fixed: !!r.fixed,
       fixedUntil: r.fixo_ate || null,
+      faturaMes: r.fatura_mes || null,
       pagamento: (r.pagamento && typeof r.pagamento === 'object') ? r.pagamento : null,
       valores: (r.valores && typeof r.valores === 'object') ? r.valores : null,
       installment: !!r.installment,
@@ -3636,6 +3681,7 @@
   function assinaturaGasto(e){
     return JSON.stringify([e.person, e.type, e.category, e.description, Number(e.value)||0,
       e.date, e.thumb || null, e.items || null, !!e.fixed, e.fixedUntil || null,
+      e.faturaMes || null,
       e.pagamento || null, e.valores || null, !!e.installment,
       e.installmentsTotal == null ? null : Number(e.installmentsTotal),
       e.installmentsPaid == null ? null : Number(e.installmentsPaid),
@@ -3778,6 +3824,9 @@
           cards: (normalizarCartoes(rc.data.cartoes).length ? normalizarCartoes(rc.data.cartoes) : DEFAULT_CARDS.slice()),
           cardIcons: aparenciaDaLista(rc.data.cartoes, 'i'),
           cardColors: aparenciaDaLista(rc.data.cartoes, 'c'),
+          cardFechamento: numeroDaLista(rc.data.cartoes, 'f'),
+          cardVencimento: numeroDaLista(rc.data.cartoes, 'v'),
+          cardDono: aparenciaDaLista(rc.data.cartoes, 'd'),
           goals: normalizarMetas(rc.data.metas),
           categories: normalizarCategorias(rc.data.categorias),
           categoryIcons: iconesDaLista(rc.data.categorias),
@@ -3797,6 +3846,9 @@
     if (!loaded.cards.length) loaded.cards = DEFAULT_CARDS.slice();
     if (!loaded.cardIcons || typeof loaded.cardIcons !== 'object') loaded.cardIcons = {};
     if (!loaded.cardColors || typeof loaded.cardColors !== 'object') loaded.cardColors = {};
+    if (!loaded.cardFechamento || typeof loaded.cardFechamento !== 'object') loaded.cardFechamento = {};
+    if (!loaded.cardVencimento || typeof loaded.cardVencimento !== 'object') loaded.cardVencimento = {};
+    if (!loaded.cardDono || typeof loaded.cardDono !== 'object') loaded.cardDono = {};
     loaded.goals = normalizarMetas(loaded.goals);
     loaded.categories = normalizarCategorias(loaded.categories);
     if (!loaded.categoryIcons || typeof loaded.categoryIcons !== 'object') loaded.categoryIcons = {};
@@ -4631,11 +4683,15 @@
       map[key].items.push(1);
     }
     lista.forEach(function(e){
-      var compra = new Date(e.date + 'T00:00:00');
+      // O gráfico anda pelo mês da FATURA: é quando o dinheiro sai.
+      var mkBase = mesDoGasto(e);
+      var pBase = String(mkBase).split('-');
+      var compra = new Date(Number(pBase[0]), Number(pBase[1]) - 1,
+                            parseInt(String(e.date).slice(8,10), 10) || 1);
       if (isNaN(compra.getTime())) return;
       var c = personalCalc(e);
       if (!c.installment){
-        addTo(monthKeyFromDate(e.date), compra.getFullYear(), compra.getMonth(), e.value);
+        addTo(mkBase, compra.getFullYear(), compra.getMonth(), e.value);
         return;
       }
       for (var k = 1; k <= c.total; k++){
@@ -4655,7 +4711,7 @@
   function upcomingMonthsForMember(memberId){
     var list = state.expenses.filter(function(e){ return e.person===memberId && e.type==='pessoal'; });
     var map = {};
-    var currentYear = new Date().getFullYear();
+    var currentYear = agora().getFullYear();
     list.forEach(function(e){
       var c = personalCalc(e);
       if (!c.installment || c.remaining <= 0) return;
@@ -4695,7 +4751,7 @@
         addTo(key, purchaseDate.getFullYear(), purchaseDate.getMonth(), {
           id:e.id, description:e.description, category:e.category, value:e.value,
           installmentLabel: e.parcelaDe ? (e.parcelaDe.n + '/' + e.parcelaDe.total) : null,
-          paid: e.parcelaDe ? (monthKeyFromDate(e.date) <= currentMonthKey()) : true
+          paid: e.parcelaDe ? (mesDoGasto(e) <= currentMonthKey()) : true
         });
       } else {
         for (var k = 1; k <= c.total; k++){
@@ -4709,7 +4765,7 @@
       }
     });
     var keys = Object.keys(map).sort();
-    var now = new Date();
+    var now = agora();
     var currentKey = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
     return keys.map(function(k){
       var m = map[k];
@@ -4735,7 +4791,7 @@
     // Ordem da lista: o ano atual sempre em cima, depois os anos que ainda vão
     // chegar em ordem crescente (é a sequência natural do que vem pela frente),
     // e por último o histórico, do mais recente pro mais antigo.
-    var anoAtual = new Date().getFullYear();
+    var anoAtual = agora().getFullYear();
     return order.sort(function(a,b){
       if (a === anoAtual) return -1;
       if (b === anoAtual) return 1;
@@ -4748,7 +4804,7 @@
   function monthKeyFromDate(iso){ return String(iso||'').slice(0,7); }
 
   function currentMonthKey(){
-    var d = new Date();
+    var d = agora();
     return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
   }
   // Quantos meses separam dois meses (chaves '2026-09').
@@ -4806,7 +4862,7 @@
   function fixedMesesRestantes(e){
     var fim = fixedEndMonth(e);
     if (!fim) return null;
-    var inicio = monthKeyFromDate(e.date);
+    var inicio = mesDoGasto(e);
     var de = (currentMonthKey() > inicio) ? currentMonthKey() : inicio;
     return Math.max(0, mesesEntre(de, fim) + 1);
   }
@@ -4838,7 +4894,7 @@
 
   function fixedOccurrence(e, mk){
     if (!e.fixed) return null;
-    var inicio = monthKeyFromDate(e.date);
+    var inicio = mesDoGasto(e);
     if (!inicio || mk < inicio) return null;
     // Conta fixa com prazo para de aparecer depois do mês combinado.
     var fim = fixedEndMonth(e);
@@ -4856,6 +4912,9 @@
     copia.date = dateInMonth(mk, dia);
     copia.value = valorDoMes(e, mk);
     copia.virtual = true;
+    // Esta repetição é DESTE mês: sem isto ela herdaria o mês de fatura da
+    // primeira e todas as repetições cairiam no mesmo lugar.
+    if (e.faturaMes) copia.faturaMes = mk;
     // Garantir que sempre tem o campo paid
     if (copia.paid === undefined) copia.paid = false;
     return copia;
@@ -4901,7 +4960,7 @@
 
   // Qual parcela cai no mês mk (1..total), ou 0 se nenhuma.
   function parcelaNoMes(e, mk){
-    var inicio = monthKeyFromDate(e.date);
+    var inicio = mesDoGasto(e);
     if (!inicio || mk < inicio) return 0;
     var total = Math.max(1, Number(e.installmentsTotal) || 1);
     var n = mesesEntre(inicio, mk) + 1;
@@ -4911,7 +4970,7 @@
   function installmentOccurrence(e, mk){
     var n = parcelaNoMes(e, mk);
     if (!n) return null;
-    var inicio = monthKeyFromDate(e.date);
+    var inicio = mesDoGasto(e);
     var copia = Object.assign({}, e);
     copia.value = valorDaParcela(e, n);
     // A partir daqui ela é um gasto comum do valor da parcela: quem soma
@@ -4924,6 +4983,7 @@
       copia.id = e.id + '#' + mk;
       copia.date = dateInMonth(mk, parseInt(String(e.date).slice(8,10), 10) || 1);
       copia.virtual = true;
+      if (e.faturaMes) copia.faturaMes = mk;
       copia.thumb = null;          // o comprovante fica na compra, no mês dela
     }
     return copia;
@@ -4941,10 +5001,10 @@
       if (e.fixed){
         // O mês de origem entra sempre; as repetições param no horizonte
         // (e antes disso, no prazo, se a pessoa tiver posto um).
-        if (mk > limite && mk !== monthKeyFromDate(e.date)) return;
+        if (mk > limite && mk !== mesDoGasto(e)) return;
         var occ = fixedOccurrence(e, mk);
         if (occ) out.push(occ);
-      } else if (monthKeyFromDate(e.date) === mk){
+      } else if (mesDoGasto(e) === mk){
         out.push(e);
       }
     });
@@ -4955,7 +5015,7 @@
   // (ou até o último lançamento, se você já lançou algo à frente).
   function expenseMonthSpan(mesesAdiante){
     var atual = currentMonthKey();
-    var keys = state.expenses.map(function(e){ return monthKeyFromDate(e.date); })
+    var keys = state.expenses.map(function(e){ return mesDoGasto(e); })
       .filter(Boolean).sort();
     if (!keys.length) return [atual];
     var primeiro = keys[0];
@@ -4966,7 +5026,7 @@
     // ninguém.
     state.expenses.forEach(function(e){
       if (!ehParcelada(e)) return;
-      var fim = monthKeyAdd(monthKeyFromDate(e.date), Math.max(1, Number(e.installmentsTotal) || 1) - 1);
+      var fim = monthKeyAdd(mesDoGasto(e), Math.max(1, Number(e.installmentsTotal) || 1) - 1);
       if (fim > ultimo) ultimo = fim;
     });
     if (mesesAdiante){
@@ -5012,7 +5072,9 @@
      é pago num dia diferente. Num gasto comum a chave é só o mês dele, então
      o mesmo campo atende os dois casos. */
 
-  function mesDoLancamento(e){ return monthKeyFromDate(e.date); }
+  // Um só lugar decide em que mês o lançamento vive — e agora ele respeita
+  // a fatura do cartão. Marcar "pago" também cai no mês certo por causa disto.
+  function mesDoLancamento(e){ return mesDoGasto(e); }
 
   function marcaGuardada(e, mk){
     if (!e) return null;
@@ -5244,10 +5306,10 @@
             weight = null;
           }
           var displayQty = (qty != null) ? qty : (weight != null ? weight : 1);
-          items.push({description:it.description, quantity:displayQty, weight:weight, unitValue: displayQty ? subtotal/displayQty : subtotal, subtotal:subtotal, date:e.date, monthKey:monthKeyFromDate(e.date), expenseId:e.id});
+          items.push({description:it.description, quantity:displayQty, weight:weight, unitValue: displayQty ? subtotal/displayQty : subtotal, subtotal:subtotal, date:e.date, monthKey:mesDoGasto(e), expenseId:e.id});
         });
       } else {
-        items.push({description:e.description, quantity:1, weight:null, unitValue:e.value, subtotal:e.value, date:e.date, monthKey:monthKeyFromDate(e.date), expenseId:e.id});
+        items.push({description:e.description, quantity:1, weight:null, unitValue:e.value, subtotal:e.value, date:e.date, monthKey:mesDoGasto(e), expenseId:e.id});
       }
     });
     return items;
@@ -5392,11 +5454,17 @@
   function cartoesParaBanco(s){
     var icones = (s && s.cardIcons) || {};
     var cores = (s && s.cardColors) || {};
+    var fecha = (s && s.cardFechamento) || {};
+    var vence = (s && s.cardVencimento) || {};
+    var dono  = (s && s.cardDono) || {};
     return ((s && s.cards) || []).map(function(nome){
       var o = {n: nome};
       if (icones[nome]) o.i = icones[nome];
       if (cores[nome]) o.c = cores[nome];
-      return (o.i || o.c) ? o : nome;
+      if (fecha[nome]) o.f = Number(fecha[nome]);
+      if (vence[nome]) o.v = Number(vence[nome]);
+      if (dono[nome] && dono[nome] !== CARTAO_DA_CASA) o.d = String(dono[nome]);
+      return (o.i || o.c || o.f || o.v || o.d) ? o : nome;
     });
   }
 
@@ -5406,6 +5474,131 @@
       if (c && typeof c === 'object' && c.n && c.i) out[String(c.n).trim()] = String(c.i);
     });
     return out;
+  }
+
+  // Igual ao de cima, mas pra campo que é número (dia do mês).
+  function numeroDaLista(lista, campo){
+    var out = {};
+    (Array.isArray(lista) ? lista : []).forEach(function(c){
+      if (!c || typeof c !== 'object' || !c.n) return;
+      var v = Number(c[campo]);
+      if (isFinite(v) && v >= 1 && v <= 31) out[String(c.n).trim()] = v;
+    });
+    return out;
+  }
+
+  /* ================================================================
+     CARTÃO: DE QUEM É, QUANDO FECHA, QUANDO VENCE
+
+     Cartão de crédito tem duas datas, e elas fazem coisas diferentes:
+
+       FECHAMENTO — o dia em que a fatura "vira". Compra feita DEPOIS
+                    dele não entra na fatura deste mês: cai na do mês
+                    que vem. É esta data que decide em qual mês o
+                    dinheiro conta.
+       VENCIMENTO — o dia de pagar a fatura. Serve pra dizer "vence
+                    25/10" na tela; não muda soma nenhuma.
+
+     Tudo isso mora na MESMA coluna jsonb dos cartões que já existia
+     ({n:'Nubank', i:'N', c:'#820AD1'} ganha f, v e d), então nenhuma
+     coluna nova precisa ser criada pra guardar isso.
+     ================================================================ */
+
+  var CARTAO_DA_CASA = 'casa';    // cartão que não é de ninguém em particular
+
+  function diasNoMesDaChave(mk){
+    var p = String(mk || '').split('-');
+    var ano = Number(p[0]), mes = Number(p[1]);
+    if (!ano || !mes) return 31;
+    return new Date(ano, mes, 0).getDate();
+  }
+
+  function fechamentoDoCartao(nome){
+    if (!nome) return 0;
+    return Number((state.settings.cardFechamento || {})[nome]) || 0;
+  }
+  function vencimentoDoCartao(nome){
+    if (!nome) return 0;
+    return Number((state.settings.cardVencimento || {})[nome]) || 0;
+  }
+  function donoDoCartao(nome){
+    if (!nome) return CARTAO_DA_CASA;
+    var d = (state.settings.cardDono || {})[nome];
+    return ehPessoaDaCasa(d) ? d : CARTAO_DA_CASA;
+  }
+
+  /* Em qual fatura cai uma compra feita neste dia, neste cartão.
+     Devolve null quando não há nada a mudar (cartão sem fechamento
+     cadastrado, ou compra feita antes do fechamento). */
+  function mesDaFatura(dataISO, cartao){
+    var fecha = fechamentoDoCartao(cartao);
+    if (!fecha) return null;
+    var mk = monthKeyFromDate(dataISO);
+    if (!mk) return null;
+    var dia = parseInt(String(dataISO).slice(8, 10), 10) || 1;
+    // Cartão que fecha dia 31 em fevereiro fecha no último dia que existe.
+    var limite = Math.min(fecha, diasNoMesDaChave(mk));
+    return (dia > limite) ? monthKeyAdd(mk, 1) : mk;
+  }
+
+  /* O MÊS EM QUE O GASTO CONTA.
+     Gasto comum: o mês da data dele, como sempre foi.
+     Compra no crédito depois do fechamento: o mês da fatura.
+     Lançamento antigo (de antes desta mudança) não tem faturaMes e por
+     isso continua exatamente onde estava — nada muda de lugar sozinho. */
+  function mesDoGasto(e){
+    if (e && e.faturaMes) return e.faturaMes;
+    return monthKeyFromDate(e && e.date);
+  }
+
+  // Dia em que a fatura desse gasto vence, se o cartão tiver a data.
+  function vencimentoDaFatura(e){
+    if (!e || !e.faturaMes || !e.card) return null;
+    var dia = vencimentoDoCartao(e.card);
+    if (!dia) return null;
+    return dateInMonth(e.faturaMes, Math.min(dia, diasNoMesDaChave(e.faturaMes)));
+  }
+
+  /* Dois cartões com o mesmo nome não podem existir (o gasto guarda o
+     nome do cartão, então dois "Nubank" ficariam indistinguíveis). Quando
+     a casa tem mais de uma pessoa e as duas têm Nubank, o segundo vira
+     "Nubank (Vanessa)". Estas duas funções cuidam disso: uma tira o
+     sufixo pra achar a marca, a outra monta o rótulo bonito da tela. */
+  function nomeBaseCartao(nome){
+    return String(nome || '').replace(/\s*\([^()]*\)\s*$/, '').trim() || String(nome || '');
+  }
+
+  function rotuloCartao(nome){
+    var dono = donoDoCartao(nome);
+    if (dono === CARTAO_DA_CASA) return String(nome || '');
+    var base = nomeBaseCartao(nome);
+    var m = memberById(dono);
+    var quem = (m && m.name) ? m.name : '';
+    if (!quem) return String(nome || '');
+    // "Nubank (Vanessa)" na lista vira "Nubank · Vanessa" na tela.
+    return base + ' · ' + quem;
+  }
+
+  /* Ao salvar as configurações: se duas pessoas cadastraram um cartão com
+     o mesmo nome, o segundo ganha o nome do dono entre parênteses. Sem
+     isso o app descartaria um dos dois em silêncio — e a pessoa nunca
+     entenderia por que o cartão dela sumiu. */
+  function resolverCartoesRepetidos(cards, cfg){
+    var usados = {}, saida = [];
+    (Array.isArray(cards) ? cards : []).forEach(function(nome, i){
+      var limpo = String(nome || '').trim();
+      if (!limpo) return;
+      if (!usados[limpo]){ usados[limpo] = true; saida.push(limpo); return; }
+      var dn = ((cfg || [])[i] || {}).dono;
+      var quem = ehPessoaDaCasa(dn) ? memberById(dn) : null;
+      var base = nomeBaseCartao(limpo);
+      var tentativa = (quem && quem.name) ? (base + ' (' + quem.name + ')') : (base + ' 2');
+      var n = 2;
+      while (usados[tentativa]){ tentativa = base + ' ' + (++n); }
+      usados[tentativa] = true;
+      saida.push(tentativa);
+    });
+    return saida;
   }
 
   // Vai pro banco no formato com ícone, uma coluna só.
@@ -5603,15 +5796,112 @@
     return 'Até ' + dia + ' de ' + monthLabelFromKey(mk) + ' · ' + quanto;
   }
 
-  function cardSelectHTML(selected){
+  /* A lista de cartões na hora de lançar. Com mais de uma pessoa na casa, o
+     cartão de QUEM está lançando vem primeiro — é quase sempre o certo, e
+     evita o erro de lançar no cartão do outro sem perceber. O nome do dono
+     aparece ao lado quando há mais de um cartão com o mesmo nome base. */
+  function cardSelectHTML(selected, memberId){
     var cards = state.settings.cards && state.settings.cards.length ? state.settings.cards : DEFAULT_CARDS;
     var isKnown = cards.indexOf(selected) !== -1;
-    var opts = cards.map(function(c){
-      return '<option value="'+escapeHTML(c)+'"'+(c===selected?' selected':'')+'>'+escapeHTML(c)+'</option>';
+
+    var ordenados = cards.slice();
+    if (ehPessoaDaCasa(memberId) && (state.settings.members || []).length > 1){
+      var peso = function(c){
+        var dn = donoDoCartao(c);
+        if (dn === memberId) return 0;               // o meu
+        if (dn === CARTAO_DA_CASA) return 1;         // o da casa
+        return 2;                                    // o do outro
+      };
+      // Estável: dentro de cada grupo a ordem que a pessoa escolheu é mantida.
+      ordenados = cards.map(function(c, i){ return {c:c, i:i}; })
+        .sort(function(a, b){ return (peso(a.c) - peso(b.c)) || (a.i - b.i); })
+        .map(function(o){ return o.c; });
+    }
+
+    var opts = ordenados.map(function(c){
+      return '<option value="'+escapeHTML(c)+'"'+(c===selected?' selected':'')+'>'+escapeHTML(rotuloCartao(c))+'</option>';
     }).join('');
     var customSelected = !!selected && !isKnown;
     opts += '<option value="__custom__"'+(customSelected?' selected':'')+'>✏️ Outro cartão…</option>';
     return {html: '<select class="card-select">'+opts+'</select>', customSelected: customSelected};
+  }
+
+  /* O campo "Entra na fatura de". Ele só aparece quando faz sentido: crédito,
+     num cartão que tem dia de fechamento cadastrado. Nos outros casos fica
+     escondido e o app se comporta como sempre se comportou. */
+  function faturaCampoHTML(editingExpense){
+    var escolhido = (editingExpense && editingExpense.faturaMes) ? editingExpense.faturaMes : '';
+    return '<div class="field fatura-campo" style="display:none;" data-escolhido="' + escapeHTML(escolhido) + '">'
+      + '<label>Entra na fatura de</label>'
+      + '<select class="fatura-select"></select>'
+      + '<div class="items-hint fatura-nota" style="margin:6px 0 0;"></div>'
+      + '</div>';
+  }
+
+  // Qual cartão está escolhido no formulário agora (inclusive o digitado à mão).
+  function cartaoDoFormulario(form){
+    var sel = form.querySelector('.card-select');
+    var nome = sel ? sel.value : '';
+    if (nome === '__custom__'){
+      var c = form.querySelector('.custom-card-input');
+      nome = c ? String(c.value || '').trim() : '';
+    }
+    return nome;
+  }
+
+  function atualizarCampoFatura(form){
+    var campo = form && form.querySelector('.fatura-campo');
+    if (!campo) return;
+    var sel = campo.querySelector('.fatura-select');
+    var nota = campo.querySelector('.fatura-nota');
+
+    var pmEl = form.querySelector('.payment-method-select');
+    var metodo = pmEl ? pmEl.value : 'outro';
+    var fixEl = form.querySelector('.fixed-toggle-select');
+    var ehFixo = !!fixEl && fixEl.value === 'sim';
+    var cartao = cartaoDoFormulario(form);
+    var fecha = fechamentoDoCartao(cartao);
+
+    // Débito e pix saem na hora; conta fixa no cartão não é uma compra avulsa.
+    if (metodo !== 'credito' || !cartao || !fecha || ehFixo){
+      campo.style.display = 'none';
+      if (sel) sel.innerHTML = '';
+      return;
+    }
+
+    var dataEl = form.querySelector('.date-input');
+    var data = (dataEl && dataEl.value) || todayISO();
+    var mkCompra = monthKeyFromDate(data);
+    var sugerido = mesDaFatura(data, cartao) || mkCompra;
+    var guardado = campo.getAttribute('data-escolhido') || '';
+    var valor = guardado || sugerido;
+
+    var opcoes = [mkCompra, monthKeyAdd(mkCompra, 1)];
+    if (opcoes.indexOf(valor) === -1) opcoes.unshift(valor);
+
+    sel.innerHTML = opcoes.map(function(mk){
+      var extra = (mk === sugerido) ? ' (o normal)' : '';
+      return '<option value="' + mk + '"' + (mk === valor ? ' selected' : '') + '>'
+        + escapeHTML(monthLabelFromKey(mk)) + extra + '</option>';
+    }).join('');
+    sel.value = valor;
+
+    var dia = parseInt(String(data).slice(8, 10), 10) || 1;
+    var vence = vencimentoDoCartao(cartao);
+    var quandoVence = vence
+      ? (' A fatura vence dia ' + vence + '.')
+      : '';
+    var recado = sugerido === mkCompra
+      ? ('O ' + escapeHTML(rotuloCartao(cartao)) + ' fecha dia ' + fecha + '. Uma compra do dia ' + dia
+         + ' ainda entra na fatura deste mês.' + quandoVence)
+      : ('O ' + escapeHTML(rotuloCartao(cartao)) + ' fecha dia ' + fecha + ', e o dia ' + dia
+         + ' já passou disso: esta compra cai na fatura de <b>' + escapeHTML(monthLabelFromKey(sugerido))
+         + '</b>. É nesse mês que ela vai contar, porque é nele que o dinheiro sai.' + quandoVence);
+    if (valor !== sugerido){
+      recado += ' <b>Você mudou à mão</b> para ' + escapeHTML(monthLabelFromKey(valor)) + '.';
+    }
+    nota.innerHTML = recado;
+    campo.style.display = 'block';
   }
 
   function renderPhotoSlotHTML(editingExpense){
@@ -5771,7 +6061,7 @@
     // quadro "Contas por cartão" do Resumo fica cego pras contas da casa.
     var paymentMethod = editingExpense ? (editingExpense.paymentMethod || 'outro') : pagamentoPadrao('casal');
     var usaCartao = (paymentMethod === 'credito' || paymentMethod === 'debito');
-    var card = cardSelectHTML(editingExpense ? editingExpense.card : null);
+    var card = cardSelectHTML(editingExpense ? editingExpense.card : null, memberId);
     var existingItems = (editingExpense && Array.isArray(editingExpense.items)) ? editingExpense.items : [];
     var hasItems = existingItems.length > 0;
     var isInstallment = editingExpense ? !!editingExpense.installment : false;
@@ -5794,6 +6084,7 @@
         + '<div class="field card-field" style="display:'+(usaCartao?'block':'none')+';"><label>Cartão / conta</label>' + card.html + '</div>'
       + '</div>'
       + '<div class="field custom-card-field" style="display:'+((usaCartao&&card.customSelected)?'block':'none')+';"><label>Nome do cartão</label><input type="text" class="custom-card-input" placeholder="Ex: C6, PicPay..." value="'+(card.customSelected&&editingExpense?escapeHTML(editingExpense.card):'')+'"></div>'
+      + faturaCampoHTML(editingExpense)
       + '<div class="field"><label>É um gasto fixo?</label><select class="fixed-toggle-select"><option value="nao"'+(!isFixed?' selected':'')+'>Não</option><option value="sim"'+(isFixed?' selected':'')+'>Sim</option></select>'
         + '<div class="items-hint" style="margin:6px 0 0;">Marcando como fixo, esse gasto aparece sozinho em todos os meses seguintes com o mesmo valor — você não precisa lançar de novo.</div></div>'
       + prazoFixoHTML(editingExpense, isFixed)
@@ -5835,7 +6126,7 @@
     var usaCartao = (paymentMethod === 'credito' || paymentMethod === 'debito');
     var isInstallment = editingExpense ? !!editingExpense.installment : false;
     var isFixed = editingExpense ? !!editingExpense.fixed : false;
-    var card = cardSelectHTML(editingExpense ? editingExpense.card : null);
+    var card = cardSelectHTML(editingExpense ? editingExpense.card : null, memberId);
     var installmentsTotal = (editingExpense && editingExpense.installmentsTotal) ? editingExpense.installmentsTotal : 2;
     var installmentsPaid = (editingExpense && typeof editingExpense.installmentsPaid === 'number') ? editingExpense.installmentsPaid : 0;
     return ''
@@ -5858,6 +6149,7 @@
       + '<div class="field"><label>Forma de pagamento</label>' + paymentMethodSelectHTML(paymentMethod, false) + '</div>'
       + '<div class="field card-field" style="display:'+(usaCartao?'block':'none')+';"><label>Cartão / conta</label>' + card.html + '</div>'
       + '<div class="field custom-card-field" style="display:'+((usaCartao&&card.customSelected)?'block':'none')+';"><label>Nome do cartão</label><input type="text" class="custom-card-input" placeholder="Ex: C6, PicPay..." value="'+(card.customSelected&&editingExpense?escapeHTML(editingExpense.card):'')+'"></div>'
+      + faturaCampoHTML(editingExpense)
       + '<div class="field credito-only-field" style="display:'+((isCredito&&!isFixed)?'block':'none')+';"><label>Parcelado?</label><select class="installment-toggle-select"><option value="nao"'+(!isInstallment?' selected':'')+'>Não</option><option value="sim"'+(isInstallment?' selected':'')+'>Sim</option></select></div>'
       + parcelaCamposHTML(editingExpense, isCredito && isInstallment && !isFixed)
       + '</div>'
@@ -5885,6 +6177,30 @@
   // são o mesmo — aí mostra um só, pra não inventar informação.
   /* "Parcela 2 de 4 · compra de R$ 200,00" — a linha precisa dizer as duas
      coisas: o que sai NESTE mês (o valor à direita) e de que compra ela veio. */
+  /* "comprado 20/09 · 💳 fatura de outubro".
+     Só aparece quando a fatura é de um mês DIFERENTE do da data mostrada —
+     que é justamente o caso em que a pessoa estranharia ver a compra ali.
+     Sem isso, uma compra de setembro apareceria em outubro sem explicação. */
+  // "out/26" — a linha do gasto é estreita e "Outubro de 2026" estourava a
+  // coluna, passando por cima do valor.
+  function mesCurtoDaChave(mk){
+    var p = String(mk || '').split('-');
+    if (p.length !== 2) return String(mk || '');
+    var nome = MONTH_NAMES_PT[Number(p[1]) - 1] || p[1];
+    return nome.slice(0, 3).toLowerCase() + '/' + p[0].slice(2);
+  }
+
+  function seloFaturaHTML(e){
+    if (!e || !e.faturaMes) return '';
+    if (e.faturaMes === monthKeyFromDate(e.date)) return '';
+    var venc = vencimentoDaFatura(e);
+    var titulo = 'Comprado em ' + formatDateBR(e.date) + ', entra na fatura de '
+      + monthLabelFromKey(e.faturaMes)
+      + (venc ? (', que vence em ' + formatDateBR(venc)) : '');
+    return ' · <span class="fatura-selo" title="' + escapeHTML(titulo) + '">💳 fatura ' + escapeHTML(mesCurtoDaChave(e.faturaMes))
+      + (venc ? (' · vence ' + String(formatDateBR(venc)).slice(0, 5)) : '') + '</span>';
+  }
+
   function seloParcelaHTML(e){
     if (!e || !e.parcelaDe) return '';
     var p = e.parcelaDe;
@@ -5918,13 +6234,13 @@
           : (c.installment
               ? (' · '+c.total+'x de '+formatBRL(c.parcelValue)+' · ✅ '+c.paid+' pagas'+(c.remaining>0?(' · ⏳ '+c.remaining+' restantes'):''))
               : (e.fixed ? ' · ' + seloFixoHTML(e) : ''));
-        var mkLinha = monthKeyFromDate(e.date);
+        var mkLinha = mesDoGasto(e);
         var botoes = situacaoBotoesHTML(e, mkLinha);
         return ''
           + '<div class="entry '+getStatusClass(e, mkLinha)+(botoes?' tem-situacao':'')+'" id="linha-'+escapeHTML(e.id)+'">'
           + thumb
           + '<div class="info"><div class="desc"><span class="desc-txt">'+escapeHTML(e.description)+'</span></div>'
-            + '<div class="date">'+formatDateBR(e.date)+detailLine+'</div></div>'
+            + '<div class="date">'+formatDateBR(e.date)+seloFaturaHTML(e)+detailLine+'</div></div>'
           + valorDaLinhaHTML(e, mkLinha)
           + '<button class="edit" data-action="edit-expense" data-id="'+e.id+'">✏️</button>'
           + '<button class="del" data-action="delete-expense" data-id="'+e.id+'">🗑️</button>'
@@ -5945,7 +6261,7 @@
 
   function renderPersonalEntryRow(e){
     var c = personalCalc(e);
-    var mkPessoal = monthKeyFromDate(e.date);
+    var mkPessoal = mesDoGasto(e);
     var botoesPessoal = situacaoBotoesHTML(e, mkPessoal);
     var thumb = e.thumb
       ? '<img class="thumb" src="'+e.thumb+'" data-action="view-receipt" data-id="'+e.id+'">'
@@ -5964,7 +6280,7 @@
       + '<div class="entry personal-entry '+getStatusClass(e, mkPessoal)+(botoesPessoal?' tem-situacao':'')+'" id="linha-'+escapeHTML(e.id)+'">'
       + thumb
       + '<div class="info"><div class="desc"><span class="desc-txt">'+escapeHTML(e.description)+cardLabel+'</span></div>'
-        + '<div class="date">'+formatDateBR(e.date)+' · '+detailLine+'</div></div>'
+        + '<div class="date">'+formatDateBR(e.date)+seloFaturaHTML(e)+' · '+detailLine+'</div></div>'
       + '<div class="value">'+formatBRL(e.value)+'</div>'
       + '<button class="edit" data-action="edit-expense" data-id="'+e.id+'">✏️</button>'
       + '<button class="del" data-action="delete-expense" data-id="'+e.id+'">🗑️</button>'
@@ -6893,7 +7209,7 @@
     var maxTotal = Math.max.apply(null, years.map(function(y){ return y.total; }).concat([1]));
     var cardsHTML = years.map(function(y){
       var pct = Math.max(4, Math.round(y.total / maxTotal * 100));
-      var anoAgora = new Date().getFullYear();
+      var anoAgora = agora().getFullYear();
       var tag = y.hasCurrent
         ? '<span class="month-tag current">Ano atual</span>'
         : (y.year > anoAgora ? '<span class="month-tag future">Previsto</span>' : '');
@@ -7036,7 +7352,7 @@
     for (var i = 0; i < 12; i++){
       var mk = monthKeyAdd(currentMonthKey(), i);
       fixos.forEach(function(e){
-        var inicio = monthKeyFromDate(e.date);
+        var inicio = mesDoGasto(e);
         if (mk < inicio) return;
         var fim = fixedEndMonth(e);
         if (fim && mk > fim) return;
@@ -7109,7 +7425,7 @@
           + '<div class="thumb-placeholder" style="background:'+hexToRgba(catColor(e.category),0.15)+';color:'+catColor(e.category)+';">'+catIcon(e.category)+'</div>'
           + '<div class="info"><div class="desc"><span class="desc-txt">'+escapeHTML(e.description)+'</span></div>'
             + '<div class="date">'+escapeHTML(e.category)+' · paga por '+escapeHTML(dono ? dono.name : '?')
-            + ' · desde '+escapeHTML(monthLabelFromKey(monthKeyFromDate(e.date)))
+            + ' · desde '+escapeHTML(monthLabelFromKey(mesDoGasto(e)))
             + prazoNaListaHTML(e)+'</div></div>'
           + valorDaLinhaHTML(e, mkAtual)
           + '<button class="edit" data-action="edit-fixed" data-id="'+e.id+'" data-person="'+escapeHTML(e.person)+'" data-type="'+e.type+'">✏️</button>'
@@ -7155,7 +7471,7 @@
   function contasDoMes(mk){
     var normais = [], pessoais = [], fixasDeTras = [], parcelasDeTras = [];
     state.expenses.forEach(function(e){
-      var mkE = monthKeyFromDate(e.date);
+      var mkE = mesDoGasto(e);
       if (e.fixed){
         // Fixa que COMEÇOU neste mês é lançamento do mês: some junto.
         if (mkE === mk){ (e.type === 'pessoal' ? pessoais : normais).push(e); }
@@ -7552,6 +7868,9 @@
     if (itemsListEl && itemsListEl.querySelectorAll('.item-row').length){
       recalcItemsTotal(itemsListEl.closest('form'));
     }
+    // O aviso "entra na fatura de" depende do cartão e da data que estão no
+    // formulário agora, então ele é montado depois que a tela existe.
+    contentEl.querySelectorAll('form.add-form').forEach(function(f){ atualizarCampoFatura(f); });
     posicionarGraficos();
     aplicarNovoLancamento();
   }
@@ -7608,9 +7927,23 @@
 
   function openSettingsModal(){
     state.settingsDraft = JSON.parse(JSON.stringify(state.settings));
-    // Guarda os nomes como estavam: se a pessoa renomear um cartão, o símbolo
-    // e a cor dele vão junto em vez de ficarem órfãos com o nome velho.
-    state.settingsDraft.cardsOriginais = (state.settings.cards || []).slice();
+    /* Enquanto a janela está aberta, a ficha de cada cartão (símbolo, cor,
+       dono, fechamento, vencimento) anda POR POSIÇÃO, não por nome.
+       Motivo: dois cartões podem ter o mesmo nome por um instante — é o que
+       acontece quando a pessoa está justamente cadastrando o segundo
+       "Nubank". Guardando por nome, o segundo escrevia por cima do primeiro
+       e o dia de fechamento de um virava o do outro, sem ninguém perceber.
+       Por posição isso não tem como acontecer. */
+    var s0 = state.settings;
+    state.settingsDraft.cardCfg = (s0.cards || []).map(function(nome){
+      return {
+        icone: (s0.cardIcons || {})[nome] || null,
+        cor:   (s0.cardColors || {})[nome] || null,
+        fecha: Number((s0.cardFechamento || {})[nome]) || 0,
+        vence: Number((s0.cardVencimento || {})[nome]) || 0,
+        dono:  (s0.cardDono || {})[nome] || CARTAO_DA_CASA
+      };
+    });
     renderSettingsModal();
     settingsModalEl.classList.remove('hidden');
     if (souAdmin) renderListaLicencas();
@@ -7641,9 +7974,26 @@
         + '</div>';
     }).join('');
     var sum = d.members.reduce(function(s,m){ return s+(Number(m.percentage)||0); },0);
+    /* Uma linha curta embaixo de cada cartão dizendo de quem ele é e quando
+       fecha — pra a pessoa ver de relance o que já configurou, sem abrir o 🎨. */
+    function cartaoResumoHTML(idx){
+      var ficha = (d.cardCfg || [])[idx] || {};
+      var dn = ficha.dono;
+      var f = Number(ficha.fecha) || 0;
+      var v = Number(ficha.vence) || 0;
+      var pedacos = [];
+      var quem = ehPessoaDaCasa(dn) ? memberById(dn) : null;
+      if (quem) pedacos.push('de ' + escapeHTML(quem.name));
+      if (f) pedacos.push('fecha dia ' + f);
+      if (v) pedacos.push('vence dia ' + v);
+      if (!pedacos.length) pedacos.push('sem data de fechamento — toque no 🎨 pra cadastrar');
+      return '<div class="cartao-resumo">' + pedacos.join(' · ') + '</div>';
+    }
+
     var cardRows = d.cards.map(function(c, idx){
-      var cor = (d.cardColors || {})[c] || (marcaConhecida(c) ? marcaConhecida(c).cor : CARD_COLORS[hashString(c) % CARD_COLORS.length]);
-      var ic = (d.cardIcons || {})[c] || (marcaConhecida(c) ? marcaConhecida(c).icone : (String(c||'?').trim().charAt(0)||'?').toUpperCase());
+      var fichaL = (d.cardCfg || [])[idx] || {};
+      var cor = fichaL.cor || (marcaConhecida(c) ? marcaConhecida(c).cor : CARD_COLORS[hashString(c) % CARD_COLORS.length]);
+      var ic = fichaL.icone || (marcaConhecida(c) ? marcaConhecida(c).icone : (String(c||'?').trim().charAt(0)||'?').toUpperCase());
       return '<div class="cartao-linha">'
         + '<span class="cartao-ordem">'
           + '<button type="button" class="cartao-seta" data-action="subir-cartao" data-idx="'+idx+'"'
@@ -7653,9 +8003,10 @@
         + '</span>'
         + '<span class="card-mark" style="background:'+cor+';color:'+textoSobre(cor)+';box-shadow:0 0 10px '+hexToRgba(cor,0.55)+';">'+escapeHTML(ic)+'</span>'
         + '<input type="text" class="card-name-input" data-idx="'+idx+'" value="'+escapeHTML(c)+'">'
-        + '<button type="button" class="cartao-editar" data-action="editar-cartao" data-idx="'+idx+'" title="Símbolo e cor de '+escapeHTML(c)+'">🎨</button>'
+        + '<button type="button" class="cartao-editar" data-action="editar-cartao" data-idx="'+idx+'" title="Dono, fechamento, símbolo e cor de '+escapeHTML(c)+'">🎨</button>'
         + '<button type="button" class="photo-remove" data-action="remove-card" data-idx="'+idx+'">Remover</button>'
-        + '</div>';
+        + '</div>'
+        + cartaoResumoHTML(idx);
     }).join('');
     settingsPanelEl.innerHTML = ''
       + '<h2>Configurações</h2>'
@@ -7664,7 +8015,9 @@
       + '<div class="pct-sum-note" id="pct-sum-note">Soma das porcentagens: '+sum+'%'+(Math.abs(sum-100)>0.5 ? ' (não precisa somar 100 — é usado de forma proporcional)':'')+'</div>'
       + '<button type="button" id="add-member-btn" class="secondary-btn">+ Adicionar pessoa</button>'
       + '<div class="field" style="margin-top:18px;"><label>Cartões cadastrados</label>'
-        + '<div class="note" style="margin:-2px 0 8px;">O 🎨 abre o símbolo e a cor do cartão — é como ele aparece nas listas e nos gráficos. '
+        + '<div class="note" style="margin:-2px 0 8px;">O 🎨 abre <strong>de quem é o cartão, o dia em que ele fecha e o dia em que vence</strong>, '
+        + 'além do símbolo e da cor. O dia de fechamento é o que importa pro dinheiro: compra feita depois dele entra na fatura do mês seguinte, '
+        + 'e o app já lança ela lá sozinho. '
         + 'As setas ▲▼ mudam a ordem: <strong>o primeiro da lista é o que já vem escolhido</strong> na hora de lançar um gasto, então deixe no topo o que você mais usa.</div>'
         + cardRows + '</div>'
       + '<button type="button" id="add-card-btn" class="secondary-btn">+ Adicionar cartão</button>'
@@ -9508,11 +9861,15 @@
     var d = state.settingsDraft;
     if (!d || !d.cards[idx]) return;
     var nome = d.cards[idx];
+    var ficha = (d.cardCfg || [])[idx] || {};
     cartaoEditando = {
       idx: idx,
       nome: nome,
-      icone: (d.cardIcons || {})[nome] || null,
-      cor: (d.cardColors || {})[nome] || null
+      icone: ficha.icone || null,
+      cor: ficha.cor || null,
+      fecha: Number(ficha.fecha) || 0,
+      vence: Number(ficha.vence) || 0,
+      dono: ficha.dono || CARTAO_DA_CASA
     };
     renderCartaoModal();
     cartaoModalEl.classList.remove('hidden');
@@ -9555,8 +9912,37 @@
         + ' data-icone="' + escapeHTML(i) + '">' + escapeHTML(i) + '</button>';
     }).join('');
 
+    // Quem pode ser dono: cada pessoa da casa, ou a casa inteira.
+    var donos = '<option value="' + CARTAO_DA_CASA + '"'
+      + (cartaoEditando.dono === CARTAO_DA_CASA ? ' selected' : '') + '>🏠 Da casa (todo mundo usa)</option>'
+      + (state.settingsDraft.members || []).map(function(m){
+          return '<option value="' + escapeHTML(m.id) + '"'
+            + (cartaoEditando.dono === m.id ? ' selected' : '') + '>' + escapeHTML(m.name) + '</option>';
+        }).join('');
+
+    function diasSelect(classe, escolhido, vazio){
+      var o = '<option value="0">' + vazio + '</option>';
+      for (var dd = 1; dd <= 31; dd++){
+        o += '<option value="' + dd + '"' + (escolhido === dd ? ' selected' : '') + '>dia ' + dd + '</option>';
+      }
+      return '<select class="' + classe + '">' + o + '</select>';
+    }
+
+    // Exemplo com número de verdade, pra pessoa conferir se entendeu.
+    var exemplo = '';
+    if (cartaoEditando.fecha){
+      var hojeMk = currentMonthKey();
+      var depois = Math.min(cartaoEditando.fecha + 1, diasNoMesDaChave(hojeMk));
+      exemplo = '<div class="note" style="margin:8px 0 0;">Fechando dia ' + cartaoEditando.fecha
+        + ': uma compra do dia ' + depois + ' entra na fatura de <b>'
+        + escapeHTML(monthLabelFromKey(monthKeyAdd(hojeMk, 1)))
+        + '</b>, e é nesse mês que ela vai contar no seu gasto.'
+        + (cartaoEditando.vence ? (' Essa fatura vence dia ' + cartaoEditando.vence + '.') : '')
+        + '</div>';
+    }
+
     cartaoPanelEl.innerHTML = ''
-      + '<h2>Aparência do cartão</h2>'
+      + '<h2>Cartão</h2>'
       + '<div class="cartao-previa">'
         + '<span class="card-mark card-mark-lg" style="background:' + cor + ';color:' + textoSobre(cor) + ';'
           + 'box-shadow:0 0 16px ' + hexToRgba(cor, 0.55) + ';">' + escapeHTML(ic) + '</span>'
@@ -9570,6 +9956,25 @@
         + '<div class="note" style="margin:8px 0 0;">Não uso a logomarca do banco aqui: logo de banco é marca registrada '
         + 'e não posso desenhar nem distribuir. Cor da marca com a inicial dá o mesmo reconhecimento de longe.</div></div>'
       + (padrao ? '' : '<button type="button" class="secondary-btn" data-action="cartao-padrao" style="margin-top:6px;">Voltar ao padrão</button>')
+
+      + '<div class="field" style="margin-top:18px;"><label>De quem é este cartão</label>'
+        + '<select class="cartao-dono-select">' + donos + '</select>'
+        + '<div class="note" style="margin:8px 0 0;">Cada pessoa tem o cartão dela, com o dia de fechamento dela. '
+        + 'Marque <b>Da casa</b> só quando os dois usam o mesmo cartão. '
+        + 'Se duas pessoas tiverem um cartão com o mesmo nome, o app põe o nome do dono entre parênteses pra não misturar.</div></div>'
+
+      + '<div class="field"><label>Dia em que a fatura fecha</label>'
+        + diasSelect('cartao-fecha-select', cartaoEditando.fecha, 'Não sei / não quero usar')
+        + '<div class="note" style="margin:8px 0 0;">É o dia em que a fatura vira. Compra feita <b>depois</b> dele não entra '
+        + 'na fatura deste mês: cai na do mês seguinte — e o app já lança ela lá sozinho. '
+        + 'Deixando em branco, nada muda: o gasto conta no mês da compra, como sempre foi.</div>'
+        + exemplo + '</div>'
+
+      + '<div class="field"><label>Dia em que a fatura vence</label>'
+        + diasSelect('cartao-vence-select', cartaoEditando.vence, 'Não sei')
+        + '<div class="note" style="margin:8px 0 0;">É o dia de pagar. Serve pra o app escrever "vence dia 25" na tela — '
+        + 'não muda soma nenhuma.</div></div>'
+
       + '<div class="settings-actions" style="margin-top:18px;">'
         + '<button type="button" class="secondary-btn" data-action="fechar-cartao">Cancelar</button>'
         + '<button type="button" class="submit-btn" data-action="salvar-cartao" style="background:var(--neon2);color:#181712;">Usar este</button>'
@@ -9689,13 +10094,16 @@
     if (!cartaoEditando) return;
     var d = state.settingsDraft;
     if (!d) return closeCartaoModal();
-    // O nome pode ter sido editado na caixa de texto enquanto a janela estava
-    // aberta; quem manda é o que está no rascunho agora.
-    var nome = d.cards[cartaoEditando.idx] || cartaoEditando.nome;
-    d.cardIcons = d.cardIcons || {};
-    d.cardColors = d.cardColors || {};
-    if (cartaoEditando.icone) d.cardIcons[nome] = cartaoEditando.icone; else delete d.cardIcons[nome];
-    if (cartaoEditando.cor) d.cardColors[nome] = cartaoEditando.cor; else delete d.cardColors[nome];
+    // Guardado na posição do cartão, não no nome dele: dois cartões com o
+    // mesmo nome na tela não podem escrever um por cima do outro.
+    d.cardCfg = d.cardCfg || [];
+    d.cardCfg[cartaoEditando.idx] = {
+      icone: cartaoEditando.icone || null,
+      cor: cartaoEditando.cor || null,
+      fecha: Number(cartaoEditando.fecha) || 0,
+      vence: Number(cartaoEditando.vence) || 0,
+      dono: cartaoEditando.dono || CARTAO_DA_CASA
+    };
     closeCartaoModal();
     renderSettingsModal();
   }
@@ -10352,6 +10760,8 @@
       custom.style.display = (usaCartao && sel && sel.value === '__custom__') ? 'block' : 'none';
     }
 
+    atualizarCampoFatura(form);
+
     // Gasto fixo e parcelamento não convivem: um repete pra sempre com o mesmo
     // valor, o outro divide um valor único em N vezes. E débito não parcela.
     form.querySelectorAll('.credito-only-field').forEach(function(el){
@@ -10481,23 +10891,50 @@
       if (!m.name || !m.name.trim()) m.name = 'Pessoa';
       m.percentage = Number(m.percentage) || 0;
     });
-    var originais = d.cardsOriginais || [];
+    /* Até aqui tudo andou por POSIÇÃO. Agora, na saída, vira o formato que o
+       resto do app usa: um mapa por NOME do cartão. A ordem importa —
+       primeiro os nomes vazios saem, depois os repetidos ganham o nome do
+       dono, e só então os mapas são montados. Montar antes, como era, fazia
+       o segundo "Nubank" escrever por cima do primeiro. */
     var brutos = (d.cards || []).map(function(c){ return (c||'').trim(); });
-    var iconesAntes = d.cardIcons || {}, coresAntes = d.cardColors || {};
-    var icones = {}, cores = {};
+    var fichas = (d.cardCfg || []);
+
+    // Tira os vazios levando a ficha de cada um junto.
+    var nomes = [], cfgs = [];
     brutos.forEach(function(nome, i){
       if (!nome) return;
-      var antigo = originais[i];
-      var ic = iconesAntes[nome] || (antigo ? iconesAntes[antigo] : null);
-      var cor = coresAntes[nome] || (antigo ? coresAntes[antigo] : null);
-      if (ic) icones[nome] = ic;
-      if (cor) cores[nome] = cor;
+      nomes.push(nome);
+      cfgs.push(fichas[i] || {});
     });
-    d.cards = brutos.filter(function(c){ return c.length > 0; });
-    if (!d.cards.length) d.cards = DEFAULT_CARDS.slice();
+    if (!nomes.length){
+      nomes = DEFAULT_CARDS.slice();
+      cfgs = nomes.map(function(){ return {}; });
+    }
+
+    /* Duas pessoas com um cartão de mesmo nome: o segundo vira
+       "Nubank (Vanessa)". Sem isto um dos dois sumiria em silêncio, porque a
+       lista não aceita nome repetido — e o gasto guarda o NOME do cartão,
+       então dois "Nubank" seriam indistinguíveis na hora de somar. */
+    nomes = resolverCartoesRepetidos(nomes, cfgs);
+
+    var icones = {}, cores = {}, fecha = {}, vence = {}, dono = {};
+    nomes.forEach(function(nome, i){
+      var c = cfgs[i] || {};
+      if (c.icone) icones[nome] = c.icone;
+      if (c.cor) cores[nome] = c.cor;
+      if (Number(c.fecha)) fecha[nome] = Number(c.fecha);
+      if (Number(c.vence)) vence[nome] = Number(c.vence);
+      if (c.dono && c.dono !== CARTAO_DA_CASA) dono[nome] = c.dono;
+    });
+
+    d.cards = nomes;
     d.cardIcons = icones;
     d.cardColors = cores;
+    d.cardFechamento = fecha;
+    d.cardVencimento = vence;
+    d.cardDono = dono;
     delete d.cardsOriginais;
+    delete d.cardCfg;
     var ok = await saveSettings(d);
     if (!ok){ alert('Não foi possível salvar as configurações. Tente de novo.'); return; }
     var formDraft = captureAddFormDraft();
@@ -10736,6 +11173,31 @@
       extra.card = cardValue;
     } else {
       extra.card = null;
+    }
+
+    /* MÊS DA FATURA.
+       Só no crédito: no débito e no pix o dinheiro sai na hora, não existe
+       fatura. Se a pessoa mexeu no seletor, vale a escolha dela; senão vale
+       o que o fechamento do cartão diz. Quando dá no mesmo mês da compra,
+       guardamos null — assim o gasto fica igualzinho aos de antes. */
+    extra.faturaMes = null;
+    if (extra.card && paymentMethod === 'credito'){
+      var faturaSel = form.querySelector('.fatura-select');
+      var escolhido = (faturaSel && faturaSel.value) ? faturaSel.value : null;
+      var sugerido = mesDaFatura(date, extra.card);
+      var alvo = escolhido || sugerido;
+      if (alvo && alvo !== monthKeyFromDate(date)) extra.faturaMes = alvo;
+    }
+
+    /* A conta que nasceu PENDENTE tem que ficar pendente no mês em que ela
+       será paga. Sem isto, a marca de pendente ficaria num mês onde o gasto
+       nem aparece — e ninguém conseguiria marcar como paga. */
+    if (extra.faturaMes && extra.pagamento){
+      var mkCompra = monthKeyFromDate(date);
+      if (extra.pagamento[mkCompra] === 'pending'){
+        delete extra.pagamento[mkCompra];
+        extra.pagamento[extra.faturaMes] = 'pending';
+      }
     }
 
     // Parcelamento: débito não parcela, e no formulário pessoal ele só existe
@@ -12290,6 +12752,26 @@
       licAberto = false;
       pintarListaLicencas();
     };
+    // Porta pro teste automático conferir a conta do mês da fatura sem
+    // precisar ler a tela: devolve o que o app soma em cada mês.
+    window.__testFatura = {
+      mesDoGasto: function(e){ return mesDoGasto(e); },
+      mesDaFatura: function(data, cartao){ return mesDaFatura(data, cartao); },
+      totalDoMes: function(mk){
+        return expensesFor(mk).reduce(function(s, e){ return s + (Number(e.value) || 0); }, 0);
+      },
+      idsDoMes: function(mk){
+        return expensesFor(mk).map(function(e){ return e.id; });
+      },
+      cartoes: function(){ return (state.settings.cards || []).slice(); },
+      config: function(){
+        return {
+          fecha: state.settings.cardFechamento || {},
+          vence: state.settings.cardVencimento || {},
+          dono: state.settings.cardDono || {}
+        };
+      }
+    };
   }
 
   async function scanCodigoENota(file, formEl){
@@ -12872,6 +13354,7 @@
           || e.target.matches('.value-input')
           || e.target.matches('.date-input'))){
         atualizarPreviaParcela(e.target.closest('form'));
+        if (e.target.matches('.date-input')) atualizarCampoFatura(e.target.closest('form'));
       }
       var itemRow = e.target.closest ? e.target.closest('.item-row') : null;
       if (!itemRow) return;
@@ -12912,6 +13395,20 @@
       if (e.target.matches('.card-select') || e.target.matches('.payment-method-select')
           || e.target.matches('.installment-toggle-select')){
         atualizarCamposPagamento(e.target.closest('form'));
+        return;
+      }
+      // Mudou a data ou digitou o nome de um cartão novo: o mês da fatura
+      // pode ter mudado junto, então o aviso é refeito na hora.
+      if (e.target.matches('.date-input') || e.target.matches('.custom-card-input')){
+        atualizarCampoFatura(e.target.closest('form'));
+        return;
+      }
+      // Trocou a fatura à mão: a escolha fica guardada no próprio campo, pra
+      // não ser desfeita quando o aviso for redesenhado.
+      if (e.target.matches('.fatura-select')){
+        var campoF = e.target.closest('.fatura-campo');
+        if (campoF) campoF.setAttribute('data-escolhido', e.target.value || '');
+        atualizarCampoFatura(e.target.closest('form'));
         return;
       }
       if (e.target.matches('.photo-input')){ handlePhotoChange(e.target); return; }
@@ -13128,7 +13625,9 @@
       }
       if (e.target.closest('#add-card-btn')){
         if (!Array.isArray(state.settingsDraft.cards)) state.settingsDraft.cards = [];
+        if (!Array.isArray(state.settingsDraft.cardCfg)) state.settingsDraft.cardCfg = [];
         state.settingsDraft.cards.push('Novo cartão');
+        state.settingsDraft.cardCfg.push({icone:null, cor:null, fecha:0, vence:0, dono:CARTAO_DA_CASA});
         renderSettingsModal();
         return;
       }
@@ -13141,6 +13640,7 @@
       if (removeCardBtn){
         var ridx = Number(removeCardBtn.getAttribute('data-idx'));
         state.settingsDraft.cards.splice(ridx, 1);
+        if (Array.isArray(state.settingsDraft.cardCfg)) state.settingsDraft.cardCfg.splice(ridx, 1);
         renderSettingsModal();
         return;
       }
@@ -13157,6 +13657,13 @@
           var guardado = lista[deOnde];
           lista[deOnde] = lista[praOnde];
           lista[praOnde] = guardado;
+          // A ficha do cartão viaja junto com ele.
+          var fichas = state.settingsDraft.cardCfg;
+          if (Array.isArray(fichas) && fichas.length === lista.length){
+            var fGuardada = fichas[deOnde];
+            fichas[deOnde] = fichas[praOnde];
+            fichas[praOnde] = fGuardada;
+          }
           renderSettingsModal();
           // Depois do redesenho o botão é outro elemento: devolve o foco pro
           // mesmo cartão, na posição nova, pra dar pra clicar de novo seguido.
@@ -13436,6 +13943,13 @@
         cartaoEditando.icone = (cartaoEditando.icone === ic) ? null : ic;
         renderCartaoModal(); return;
       }
+    });
+
+    cartaoPanelEl.addEventListener('change', function(e){
+      if (!cartaoEditando) return;
+      if (e.target.matches('.cartao-dono-select')){ cartaoEditando.dono = e.target.value; renderCartaoModal(); return; }
+      if (e.target.matches('.cartao-fecha-select')){ cartaoEditando.fecha = Number(e.target.value) || 0; renderCartaoModal(); return; }
+      if (e.target.matches('.cartao-vence-select')){ cartaoEditando.vence = Number(e.target.value) || 0; renderCartaoModal(); return; }
     });
 
     catsModalEl.addEventListener('click', function(e){ if (e.target === catsModalEl) closeCatsModal(); });
